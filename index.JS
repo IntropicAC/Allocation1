@@ -52,7 +52,7 @@ const observations = [
 
   { name: 'Generals', staff: 1, type: 1 },
   { name: 'KP', staff: 1, type: 2 },
-  { name: 'GH', staff: 1, type: 3 },
+  { name: 'GH', staff: 2, type: 3 },
 
 ];
 
@@ -66,74 +66,50 @@ const numStaffMembers = staff.length;
 const maxObs = Math.floor(totalObs / numStaffMembers);
 
 console.log(totalObs);
+console.log(maxObs);
 
 
 
 // Function to shuffle an array
 function shuffle(array) {
-  let newArr = [...array];
   for (let i = newArr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
   }
-  return newArr;
+  return array;
 }
 
-function allocateStaff(staff, observations, numIterations) {
-  for(let iteration = 0; iteration < numIterations; iteration++) {
-    // Clone and shuffle the observations array
-    let observationsList = shuffle([...observations]);
+function allocateStaff(staff, observations, totalObs) {
+    // Create a map to store the observations that each staff member has had.
+    let observationsReceived = {};
 
-    // Assign staff to observations
-    observationsList.forEach(observation => {
-      let staffNeeded = observation.staff;
+// Iterate over the staff members.
+    for (let i = 0; i < staff.length; i++) {
+// Initialize the map for the current staff member.
+observationsReceived[staff[i].name] = [];
 
-      staff.forEach(staffMember => {
-        // Check if this staff member can take more observations
-        let totalObsForThisStaff = staffMember.type1 + staffMember.type2 + staffMember.type3 + staffMember.type4;
-			
- 				let maxType = 0;
-      	if (totalObs < 48){
-         maxType = totalObs;
-        } else {
-         maxType = totalObs / 2;
-        }
-        // Check if staff member has already 4 observations of the current type
-        let alreadyHasFourOfThisType;
-        switch(observation.type) {
-          case 1: alreadyHasFourOfThisType = staffMember.type1 >= maxType; break;
-          case 2: alreadyHasFourOfThisType = staffMember.type2 >= maxType; break;
-          case 3: alreadyHasFourOfThisType = staffMember.type3 >= maxType; break;
-          case 4: alreadyHasFourOfThisType = staffMember.type4 >= maxType; break;
-          default: console.log("Unknown type!");
-        }
+// Iterate over the observations.
+for (let j = 0; j < observations.length; j++) {
 
-        // Only assign observation if staff member doesn't have 4 of this type already
-        if(staffNeeded > 0 && totalObsForThisStaff < maxObs && !alreadyHasFourOfThisType) {
-          staffMember.numObservations++;
-
-          // Update the type
-          switch(observation.type) {
-            case 1: staffMember.type1++; break;
-            case 2: staffMember.type2++; break;
-            case 3: staffMember.type3++; break;
-            case 4: staffMember.type4++; break;
-            default: console.log("Unknown type!");
-          }
-
-          staffNeeded--;
-        }
-      });
-
-      if (staffNeeded > 0) {
-        console.log(`Observation ${observation.name} requires ${staffNeeded} more staff.`);
-      }
-    });
+  // If the staff member has already had this observation in the last 2 hours, skip it.
+  if (observationsReceived[staff[i].name].includes(observations[j]) 
+  && j <= observationsReceived[staff[i].name].length - 2) {
+    continue;
   }
 
-  // Return the updated staff array
-  return staff;
+  // Add the observation to the list of observations that the staff member has had.
+  observationsReceived[staff[i].name].push(observations[j]);
+}
 }
 
-// Test the function with your data
-console.log(allocateStaff(staff, observations, 12));
+// Assign the staff to the observations.
+for (let i = 0; i < staff.length; i++) {
+staff[i].observation = observationsReceived[staff[i].name].pop();
+}
+console.log(observationsReceived);
+// Return the assigned staff.
+return staff;
+
+};
+
+allocateStaff();
