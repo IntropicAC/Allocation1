@@ -3,12 +3,12 @@ const staff = [
   { name: 'Adam', 	break: 14, numObservations: 0, 8: 'BW' },
   { name: 'Mark', 	break: 15, numObservations: 0, 8: 'BW' },
   { name: 'Jane', 	break: 15, numObservations: 0, 8: 'CA' },
-  { name: 'Peter', 	break: 16, numObservations: 0, 8: 'CA' },
+  { name: 'Peter', 	break: 15, numObservations: 0, 8: 'CA' },
   { name: 'Angila', break: 16, numObservations: 0, 8: '-' },
-  { name: 'Paul', 	break: 17, numObservations: 0, 8: 'Gen' },
-  { name: 'Char', 	break: 17, numObservations: 0, 8: '-', security: 5 },
-  { name: 'Dan', 		break: 18, numObservations: 0, 8: '-' },
-  { name: 'Ralph', 	break: 19, numObservations: 0, 8: '-' },
+  { name: 'Paul', 	break: 16, numObservations: 0, 8: 'Gen' },
+  { name: 'Char', 	break: 16, numObservations: 0, 8: '-', security: 5 },
+  { name: 'Dan', 		break: 19, numObservations: 0, 8: '-' },
+  { name: 'Bill', 		break: 19, numObservations: 0, 8: '-' },
 ];
 
 const observations = [
@@ -59,7 +59,7 @@ for (let hour = 9; hour <= 19; hour++) {
 
     while (assigned < observation.staff) {
       loopCounter++;
-      if (loopCounter > 10000) {
+      if (loopCounter > 2000) {
         console.error('Stuck in loop');
         console.log(`Unable to assign observation: ${observation.name} at hour: ${hour}`);
         break;
@@ -146,6 +146,48 @@ staff.forEach(staffMember => {
 console.log('Total Observations Across All Staff: ' + totalObservations);
 
 
+
+let sourceCell = null;
+
+// Handle drag start event
+function handleDragStart(e) {
+    // Store source cell data
+    sourceCell = e.target;
+    e.dataTransfer.setData("text/plain", e.target.innerHTML);
+}
+
+// Handle drag over event
+function handleDragOver(e) {
+    // Prevent default to allow drop
+    e.preventDefault();
+}
+
+// Handle drop event
+function handleDrop(e) {
+    // Swap innerHTML of source cell and target cell
+    e.preventDefault();
+    const originalData = e.target.innerHTML;
+    e.target.innerHTML = sourceCell.innerHTML;
+    sourceCell.innerHTML = originalData;
+}
+
+// Add event listeners to each cell
+function addDragAndDropToCells() {
+    const rows = document.querySelectorAll('#observations-table tr');
+    rows.forEach(row => {
+        let cells = row.querySelectorAll('td');
+        // start from 1 to avoid the first cell
+        for(let i = 1; i < cells.length; i++) {
+            cells[i].setAttribute('draggable', 'true');
+            cells[i].addEventListener('dragstart', handleDragStart, false);
+            cells[i].addEventListener('dragover', handleDragOver, false);
+            cells[i].addEventListener('drop', handleDrop, false);
+        }
+    });
+}
+
+
+
 window.onload = function() {
     // Assuming staff and observations are defined somewhere in this script
     let table = document.getElementById("observations-table");
@@ -173,4 +215,5 @@ window.onload = function() {
             }
         }
     }
+    addDragAndDropToCells();
 }
