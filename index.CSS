@@ -145,7 +145,18 @@ body {
     }
   }
   
-  
+
+  #observations-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial;
+}
+
+#observations-table th, #observations-table td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: center;
+}
 
 
 

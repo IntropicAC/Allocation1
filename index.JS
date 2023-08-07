@@ -1,115 +1,176 @@
-
-   /* window.onload = function() {
-        var button = document.getElementById("modernButton");
-      
-        button.addEventListener("click", function() {
-          button.classList.add("shrink");
-      
-          setTimeout(function() {
-            button.parentNode.removeChild(button);
-          }, 375);
-        });
-      };
-
-/*     Allocation code      
-const people = [
-  { staff: 'Alex',   break: 14, numObservations: 0 },
-  { staff: 'Adam',   break: 14, numObservations: 0 },
-  { staff: 'Angila', break: 15, numObservations: 0 },
-  { staff: 'Angel',  break: 15, numObservations: 0 },
-  { staff: 'Jack',   break: 16, numObservations: 0 },
-  { staff: 'Jill',   break: 16, numObservations: 0 },
-  { staff: 'Jade',   break: 17, numObservations: 0 },
-  { staff: 'Fill',   break: 17, numObservations: 0 },
-  { staff: 'Ben',    break: 19, numObservations: 0 },
-  { staff: 'Jerry',  break: 19, numObservations: 0 }
-      ];
-      
-const observation = [
-  { name: 'BW', staff: 3 },
-  { name: 'Generals', staff: 1 },
-  { name: 'KP', staff: 1 },
-  { name: 'GO', staff: 2 }
-      ];
-      
-const numHours = 12;
-      
-function allocation(people, observations){
-
-  
-  let randomNumber = Math.random(Math.floor()) * people.length;
-} */
-
 const staff = [
-  { name: 'Alex',   break: 14, numObservations: 0, type1: 0, type2: 0, type3: 0, type4: 0 },
-  { name: 'Adam',   break: 14, numObservations: 0, type1: 0, type2: 0, type3: 0, type4: 0 },
-  { name: 'Angila', break: 15, numObservations: 0, type1: 0, type2: 0, type3: 0, type4: 0 },
-  { name: 'Angel',  break: 15, numObservations: 0, type1: 0, type2: 0, type3: 0, type4: 0 },
-  { name: 'Jack',   break: 16, numObservations: 0, type1: 0, type2: 0, type3: 0, type4: 0 },
+  { name: 'Alex', 	break: 14, numObservations: 0, 8: 'BW' },
+  { name: 'Adam', 	break: 14, numObservations: 0, 8: 'BW' },
+  { name: 'Mark', 	break: 15, numObservations: 0, 8: 'BW' },
+  { name: 'Jane', 	break: 15, numObservations: 0, 8: 'CA' },
+  { name: 'Peter', 	break: 16, numObservations: 0, 8: 'CA' },
+  { name: 'Angila', break: 16, numObservations: 0, 8: '-' },
+  { name: 'Paul', 	break: 17, numObservations: 0, 8: 'Gen' },
+  { name: 'Char', 	break: 17, numObservations: 0, 8: '-', security: 5 },
+  { name: 'Dan', 		break: 18, numObservations: 0, 8: '-' },
+  { name: 'Ralph', 	break: 19, numObservations: 0, 8: '-' },
 ];
 
 const observations = [
-
-  { name: 'Generals', staff: 1, type: 1 },
-  { name: 'KP', staff: 1, type: 2 },
-  { name: 'GH', staff: 2, type: 3 },
-
+  { name: 'BW', 	staff: 3 },
+  { name: 'CA', 	staff: 2 },
+  { name: 'Gen', 	staff: 1 },
 ];
 
-// Get the total number of staff in observations and multiply by 12
 const totalObs = observations.reduce((sum, observation) => sum + observation.staff, 0) * 12;
-
-// Get the number of staff in people
 const numStaffMembers = staff.length;
+const maxObs = Math.ceil(totalObs / numStaffMembers);
 
-// Calculate maxObsPerStaffMember
-const maxObs = Math.floor(totalObs / numStaffMembers);
-
-console.log(totalObs);
-console.log(maxObs);
-
-
-
-// Function to shuffle an array
-function shuffle(array) {
-  for (let i = newArr.length - 1; i > 0; i--) {
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+    [array[i], array[j]] = [array[j], array[i]];
   }
-  return array;
 }
 
-function allocateStaff(staff, observations, totalObs) {
-    // Create a map to store the observations that each staff member has had.
-    let observationsReceived = {};
+staff.forEach(staffMember => {
+  staffMember.observations = {};
+  staffMember.lastObservation = staffMember[8];
+  staffMember.obsCounts = {};
+  staffMember.lastReceived = {};
 
-// Iterate over the staff members.
-    for (let i = 0; i < staff.length; i++) {
-// Initialize the map for the current staff member.
-observationsReceived[staff[i].name] = [];
-
-// Iterate over the observations.
-for (let j = 0; j < observations.length; j++) {
-
-  // If the staff member has already had this observation in the last 2 hours, skip it.
-  if (observationsReceived[staff[i].name].includes(observations[j]) 
-  && j <= observationsReceived[staff[i].name].length - 2) {
-    continue;
+  for (let hour = 8; hour <= 19; hour++) {
+    staffMember.observations[hour] = hour === 8 ? staffMember[8] : '-';
   }
 
-  // Add the observation to the list of observations that the staff member has had.
-  observationsReceived[staff[i].name].push(observations[j]);
-}
+  if (staffMember[8] !== '-') {
+    staffMember.obsCounts[staffMember[8]] = 1;
+    staffMember.numObservations = 1;
+  } else {
+    staffMember.numObservations = 0;
+  }
+});
+
+for (let hour = 9; hour <= 19; hour++) { 
+  staff.forEach(staffMember => {
+    staffMember.lastObservation = staffMember.observations[hour - 1];
+  });
+
+  shuffleArray(staff);
+
+  observations.forEach(observation => {
+    let assigned = 0;
+    let loopCounter = 0;
+
+    while (assigned < observation.staff) {
+      loopCounter++;
+      if (loopCounter > 10000) {
+        console.error('Stuck in loop');
+        console.log(`Unable to assign observation: ${observation.name} at hour: ${hour}`);
+        break;
+      }
+
+      // Calculate scores for each staff member
+      let staffWithScores = staff.map(staffMember => {
+        let score = 0;
+        if (staffMember.observations[hour - 1] !== observation.name) {
+          score++;
+        }
+        score += maxObs - staffMember.numObservations;
+        
+        if (staffMember.observations[hour - 1] === '-') {
+          score+=2;
+        }
+        if (hour >= 2 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 					2] !== '-') {
+          score-=10;
+        }
+        if (hour >= 2 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour -2] !== '-' && staffMember.observations[hour - 3] !== '-') {
+          score-=20;
+        }
+        if (staffMember.observations[hour - 1] === '-' && observation.name === "Gen") {
+          score -=2;  // This value can be tweaked as needed
+        }
+        if (staffMember.obsCounts[observation.name] > 1) {
+          score-=10;
+        }
+        if (staffMember.obsCounts[observation.name] > 2) { 
+          score-=20;
+        }
+        if (staffMember.obsCounts[observation.name] > 3) { 
+          score-=40;
+        }
+        if (staffMember.obsCounts[observation.name] > 4) { 
+          score-=80;
+        }
+        // This section checks for the condition if the staff member has received 2 observations in the past hour that are not Gen
+        if (hour >= 2 && observation.name === "Gen" && staffMember.observations[hour - 1] !== 'Gen' && staffMember.observations[hour - 2] !== 'Gen') {
+          score += 10; // Increase the score
+        }
+        return { ...staffMember, score };
+      });
+
+      staffWithScores.sort((a, b) => b.score - a.score);
+
+      for (let i = 0; i < staffWithScores.length; i++) {
+        let hasObservationAlready = staffWithScores[i].observations[hour] !== '-';
+        let hasSameLastObservation = staffWithScores[i].lastObservation === observation.name;
+        let isOnBreak = staffWithScores[i].break === hour;
+        let isSecurityHour = (hour === 12 || hour === 17 || hour === 19) && staffWithScores[i].security !== undefined;
+        let reachedMaxObservations = staffWithScores[i].numObservations >= maxObs + 1;
+				let reachedSecurityLimit = staffWithScores[i].security !== undefined && staffWithScores[i].numObservations >= staffWithScores[i].security;
+        
+        if (!hasObservationAlready && !hasSameLastObservation && !isOnBreak && !isSecurityHour && !reachedSecurityLimit /*&& !reachedMaxObservations*/) {
+          let staffMember = staff.find(member => member.name === staffWithScores[i].name);
+          staffMember.observations[hour] = observation.name;
+          staffMember.numObservations++;
+          assigned++;
+          break;
+        }
+      }
+    }
+  });
 }
 
-// Assign the staff to the observations.
-for (let i = 0; i < staff.length; i++) {
-staff[i].observation = observationsReceived[staff[i].name].pop();
+console.log(maxObs, totalObs)
+staff.forEach(staffMember => {
+  staffMember.obsCount = Object.values(staffMember.observations).filter(val => val !== '-').length;
+});
+
+console.log('Name\t8\t9\t10\t11\t12\t13\t14\t15\t16\t17\t18\t19\tTotal True');
+let totalObservations = 0;
+staff.forEach(staffMember => {
+  let line = staffMember.name;
+  for (let hour = 8; hour <= 19; hour++) {
+    line += staffMember.break === hour ? '\t!!' : '\t' + staffMember.observations[hour];
+  }
+  line += '\t' + staffMember.numObservations;
+  line += '\t  ' + staffMember.obsCount;
+  console.log(line);
+  totalObservations += staffMember.obsCount;
+});
+console.log('Total Observations Across All Staff: ' + totalObservations);
+
+
+window.onload = function() {
+    // Assuming staff and observations are defined somewhere in this script
+    let table = document.getElementById("observations-table");
+    let headerRow = document.getElementById("header-row");
+    let tbody = table.getElementsByTagName('tbody')[0];
+
+    // Add table headers
+    headerRow.innerHTML = "<th>Time</th>" + staff.map(staffMember => {
+        let totalObservations = Object.values(staffMember.observations).filter(val => val !== '-').length;
+        return `<th>${staffMember.name} - ${totalObservations}</th>`
+    }).join("");
+
+    // Add table rows for each hour
+    for (let hour = 8; hour <= 19; hour++) {
+        let row = tbody.insertRow();
+        row.insertCell().innerText = hour;
+
+        // Add cell for each staff member
+        for (let j = 0; j < staff.length; j++) {
+            let cell = row.insertCell();
+            if(staff[j].break === hour) {
+                cell.innerText = 'Break';
+            } else {
+                cell.innerText = staff[j].observations[hour] || 'Break';
+            }
+        }
+    }
 }
-console.log(observationsReceived);
-// Return the assigned staff.
-return staff;
-
-};
-
-allocateStaff();
