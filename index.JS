@@ -1,20 +1,23 @@
 const staff = [
-  { name: 'Alex', 	break: 14, numObservations: 0, 8: 'BW' },
-  { name: 'Adam', 	break: 14, numObservations: 0, 8: 'BW' },
-  { name: 'Mark', 	break: 15, numObservations: 0, 8: 'BW' },
-  { name: 'Jane', 	break: 15, numObservations: 0, 8: 'CA' },
-  { name: 'Peter', 	break: 15, numObservations: 0, 8: 'CA' },
-  { name: 'Angila', break: 16, numObservations: 0, 8: '-' },
-  { name: 'Paul', 	break: 16, numObservations: 0, 8: 'Gen' },
-  { name: 'Char', 	break: 16, numObservations: 0, 8: '-', security: 5 },
-  { name: 'Dan', 		break: 19, numObservations: 0, 8: '-' },
-  { name: 'Bill', 		break: 19, numObservations: 0, 8: '-' },
+  { name: 'Alex', 		 break: 14, numObservations: 0, 8: '-', security: 5 },
+  { name: 'Charl',     break: 14, numObservations: 0, 8: '-' },
+  { name: 'Jon', 			 break: 13, numObservations: 0, 8: '-' },
+  { name: 'Nigel', 		 break: 15, numObservations: 0, 8: 'AP' },
+  { name: 'Fill', 		 break: 15, numObservations: 0, 8: 'Gen' },
+  { name: 'Paul', 		 break: 16, numObservations: 0, 8: 'AP' },
+  { name: 'Will', 		 break: 16, numObservations: 0, 8: 'AY' },
+  { name: 'Pat', 		   break: 18, numObservations: 0, 8: 'AY' },
+  { name: 'Nan', 		   break: 19, numObservations: 0, 8: '-' },
+  { name: 'Crane', 		 break: 19, numObservations: 0, 8: '-' },
 ];
 
 const observations = [
-  { name: 'BW', 	staff: 3 },
-  { name: 'CA', 	staff: 2 },
+	
+  //{ name: 'BW', 	staff: 3 },
+  { name: 'AY', 	staff: 2 },
+  { name: 'AP', 	staff: 2 },
   { name: 'Gen', 	staff: 1 },
+  
 ];
 
 const totalObs = observations.reduce((sum, observation) => sum + observation.staff, 0) * 12;
@@ -33,7 +36,9 @@ staff.forEach(staffMember => {
   staffMember.lastObservation = staffMember[8];
   staffMember.obsCounts = {};
   staffMember.lastReceived = {};
-
+	if(staffMember.security !== undefined) {
+    staffMember.lastSecurityObservationHour = null; 
+  }
   for (let hour = 8; hour <= 19; hour++) {
     staffMember.observations[hour] = hour === 8 ? staffMember[8] : '-';
   }
@@ -45,6 +50,8 @@ staff.forEach(staffMember => {
     staffMember.numObservations = 0;
   }
 });
+
+const observationAverages = {};
 
 for (let hour = 9; hour <= 19; hour++) { 
   staff.forEach(staffMember => {
@@ -64,65 +71,92 @@ for (let hour = 9; hour <= 19; hour++) {
         console.log(`Unable to assign observation: ${observation.name} at hour: ${hour}`);
         break;
       }
+/* ---------------  sORTING  ------------------------- */
 
       // Calculate scores for each staff member
       let staffWithScores = staff.map(staffMember => {
         let score = 0;
-        if (staffMember.observations[hour - 1] !== observation.name) {
-          score++;
-        }
-        score += maxObs - staffMember.numObservations;
         
-        if (staffMember.observations[hour - 1] === '-') {
-          score+=2;
+        score += maxObs - staffMember.numObservations;
+       
+        if (hour >= 2 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 2] !== '-') {
+          score-=2;
         }
-        if (hour >= 2 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 					2] !== '-') {
-          score-=10;
+        if (hour >= 3 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 2] !== '-' && staffMember.observations[hour - 3] !== '-') {
+          score-=3;
         }
-        if (hour >= 2 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour -2] !== '-' && staffMember.observations[hour - 3] !== '-') {
-          score-=20;
+        if (staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 1] !== 'Gen') {
+        score -= 100; 
+    }
+	      if (observation.name === 'Gen') {
+          if (hour >= 9 && 
+            (staffMember.observations[hour - 1] === 'Gen' || staffMember.observations[hour - 2] === 'Gen')
+           ) {
+            score -= 4000;
+        }}
+
+        for (let k = 1; k <= 2 && hour - k >= 8; k++) {
+        if (staffMember.observations[hour - k] === observation.name) {
+            score -= 2; 
+            break; 
         }
-        if (staffMember.observations[hour - 1] === '-' && observation.name === "Gen") {
-          score -=2;  // This value can be tweaked as needed
-        }
-        if (staffMember.obsCounts[observation.name] > 1) {
-          score-=10;
-        }
-        if (staffMember.obsCounts[observation.name] > 2) { 
-          score-=20;
-        }
-        if (staffMember.obsCounts[observation.name] > 3) { 
-          score-=40;
-        }
-        if (staffMember.obsCounts[observation.name] > 4) { 
-          score-=80;
-        }
-        // This section checks for the condition if the staff member has received 2 observations in the past hour that are not Gen
-        if (hour >= 2 && observation.name === "Gen" && staffMember.observations[hour - 1] !== 'Gen' && staffMember.observations[hour - 2] !== 'Gen') {
-          score += 10; // Increase the score
-        }
+    }
+        if (hour === 16 && staffMember.security !== undefined) {
+        score -= 3; 
+    }
+
+
         return { ...staffMember, score };
-      });
+      }
+      );
+    
+
+
+
 
       staffWithScores.sort((a, b) => b.score - a.score);
 
+
+
+
+/* ------------------  IF'S ---------------------- */
+
       for (let i = 0; i < staffWithScores.length; i++) {
-        let hasObservationAlready = staffWithScores[i].observations[hour] !== '-';
-        let hasSameLastObservation = staffWithScores[i].lastObservation === observation.name;
-        let isOnBreak = staffWithScores[i].break === hour;
-        let isSecurityHour = (hour === 12 || hour === 17 || hour === 19) && staffWithScores[i].security !== undefined;
-        let reachedMaxObservations = staffWithScores[i].numObservations >= maxObs + 1;
-				let reachedSecurityLimit = staffWithScores[i].security !== undefined && staffWithScores[i].numObservations >= staffWithScores[i].security;
-        
-        if (!hasObservationAlready && !hasSameLastObservation && !isOnBreak && !isSecurityHour && !reachedSecurityLimit /*&& !reachedMaxObservations*/) {
-          let staffMember = staff.find(member => member.name === staffWithScores[i].name);
-          staffMember.observations[hour] = observation.name;
-          staffMember.numObservations++;
-          assigned++;
-          break;
+    let hasObservationAlready = staffWithScores[i].observations[hour] !== '-';
+    let hasSameLastObservation = staffWithScores[i].lastObservation === observation.name;
+    let isOnBreak = staffWithScores[i].break === hour;
+    let isSecurityHour = (hour === 12 ||hour === 17 || hour === 19) && staffWithScores[i].security !== undefined;
+    let reachedMaxObservations = staffWithScores[i].numObservations >= maxObs + 1;
+    let reachedSecurityLimit = staffWithScores[i].security !== undefined && staffWithScores[i].numObservations >= staffWithScores[i].security;
+
+    if (!hasObservationAlready && !hasSameLastObservation && !isOnBreak && !isSecurityHour && !reachedSecurityLimit /*&& !reachedMaxObservations*/) {
+        let staffMember = staff.find(member => member.name === staffWithScores[i].name);
+        staffMember.observations[hour] = observation.name;
+        staffMember.numObservations++;
+        staffMember.lastObservation = observation.name;
+
+        // This is where the block of code goes:
+        if(staffMember.security !== undefined) {
+            staffMember.lastSecurityObservationHour = hour; 
         }
-      }
+        if (!staffMember.obsCounts[observation.name]) {
+            staffMember.obsCounts[observation.name] = 1;
+        } else {
+            staffMember.obsCounts[observation.name]++;
+        }
+
+        assigned++;
+        break;
     }
+}
+    }
+  });
+  
+  observations.forEach(observation => {
+    let totalForObservation = staff.reduce((acc, staffMember) => {
+        return acc + (staffMember.obsCounts[observation.name] || 0);
+    }, 0);
+    observationAverages[observation.name] = totalForObservation / numStaffMembers;
   });
 }
 
@@ -154,6 +188,7 @@ function handleDragStart(e) {
     // Store source cell data
     sourceCell = e.target;
     e.dataTransfer.setData("text/plain", e.target.innerHTML);
+    
 }
 
 // Handle drag over event
@@ -166,9 +201,22 @@ function handleDragOver(e) {
 function handleDrop(e) {
     // Swap innerHTML of source cell and target cell
     e.preventDefault();
+
+    if(e.target === sourceCell){
+    	return;
+    }
+
+    document.querySelectorAll('.highlight, .sourceHighlight').forEach(cell => {
+        cell.classList.remove('highlight');
+        cell.classList.remove('sourceHighlight');
+    });
+
     const originalData = e.target.innerHTML;
     e.target.innerHTML = sourceCell.innerHTML;
     sourceCell.innerHTML = originalData;
+    sourceCell.classList.add('sourceHighlight');
+    e.target.classList.add('highlight');
+   
 }
 
 // Add event listeners to each cell
@@ -189,6 +237,8 @@ function addDragAndDropToCells() {
 
 
 window.onload = function() {
+
+	staff.sort((a, b) => a.name.localeCompare(b.name));
     // Assuming staff and observations are defined somewhere in this script
     let table = document.getElementById("observations-table");
     let headerRow = document.getElementById("header-row");
@@ -209,11 +259,12 @@ window.onload = function() {
         for (let j = 0; j < staff.length; j++) {
             let cell = row.insertCell();
             if(staff[j].break === hour) {
-                cell.innerText = 'Break';
+                cell.innerHTML = '<strong>Break</strong>';
             } else {
                 cell.innerText = staff[j].observations[hour] || 'Break';
             }
         }
     }
     addDragAndDropToCells();
+    
 }
