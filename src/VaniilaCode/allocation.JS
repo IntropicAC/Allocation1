@@ -1,24 +1,28 @@
 const staff = [
-  { name: 'Alex', 		 break: 14, numObservations: 0, 8: '-', security: 5 },
+  { name: 'Alex', 		 break: 14, numObservations: 0, 8: '-', security: 3 },
   { name: 'Charl',     break: 14, numObservations: 0, 8: '-' },
   { name: 'Jon', 			 break: 13, numObservations: 0, 8: '-' },
-  { name: 'Nigel', 		 break: 15, numObservations: 0, 8: 'AP' },
+  { name: 'Nigel', 		 break: 15, numObservations: 0, 8: 'BS' },
   { name: 'Fill', 		 break: 15, numObservations: 0, 8: 'Gen' },
-  { name: 'Paul', 		 break: 16, numObservations: 0, 8: 'AP' },
-  { name: 'Will', 		 break: 16, numObservations: 0, 8: 'AY' },
-  { name: 'Pat', 		   break: 18, numObservations: 0, 8: 'AY' },
+  { name: 'Paul', 		 break: 16, numObservations: 0, 8: 'BS' },
+  { name: 'Will', 		 break: 16, numObservations: 0, 8: 'HH' },
+  { name: 'Pat', 		   break: 18, numObservations: 0, 8: 'HH' },
   { name: 'Nan', 		   break: 19, numObservations: 0, 8: '-' },
-  { name: 'Crane', 		 break: 19, numObservations: 0, 8: '-' },
+  { name: 'Crane', 		 break: 16, numObservations: 0, 8: '-' },
+  { name: 'Matt', 		 break: 13, numObservations: 0, 8: 'BW' },
+  { name: 'Kane', 		 break: 19, numObservations: 0, 8: 'BW' },
 ];
 
 const observations = [
 	
-  //{ name: 'BW', 	staff: 3 },
-  { name: 'AY', 	staff: 2 },
-  { name: 'AP', 	staff: 2 },
+  { name: 'BW', 	staff: 2 },
+  { name: 'HH', 	staff: 2 },
+  { name: 'BS', 	staff: 2 },
   { name: 'Gen', 	staff: 1 },
   
 ];
+
+function allocateObservations (staff, observations) {
 
 const totalObs = observations.reduce((sum, observation) => sum + observation.staff, 0) * 12;
 const numStaffMembers = staff.length;
@@ -66,7 +70,7 @@ for (let hour = 9; hour <= 19; hour++) {
 
     while (assigned < observation.staff) {
       loopCounter++;
-      if (loopCounter > 2000) {
+      if (loopCounter > 1000) {
         console.error('Stuck in loop');
         console.log(`Unable to assign observation: ${observation.name} at hour: ${hour}`);
         break;
@@ -100,20 +104,17 @@ for (let hour = 9; hour <= 19; hour++) {
             score -= 2; 
             break; 
         }
-    }
+      }
         if (hour === 16 && staffMember.security !== undefined) {
         score -= 3; 
-    }
+      }
 
+      
 
         return { ...staffMember, score };
       }
       );
     
-
-
-
-
       staffWithScores.sort((a, b) => b.score - a.score);
 
 
@@ -135,7 +136,6 @@ for (let hour = 9; hour <= 19; hour++) {
         staffMember.numObservations++;
         staffMember.lastObservation = observation.name;
 
-        // This is where the block of code goes:
         if(staffMember.security !== undefined) {
             staffMember.lastSecurityObservationHour = hour; 
         }
@@ -159,7 +159,7 @@ for (let hour = 9; hour <= 19; hour++) {
     observationAverages[observation.name] = totalForObservation / numStaffMembers;
   });
 }
-
+}
 console.log(maxObs, totalObs)
 staff.forEach(staffMember => {
   staffMember.obsCount = Object.values(staffMember.observations).filter(val => val !== '-').length;
@@ -180,7 +180,6 @@ staff.forEach(staffMember => {
 console.log('Total Observations Across All Staff: ' + totalObservations);
 
 
-
 let sourceCell = null;
 
 // Handle drag start event
@@ -188,7 +187,6 @@ function handleDragStart(e) {
     // Store source cell data
     sourceCell = e.target;
     e.dataTransfer.setData("text/plain", e.target.innerHTML);
-    
 }
 
 // Handle drag over event
@@ -199,38 +197,42 @@ function handleDragOver(e) {
 
 // Handle drop event
 function handleDrop(e) {
-    // Swap innerHTML of source cell and target cell
     e.preventDefault();
 
-    if(e.target === sourceCell){
-    	return;
+    let targetCell = e.target;
+    if (targetCell.tagName !== 'TD') {
+        targetCell = e.target.closest('td'); // Get the closest cell if needed
     }
 
-    document.querySelectorAll('.highlight, .sourceHighlight').forEach(cell => {
-        cell.classList.remove('highlight');
-        cell.classList.remove('sourceHighlight');
-    });
+    // Check if it's a valid target, if it's not the source cell, and if it's a table cell
+    if (targetCell && targetCell !== sourceCell && targetCell.tagName === 'TD') {
+        // Clear previous highlights
+        document.querySelectorAll('.highlight, .sourceHighlight').forEach(cell => {
+            cell.classList.remove('highlight', 'sourceHighlight');
+        });
 
-    const originalData = e.target.innerHTML;
-    e.target.innerHTML = sourceCell.innerHTML;
-    sourceCell.innerHTML = originalData;
-    sourceCell.classList.add('sourceHighlight');
-    e.target.classList.add('highlight');
-   
+        // Swap content
+        const originalData = targetCell.innerHTML;
+        targetCell.innerHTML = sourceCell.innerHTML;
+        sourceCell.innerHTML = originalData;
+
+        // Highlight cells
+        sourceCell.classList.add('sourceHighlight');
+        targetCell.classList.add('sourceHighlight');
+    }
 }
 
 // Add event listeners to each cell
 function addDragAndDropToCells() {
-    const rows = document.querySelectorAll('#observations-table tr');
-    rows.forEach(row => {
-        let cells = row.querySelectorAll('td');
-        // start from 1 to avoid the first cell
-        for(let i = 1; i < cells.length; i++) {
-            cells[i].setAttribute('draggable', 'true');
-            cells[i].addEventListener('dragstart', handleDragStart, false);
-            cells[i].addEventListener('dragover', handleDragOver, false);
-            cells[i].addEventListener('drop', handleDrop, false);
-        }
+    const table = document.querySelector('#observations-table');
+    table.addEventListener('dragover', handleDragOver, false);
+    table.addEventListener('drop', handleDrop, false);
+
+    const cells = table.querySelectorAll('td');
+    cells.forEach(cell => {
+        cell.setAttribute('draggable', 'true');
+        cell.classList.add('draggable');
+        cell.addEventListener('dragstart', handleDragStart, false);
     });
 }
 
@@ -239,7 +241,7 @@ function addDragAndDropToCells() {
 window.onload = function() {
 
 	staff.sort((a, b) => a.name.localeCompare(b.name));
-    // Assuming staff and observations are defined somewhere in this script
+    
     let table = document.getElementById("observations-table");
     let headerRow = document.getElementById("header-row");
     let tbody = table.getElementsByTagName('tbody')[0];

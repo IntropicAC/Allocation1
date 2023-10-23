@@ -150,6 +150,8 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-family: Arial;
+    
+  
 }
 
 #observations-table th, #observations-table td {
@@ -169,6 +171,9 @@ body {
 }
 
 
+.draggable {
+  cursor: grab;
+}
 
 
 
