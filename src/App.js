@@ -1,4 +1,5 @@
 import './App.css';
+import AllocationInput from './components/allocationInput';
 
 function App() {
   return (
@@ -15,20 +16,21 @@ function App() {
 
         {/* Main Content Area */}
         <main id="content-area">
-          {/* This is where table will go */}
+          
           <table id="observations-table">
             <thead>
               <tr id="header-row">
-                {/* headers will be inserted here */}
+                
               </tr>
             </thead>
             <tbody>
-                {/* rows will be inserted here */}
+                
             </tbody>
           </table>
-          <button className="modern-button" id="modernButton" onClick={this.onClick}>
+          {/*<button className="modern-button" id="modernButton">
             <span>Create Allocation</span>
-          </button>
+  </button>*/}
+          <AllocationInput/>
         </main>
 
         {/* Footer */}

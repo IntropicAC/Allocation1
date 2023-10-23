@@ -159,25 +159,16 @@ for (let hour = 9; hour <= 19; hour++) {
     observationAverages[observation.name] = totalForObservation / numStaffMembers;
   });
 }
+
+  createTable();
 }
-console.log(maxObs, totalObs)
+
+
+function createTable() {
+
 staff.forEach(staffMember => {
   staffMember.obsCount = Object.values(staffMember.observations).filter(val => val !== '-').length;
 });
-
-console.log('Name\t8\t9\t10\t11\t12\t13\t14\t15\t16\t17\t18\t19\tTotal True');
-let totalObservations = 0;
-staff.forEach(staffMember => {
-  let line = staffMember.name;
-  for (let hour = 8; hour <= 19; hour++) {
-    line += staffMember.break === hour ? '\t!!' : '\t' + staffMember.observations[hour];
-  }
-  line += '\t' + staffMember.numObservations;
-  line += '\t  ' + staffMember.obsCount;
-  console.log(line);
-  totalObservations += staffMember.obsCount;
-});
-console.log('Total Observations Across All Staff: ' + totalObservations);
 
 
 let sourceCell = null;
@@ -238,7 +229,7 @@ function addDragAndDropToCells() {
 
 
 
-window.onload = function() {
+
 
 	staff.sort((a, b) => a.name.localeCompare(b.name));
     
