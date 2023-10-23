@@ -62,13 +62,15 @@ body {
   main {
     display: flex;
     justify-content: center;
-    align-items: center;
+    padding: 10px;
+    align-items: top;
     height: 50rem; 
     margin: 10rem 20rem; 
     border-radius: 0px;
     background: #d6e4ff;
     box-shadow: inset -9px 9px 13px #b6c2d9,
                 inset 9px -9px 13px #f6ffff;
+    border: red dotted 1px;
   }
   
   /* Footer styles */
@@ -83,7 +85,7 @@ body {
     align-items: flex-end;
     text-align: center;
     padding: 0.2rem;
-    background-image: url(./VaniilaCode/images/wave-haikei.svg.jpg);
+    background-image: url(./images/wave-haikei.svg.jpg);
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;

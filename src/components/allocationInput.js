@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import styles from './allocationInput.module.css';
+
 
 function AllocationInput() {
   const [staff, setStaff] = useState([]);
@@ -22,11 +24,14 @@ function AllocationInput() {
     setNewStaff({name: '', break: '8:00', security: false}); // reset fields
   }
 
-  const handleSecurityChange = (index) => {
-    const updatedStaff = staff.map((staffMember, i) => ({
-      ...staffMember,
-      security: i === index,
-    }));
+  const handleSecurityChange = (e, index) => {
+    const updatedStaff = staff.map((staffMember, i) => {
+      if (i === index) {
+        return { ...staffMember, security: e.target.checked };
+      }
+      return staffMember;
+    });
+  
     setStaff(updatedStaff);
   };
 
@@ -39,41 +44,61 @@ function AllocationInput() {
   }
 
   return (
-    <div>
-      <form onSubmit={addStaffMember}>
-        <input
-          type="text"
-          name="name"
-          value={newStaff.name}
-          onChange={handleInputChange}
-          placeholder="Name"
-          required
-        />
-        <select
-          name="break"
-          value={newStaff.break}
-          onChange={handleInputChange}
-        >
-          {breakTimeOptions}
-        </select>
+    <section className={styles.container}>
+      <header>
+        <h1>Staff Allocation</h1>
+      </header>
+
+      <form className={styles.form} onSubmit={addStaffMember}>
+        <label>
+          Name:
+          <input
+            type="text"
+            className={styles.inputText}
+            name="name"
+            value={newStaff.name}
+            onChange={handleInputChange}
+            placeholder="Name"
+            required
+          />
+        </label>
+        <label>
+          Break Time:
+          <select
+            className={styles.select}
+            name="break"
+            value={newStaff.break}
+            onChange={handleInputChange}
+          >
+            {breakTimeOptions}
+          </select>
+        </label>
         {/* Other input fields if any */}
-        <button type="submit">Add Staff Member</button>
+        <button className={styles.button} type="submit">Add Staff Member</button>
       </form>
 
-      <ul>
-        {staff.map((member, index) => (
-          <li key={index}>
-            <input
-              type="radio"
-              name="security"
-              checked={member.security}
-              onChange={() => handleSecurityChange(index)}
-            />
-            {member.name} - Break: {member.break}
-          </li>
+      <article className={styles.staffContainer}>
+        {staff.map((staffMember, index) => (
+          <section key={index} className={styles.staffMember}>
+            <header>
+              <h2>{staffMember.name}</h2>
+            </header>
+            <p>Break: {staffMember.break}</p>
+            <fieldset>
+              <legend>Security</legend>
+              <label>
+                <input 
+                  type="checkbox" 
+                  checked={staffMember.security} 
+                  onChange={(e) => handleSecurityChange(e, index)} 
+                />
+                Security
+              </label>
+            </fieldset>
+          </section>
         ))}
-      </ul>
-    </div>
+      </article>
+    </section>
   );
 }
 

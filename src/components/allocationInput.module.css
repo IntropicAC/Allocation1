@@ -1,0 +1,30 @@
+/* AllocationInput.module.css */
+
+.form {
+  display: flex;
+  flex-direction: inline-block;
+  width: 100%;
+  margin-bottom: 5px;
+  margin-right: 10px;
+}
+
+.inputText, .select, .button {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  margin-right: 5px;
+  margin-bottom: 2.5px;
+}
+
+.button {
+  background-color: #4CAF50; /* Green */
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  background-color: #45a049; /* Darker green */
+}
+
