@@ -1,30 +1,194 @@
 /* AllocationInput.module.css */
 
+/* General Styles */
+* {
+  box-sizing: border-box;
+  font-family: 'Arial', sans-serif;
+}
+
+.staffText input[type="checkbox"] {
+  margin-right: 1rem; 
+}
+
+.staffText{
+  font-weight: bold;
+  font-size: 1.4rem;
+}
+.h1{
+  text-align: center;
+}
+.container {
+  width: 100%;
+  border-radius: 0.8rem;
+  overflow-y: auto; /* Add vertical scrolling */
+  max-height: 60rem; /* Adjust based on your needs */
+  scrollbar-width: thin; /* "auto" or "thin" */
+  scrollbar-color: #888 #f5f5f5; /* thumb and track color */
+}
+
 .form {
   display: flex;
-  flex-direction: inline-block;
+  justify-content: space-around;
+  align-items: center;
   width: 100%;
-  margin-bottom: 5px;
-  margin-right: 10px;
+  padding-right: 5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.8rem;
+  padding: 0.3rem;
+  background-color: white;
 }
 
 .inputText, .select, .button {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 16px;
-  margin-right: 5px;
-  margin-bottom: 2.5px;
+  padding: 1rem;
+  border: 0.1rem solid black;
+  border-radius: 0.8rem;
+  transition: all 0.2s ease;
+  margin-left: 1rem;
+  font-size: 1.6rem;
+}
+
+.inputText:focus, .select:focus {
+  border-color: #4CAF50;
+  outline: none;
+  box-shadow: 0 0 0.3rem #4CAF50;
 }
 
 .button {
-  background-color: #4CAF50; /* Green */
+  background-color: #4CAF50;
   color: white;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .button:hover {
-  background-color: #45a049; /* Darker green */
+  background-color: #45a049;
 }
 
+/* Custom select dropdown */
+.select {
+  appearance: none; /* Hide default arrow */
+  background: url('data:image/png;base64, ...') no-repeat; /* Add custom arrow, add your own base64 or image */
+  padding-right: 2.5rem; /* Make room for the custom arrow */
+}
+
+/* Custom checkbox */
+input[type="checkbox"] {
+  appearance: none;
+  background-color: #f3f3f3;
+  border: 0.2rem solid #dcdcdc;
+  border-radius: 0.4rem;
+  display: inline-block;
+  position: relative;
+  height: 2rem;
+  width: 2rem;
+  transition: background-color 0.2s ease, border 0.2s ease;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #4CAF50;
+  border: 0.2rem solid #4CAF50;
+}
+
+input[type="checkbox"]:checked:after {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 0.2rem;
+  width: 0.5rem;
+  height: 1.2rem;
+  border: solid white;
+  border-width: 0 0.3rem 0.3rem 0;
+  transform: rotate(45deg);
+}
+
+/* Staff Styles */
+.staffMember {
+  background: white;
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+  border-radius: 0.8rem;
+  box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-bottom: black solid 0.01rem;
+}
+
+.staffMember h2, .staffMember p, .staffMember label {
+  margin: 0 1rem;
+}
+
+.staffMember h2 {
+  display: flex;
+  flex: 0.2;
+  font-weight: bold;
+  color: #333;
+}
+
+.staffMember label:nth-of-type(1) {
+  display: flex;
+  flex: 0.2;
+}
+
+.staffMember label:nth-of-type(2) {
+  flex: 0.2;
+  display: flex;
+  align-items: center;
+}
+
+.staffMember span {
+  flex: 0.02;
+  font-weight: bold;
+  font-size: 1.5rem;
+  padding-left: 1rem;
+}
+
+/* Custom Scrollbar styles */
+.container::-webkit-scrollbar {
+  width: 0.6rem; /* width of the scrollbar */
+  height: 0.6rem; /* height for horizontal scrollbars if applicable */
+}
+
+.container::-webkit-scrollbar-track {
+  background-color: #f5f5f5; /* color of the track */
+  border-radius: 0.8rem;
+}
+
+.container::-webkit-scrollbar-thumb {
+  background-color: #888; /* color of the scroll thumb */
+  border-radius: 0.8rem;
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+  background-color: #555; /* color when hovered over the thumb */
+}
+
+
+.xButton {
+  display: inline-block;
+  background-color: #f44336; /* red color */
+  color: #ffffff; /* white text color */
+  font-weight: bold;
+  width: 1.5rem; /* width of the button */
+  height: 1.5rem; /* height of the button */
+  line-height: 1.6rem; /* vertically center the "X" */
+  text-align: center; /* horizontally center the "X" */
+  border-radius: 0.4rem; /* makes it slightly rounded */
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s; /* smooth transition for hover effects */
+  font-size: 1.5rem; /* size of the "X" character */
+  box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.1); /* adds a shadow for a lifted effect */
+  flex: 0.04;
+  margin-right: 1rem;
+}
+
+.xButton:hover {
+  background-color: #d32f2f; /* slightly darker red for hover effect */
+  transform: scale(1.1); /* slightly enlarge the button on hover */
+}
+
+.xButton:focus {
+  outline: none; /* remove default focus outline */
+  box-shadow: 0 0 0.3rem #f44336; /* adds a shadow when focused, matching your input focus style */
+}
