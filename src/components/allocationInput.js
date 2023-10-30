@@ -122,7 +122,7 @@ function AllocationInput({staff, setStaff}) {
 
             <label className={styles.staffText}>
               Break Time:
-              <select
+              <select className={styles.break}
                 value={staffMember.break}
                 onChange={(e) => handleBreakChange(e, index)}
               >
