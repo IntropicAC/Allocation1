@@ -1,60 +1,78 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef,} from "react";
 import styles from "./patientInput.module.css";
 
-function PatientInput() {
+function PatientInput({ observations, setObservations }) {
 
-  const [observations, setObservations] = useState([]);
+  const [otherStaffRequired, setOtherStaffRequired] = useState("");
   const [newObservation, setNewObservation] = useState({
     name: "",
-    staffRequired: "1",  // It's set to string "1" to match the value of the select options
+    observationType: "1:1",
+    staffRequired: "1",
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-  
-    let observationType = "";
-    if (value === "1:1") {
-      observationType = "1:1";
-    } else if (value === "Generals") {
-      observationType = "Generals";
-    }
-  
-    setNewObservation((prevState) => ({
-      ...prevState,
-      [name]: value,
-      observationType: observationType,
-    }));
-  };
-  
 
-  const nextIdRef = React.useRef(0);
+    let updatedObservation = {
+      ...newObservation,
+      [name]: value
+    };
+
+    if (name === "observationType") {
+      if (value === "Generals") {
+        updatedObservation = {
+          ...updatedObservation,
+          name: "Generals",
+          staffRequired: "1"
+        };
+      } else if (["2:1", "3:1"].includes(value)) {
+        updatedObservation.staffRequired = value.split(":")[0];
+        // Reset the name only if the previous value was "Generals"
+        if (newObservation.observationType === "Generals") {
+          updatedObservation.name = "";
+        }
+      } else if (value === "other") {
+        setOtherStaffRequired("4");  // Set the default value here
+      } else { 
+        // Reset the name only if the previous value was "Generals"
+        if (newObservation.observationType === "Generals") {
+          updatedObservation.name = "";
+        }
+      }
+    }
+
+    setNewObservation(updatedObservation);
+};
+
+
+  const nextIdRef = useRef(0);
+
   function generateId() {
     const id = nextIdRef.current;
     nextIdRef.current += 1;
     return id;
   }
 
-  const patientNameInputRef = useRef(null);
-
   const addObservation = (e) => {
     e.preventDefault();
-    
+
     let observationToAdd = { ...newObservation };
-  
-    if (observationToAdd.staffRequired === "1:1" || observationToAdd.staffRequired === "Generals") {
-      observationToAdd.staffRequired = "1";
+
+    if (newObservation.observationType === "other") {
+      observationToAdd.staffRequired = otherStaffRequired.split(":")[0]; // Extract the staff number from "4:1" type strings
     }
-  
-    const doesObservationExist = observations.some(observation => observation.name.toLowerCase() === observationToAdd.name.toLowerCase());
-  
+
     const observationWithId = { ...observationToAdd, id: generateId() };
     setObservations([...observations, observationWithId]);
     setNewObservation(prevState => ({ ...prevState, name: "" }));
-  };
-  
+
+    console.log("Observation to Add:", observationToAdd);
+};
+
+
 
   const removeObservation = (observationIdToRemove) => {
-    setObservations((observations) => observations.filter((observation) => observation.id !== observationIdToRemove));
+    setObservations(prevObservations => prevObservations.filter(observation => observation.id !== observationIdToRemove));
   };
 
   return (
@@ -63,8 +81,8 @@ function PatientInput() {
         <header>
           <h1 className={styles.h1}>Patient Observations</h1>
         </header>
-  
-        {newObservation.staffRequired !== "Generals" && (
+
+        {newObservation.observationType !== "Generals" && (
           <label className={styles.patientText}>
             Observation name:
             <input
@@ -76,74 +94,75 @@ function PatientInput() {
               onChange={handleInputChange}
               placeholder="Max 3 characters"
               required
-              ref={patientNameInputRef}
             />
           </label>
         )}
-  
+
         <label className={styles.patientText}>
           Observation type:
-          <select
-            className={styles.selectNumber}
-            name="staffRequired"
-            value={newObservation.staffRequired}
+          <select 
+            name="observationType"
+            value={newObservation.observationType}
             onChange={handleInputChange}
             required
-            >
+            className={styles.observationType}
+          >
             <option value="1:1">1:1</option>
-            <option value="2">2:1</option>
-            <option value="3">3:1</option>
+            <option value="2:1">2:1</option>
+            <option value="3:1">3:1</option>
             <option value="Generals">Generals</option>
             <option value="other">Other</option>
-            </select>
+          </select>
 
-          {newObservation.staffRequired === "other" && (
-            <input
-              type="number"
-              className={styles.inputNumber}
+          {newObservation.observationType === "other" && (
+            <select 
               name="staffRequired"
-              min="1"
-              placeholder="Enter number"
-              onChange={handleInputChange}
+              value={otherStaffRequired}
+              onChange={(e) => setOtherStaffRequired(e.target.value)}
               required
-            />
+              className={styles.selectNumber}
+            >
+              <option value="4:1">4:1</option>
+              <option value="5:1">5:1</option>
+              <option value="6:1">6:1</option>
+              <option value="7:1">7:1</option>
+              <option value="8:1">8:1</option>
+              <option value="9:1">9:1</option>
+              <option value="10:1">10:1</option>
+            </select>
           )}
         </label>
-  
+
         <button className={styles.button} type="submit">
           Add Observation
         </button>
       </form>
-  
+
       <form className={styles.patientContainer}>
-  {observations.map((observation, index) => (
-    <section key={index} className={styles.patientMember}>
-      <span>{`${index + 1}:`}</span>
-      
-      {observation.observationType === "Generals" ? (
-      <h2>Generals</h2>
-    ) : (
-      <h2>Patient: {observation.name}</h2>
-    )}
+        {observations.map((observation, index) => (
+          <section key={index} className={styles.patientMember}>
+            <span>{`${index + 1}:`}</span>
+            <h2>
+              {observation.name === "Generals" ? "Generals" : `Patient: ${observation.name}`}
+            </h2>
 
-      <label className={styles.patientText}>
-        Staff Required:
-        <span>{observation.staffRequired}</span>
-      </label>
+            <label className={styles.patientText}>
+              Staff Required:
+              <span>{observation.staffRequired}</span>
+            </label>
 
-      <button
-        className={styles.xButton}
-        onClick={(e) => {
-          e.preventDefault();
-          removeObservation(observation.id);
-        }}
-      >
-        X
-      </button>
-    </section>
-  ))}
-</form>
-
+            <button
+              className={styles.xButton}
+              onClick={(e) => {
+                e.preventDefault();
+                removeObservation(observation.id);
+              }}
+            >
+              X
+            </button>
+          </section>
+        ))}
+      </form>
     </section>
   );
 }

@@ -1,10 +1,27 @@
 // MainPage.jsx
-import React from 'react';
+import React, {useState} from 'react';
 import styles from './mainPage.module.css'; // Make sure the path is correct
 import AllocationInput from './allocationInput'; // Adjust the path if necessary
 import PatientInput from './patientInput';
+import NavigationButtons from './navigationButtons';
 
 function MainPage() {
+  const [observations, setObservations] = useState([]);
+  const [currentPage, setCurrentPage] = useState('patient'); // 'patient' or 'allocation'
+  const [staff, setStaff] = useState([]);
+
+  const handleNext = () => {
+    if (currentPage === 'patient') {
+      setCurrentPage('allocation');
+    }
+  };
+
+  const handleBack = () => {
+    if (currentPage === 'allocation') {
+      setCurrentPage('patient');
+    }
+  };
+
   return (
     <div>
       {/* Navigation */}
@@ -19,6 +36,7 @@ function MainPage() {
 
       {/* Main Content Area */}
       <main id="content-area">
+        <div className="content-wrapper">
         <table id="observations-table">
           <thead>
             <tr id="header-row">
@@ -32,8 +50,12 @@ function MainPage() {
         {/*<button className="modern-button" id="modernButton">
           <span>Create Allocation</span>
         </button>*/}
-        {/*<AllocationInput/>*/}
-        <PatientInput/>
+        {currentPage === 'patient' && <PatientInput observations={observations} setObservations={setObservations} />}
+          {currentPage === 'allocation' && <AllocationInput staff={staff} setStaff={setStaff}/>}
+
+        </div>
+        <NavigationButtons currentPage={currentPage} onNext={handleNext} onBack={handleBack} />
+
       </main>
     
       {/* Footer */}

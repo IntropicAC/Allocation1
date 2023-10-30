@@ -61,7 +61,7 @@ body {
   /* Main content area styles */
   main {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: top;
     height: 58rem; 
     margin: 7rem 10rem; 
@@ -69,9 +69,14 @@ body {
     background: #d6e4ff;
     box-shadow: inset -9px 9px 13px #b6c2d9,
                 inset 9px -9px 13px #f6ffff;
-    border: red dotted 1px;
+    flex-direction: column;
   }
-  
+
+  .content-wrapper {
+    flex: 1;
+    overflow: auto; 
+}
+
   /* Footer styles */
   footer {
     padding: 0rem;

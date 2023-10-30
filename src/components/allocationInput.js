@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import styles from "./allocationInput.module.css";
 
-function AllocationInput() {
-  const [staff, setStaff] = useState([]);
+function AllocationInput({staff, setStaff}) {
+  
   const [newStaff, setNewStaff] = useState({
     name: "",
     break: "8:00", // default break time
@@ -80,7 +80,7 @@ function AllocationInput() {
     <section className={styles.container}>
       <form className={styles.form} onSubmit={addStaffMember}>
       <header>
-        <h1 className={styles.h1}>Staff Allocation</h1>
+        <h1 className={styles.h1}>Staff members</h1>
       </header>
 
         <label className={styles.staffText}>

@@ -8,7 +8,7 @@
   
   .patientText {
     font-weight: bold;
-    font-size: 1.4rem;
+    font-size: 1.6rem;
   }
   
   .h1{
@@ -32,12 +32,12 @@
     padding-right: 5rem;
     margin-bottom: 0.5rem;
     border-radius: 0.8rem;
-    padding: 0.3rem;
+    padding: 1rem;
     background-color: white;
   }
   
-  .inputText, .numberInput, .button {
-    padding: 1rem;
+  .inputText, .observationType, .selectNumber, .button {
+    padding: 0.5rem;
     border: 0.1rem solid black;
     border-radius: 0.8rem;
     transition: all 0.2s ease;
@@ -45,8 +45,12 @@
     font-size: 1.6rem;
     
   }
+
+  .observationType, .selectNumber{
+    cursor: pointer;
+  }
   
-  .inputText:focus, .numberInput:focus {
+  .inputText:focus, .selectNumber:focus, .observationType:focus {
     border-color: #4CAF50;
     outline: none;
     box-shadow: 0 0 0.3rem #4CAF50;
@@ -152,7 +156,7 @@
 .patientMember {
     background: white;
     padding: 1rem;
-    margin-right: 0.5rem;
+    margin: 0rem 0.5rem;
     border-radius: 0.8rem;
     box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.1);
     display: flex;
