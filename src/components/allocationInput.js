@@ -117,7 +117,7 @@ function AllocationInput() {
       <form className={styles.staffContainer}>
         {staff.map((staffMember, index) => (
           <section key={index} className={styles.staffMember}>
-            <span>{`${index + 1}`}</span>
+            <span>{`${index + 1}:`}</span>
             <h2>{staffMember.name}</h2>
 
             <label className={styles.staffText}>

@@ -2,6 +2,7 @@
 import React from 'react';
 import styles from './mainPage.module.css'; // Make sure the path is correct
 import AllocationInput from './allocationInput'; // Adjust the path if necessary
+import PatientInput from './patientInput';
 
 function MainPage() {
   return (
@@ -31,7 +32,8 @@ function MainPage() {
         {/*<button className="modern-button" id="modernButton">
           <span>Create Allocation</span>
         </button>*/}
-        <AllocationInput/>
+        {/*<AllocationInput/>*/}
+        <PatientInput/>
       </main>
     
       {/* Footer */}
