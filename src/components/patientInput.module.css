@@ -34,6 +34,7 @@
     border-radius: 0.8rem;
     padding: 1rem;
     background-color: white;
+    border: black solid 0.1rem;
   }
   
   .inputText, .observationType, .selectNumber, .button {
@@ -194,19 +195,3 @@
     padding-left: 1rem;
   }
   
-  .selectNumber {
-    padding: 1rem;
-    border: 0.1rem solid black;
-    border-radius: 0.8rem;
-    transition: all 0.2s ease;
-    margin-left: 1rem;
-    font-size: 1.6rem;
-    appearance: none; /* To remove default styling in some browsers */
-    background: white;
-}
-
-.selectNumber:focus {
-    border-color: #4CAF50;
-    outline: none;
-    box-shadow: 0 0 0.3rem #4CAF50;
-}

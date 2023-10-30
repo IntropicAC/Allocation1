@@ -37,6 +37,7 @@
   border-radius: 0.8rem;
   padding: 1rem;
   background-color: white;
+  border: black solid 0.1rem;
 }
 
 .inputText, .select, .button {
