@@ -1,7 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styles from "./allocationInput.module.css";
 
-function AllocationInput({staff, setStaff}) {
+function AllocationInput({staff, setStaff, observations}) {
   
   const [newStaff, setNewStaff] = useState({
     name: "",
@@ -16,7 +16,14 @@ function AllocationInput({staff, setStaff}) {
       [name]: value,
     }));
   };
-
+  useEffect(() => {
+    console.log('observations Array:', observations);
+  }, [observations]);
+  
+  useEffect(() => {
+    console.log('staff Array:', staff);
+  }, [staff]);
+  
   const nextIdRef = React.useRef(0);
   function generateId() {
     const id = nextIdRef.current;
@@ -66,6 +73,21 @@ function AllocationInput({staff, setStaff}) {
     setStaff(updatedStaff);
   };
 
+  const assignObservation = (observationId, staffId) => {
+    // Find the index of the staff member with the given staffId
+    const staffIndex = staff.findIndex(s => s.id === staffId);
+    if (staffIndex !== -1) {
+      // Create a new staff array with the updated observationId for the selected staff member
+      const newStaff = [...staff];
+      newStaff[staffIndex] = {
+        ...newStaff[staffIndex],
+        observationId: observationId, // Update the observationId
+      };
+  
+      // Update the staff state
+      setStaff(newStaff);
+    }
+  };
   // Generate break time options from 8:00 to 19:00
   const breakTimeOptions = [];
   for (let i = 8; i <= 19; i++) {
@@ -76,82 +98,99 @@ function AllocationInput({staff, setStaff}) {
     );
   }
 
-  return (
-    <section className={styles.container}>
-      <form className={styles.form} onSubmit={addStaffMember}>
-      <header>
-        <h1 className={styles.h1}>Staff members</h1>
-      </header>
-
-        <label className={styles.staffText}>
-          Name:
-          <input
-            maxLength={10}
-            type="text"
-            className={styles.inputText}
-            name="name"
-            value={newStaff.name}
-            onChange={handleInputChange}
-            placeholder="First name"
-            required
-            ref={nameInputRef}
-          />
-        </label>
-        <label className={styles.staffText}>
-          Break Time:
-          <select
-            className={styles.select}
-            name="break"
-            value={newStaff.break}
-            onChange={handleInputChange}
-          >
-            {breakTimeOptions}
-          </select>
-        </label>
-        {/* Other input fields if any */}
-        <button className={styles.button} type="submit">
-          Add Staff Member
-        </button>
-      </form>
-
-      <form className={styles.staffContainer}>
-        {staff.map((staffMember, index) => (
-          <section key={index} className={styles.staffMember}>
-            <span>{`${index + 1}:`}</span>
-            <h2>{staffMember.name}</h2>
-
-            <label className={styles.staffText}>
-              Break Time:
-              <select className={styles.break}
-                value={staffMember.break}
-                onChange={(e) => handleBreakChange(e, index)}
-              >
-                {breakTimeOptions}
-              </select>
-            </label>
-
-            <label className={styles.staffText}>
-              <input
-                type="checkbox"
-                checked={staffMember.security}
-                onChange={(e) => handleSecurityChange(e, index)}
-              />
-              Security
-            </label>
-            <button
-              className={styles.xButton}
-              onClick={(e) => {
-                e.preventDefault();
-                removeStaffMember(staffMember.id);
-              }}
+    return (
+      <section className={styles.container}>
+        <header>
+          <h1 className={styles.h1}>Staff members</h1>
+        </header>
+        <form className={styles.form} onSubmit={addStaffMember}>
+          <label className={styles.staffText}>
+            Name:
+            <input
+              maxLength={10}
+              type="text"
+              className={styles.inputText}
+              name="name"
+              value={newStaff.name}
+              onChange={handleInputChange}
+              placeholder="First name"
+              required
+              ref={nameInputRef}
+            />
+          </label>
+          <label className={styles.staffText}>
+            Break Time:
+            <select
+              className={styles.select}
+              name="break"
+              value={newStaff.break}
+              onChange={handleInputChange}
             >
-              X
-            </button>
-          </section>
-        ))}
-      </form>
-    </section>
-  );
-}
+              {breakTimeOptions}
+            </select>
+          </label>
+          {/* Other input fields if any */}
+          <button className={styles.button} type="submit">
+            Add Staff Member
+          </button>
+        </form>
+  
+        <form className={styles.staffContainer}>
+          {staff.map((staffMember, index) => (
+            <section key={staffMember.id} className={styles.staffMember}>
+              <span>{`${index + 1}:`}</span>
+              <h2>{staffMember.name}</h2>
+  
+              <label className={styles.staffText}>
+                Break Time:
+                <select className={styles.break}
+                  value={staffMember.break}
+                  onChange={(e) => handleBreakChange(e, index)}
+                >
+                  {breakTimeOptions}
+                </select>
+              </label>
+  
+              <label className={styles.staffText}>
+                <input
+                  type="checkbox"
+                  checked={staffMember.security}
+                  onChange={(e) => handleSecurityChange(e, index)}
+                />
+                Security
+              </label>
+              
+             {/* Dropdown to assign an observation to a staff member */}
+      <label className={styles.staffText}>
+        Initial Observation:
+        <select
+          value={staffMember.observationId || ""}
+          onChange={(e) => assignObservation(Number(e.target.value), staffMember.id)}
+          className={styles.select}
+        >
+          <option value="">Select Observation</option>
+          {observations.map((observation) => (
+            <option key={observation.id} value={observation.id}>
+              {observation.name}
+            </option>
+          ))}
+        </select>
+      </label>
+  
+              <button
+                className={styles.xButton}
+                onClick={(e) => {
+                  e.preventDefault();
+                  removeStaffMember(staffMember.id);
+                }}
+              >
+                X
+              </button>
+            </section>
+          ))}
+        </form>
+      </section>
+    );
+  }
 
 export default AllocationInput;

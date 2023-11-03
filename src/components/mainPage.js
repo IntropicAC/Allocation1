@@ -51,7 +51,7 @@ function MainPage() {
           <span>Create Allocation</span>
         </button>*/}
         {currentPage === 'patient' && <PatientInput observations={observations} setObservations={setObservations} />}
-          {currentPage === 'allocation' && <AllocationInput staff={staff} setStaff={setStaff}/>}
+          {currentPage === 'allocation' && <AllocationInput staff={staff} setStaff={setStaff} observations={observations}/>}
 
         </div>
         <NavigationButtons currentPage={currentPage} onNext={handleNext} onBack={handleBack} />

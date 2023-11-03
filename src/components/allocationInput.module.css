@@ -47,6 +47,7 @@
   transition: all 0.2s ease;
   margin-left: 1rem;
   font-size: 1.6rem;
+  text-transform: capitalize;
 }
 .select{
   cursor: pointer;
