@@ -30,6 +30,7 @@ function AllocationInput({staff, setStaff, observations}) {
     nextIdRef.current += 1;
     return id;
   }
+  
 
   const nameInputRef = useRef(null);
   const addStaffMember = (e) => {
@@ -73,15 +74,15 @@ function AllocationInput({staff, setStaff, observations}) {
     setStaff(updatedStaff);
   };
 
-  const assignObservation = (observationId, staffId) => {
+  const assignObservation = (observationName, staffId) => {
     // Find the index of the staff member with the given staffId
     const staffIndex = staff.findIndex(s => s.id === staffId);
     if (staffIndex !== -1) {
-      // Create a new staff array with the updated observationId for the selected staff member
+      // Create a new staff array with the updated observationName for the selected staff member
       const newStaff = [...staff];
       newStaff[staffIndex] = {
         ...newStaff[staffIndex],
-        observationId: observationId, // Update the observationId
+        observationId: observationName, // Update the observationName instead of observationId
       };
   
       // Update the staff state
@@ -165,16 +166,16 @@ function AllocationInput({staff, setStaff, observations}) {
         Initial Observation:
         <select
           value={staffMember.observationId || ""}
-          onChange={(e) => assignObservation(Number(e.target.value), staffMember.id)}
+          onChange={(e) => assignObservation(e.target.options[e.target.selectedIndex].text, staffMember.id)}
           className={styles.select}
         >
           <option value="">Select Observation</option>
           {observations.map((observation) => (
-            <option key={observation.id} value={observation.id}>
+            <option key={observation.id} value={observation.name}>
               {observation.name}
             </option>
           ))}
-        </select>
+          </select>
       </label>
   
               <button
