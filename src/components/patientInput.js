@@ -46,12 +46,14 @@ function PatientInput({ observations, setObservations }) {
 
 
 const addObservation = (e) => {
-  e.preventDefault(); // Add this line to prevent the default form submission behavior
+  e.preventDefault(); // Prevent the default form submission behavior
 
   let observationToAdd = { ...newObservation };
 
-  if (newObservation.observationType === "other") {
-    observationToAdd.staffRequired = otherStaffRequired;
+  // If 'other' was selected, update the staffRequired to be the first number of the selection
+  if (newObservation.observationType === "other" && otherStaffRequired) {
+    const staffNumber = otherStaffRequired.split(":")[0]; // Extract the number before the colon
+    observationToAdd.staffRequired = staffNumber;
   }
 
   setObservations((prevObservations) => {
@@ -60,17 +62,15 @@ const addObservation = (e) => {
     return [...prevObservations, { ...observationToAdd, id: newId }];
   });
 
-  // Reset the newObservation state to its initial values
+  // Reset the form state
   setNewObservation({
     name: "",
     observationType: "1:1",
     staffRequired: "1",
   });
-  // If 'other' was selected, reset otherStaffRequired as well
-  if (newObservation.observationType === "other") {
-    setOtherStaffRequired("");
-  }
+  setOtherStaffRequired(""); // Reset the otherStaffRequired as well
 };
+
 
 
   const removeObservation = (observationId) => {
@@ -128,10 +128,6 @@ const addObservation = (e) => {
               <option value="4:1">4:1</option>
               <option value="5:1">5:1</option>
               <option value="6:1">6:1</option>
-              <option value="7:1">7:1</option>
-              <option value="8:1">8:1</option>
-              <option value="9:1">9:1</option>
-              <option value="10:1">10:1</option>
             </select>
           )}
         </label>
