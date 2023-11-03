@@ -1,5 +1,5 @@
 const staff = [
-  { name: 'Alex', 		 break: 14, numObservations: 0, 8: '-', security: 3 },
+  //{ name: 'Alex', 		 break: 14, numObservations: 0, 8: '-', security: 3 },
   { name: 'Charl',     break: 14, numObservations: 0, 8: '-' },
   { name: 'Jon', 			 break: 13, numObservations: 0, 8: '-' },
   { name: 'Nigel', 		 break: 15, numObservations: 0, 8: 'BS' },
@@ -9,16 +9,17 @@ const staff = [
   { name: 'Pat', 		   break: 18, numObservations: 0, 8: 'HH' },
   { name: 'Nan', 		   break: 19, numObservations: 0, 8: '-' },
   { name: 'Crane', 		 break: 16, numObservations: 0, 8: '-' },
-  { name: 'Matt', 		 break: 13, numObservations: 0, 8: 'BW' },
-  { name: 'Kane', 		 break: 19, numObservations: 0, 8: 'BW' },
+  //{ name: 'Matt', 		 break: 13, numObservations: 0, 8: 'BW' },
+  //{ name: 'Kane', 		 break: 19, numObservations: 0, 8: 'BW' },
 ];
 
 const observations = [
 	
-  { name: 'BW', 	staff: 2 },
-  { name: 'HH', 	staff: 2 },
+  //{ name: 'BW', 	staff: 2 },
   { name: 'BS', 	staff: 2 },
+  { name: 'HH', 	staff: 2 },
   { name: 'Gen', 	staff: 1 },
+  
   
 ];
 
@@ -63,8 +64,21 @@ for (let hour = 9; hour <= 19; hour++) {
   });
 
   shuffleArray(staff);
-
-  observations.forEach(observation => {
+    
+    // Separate 'Gen' from other observations
+    const genObservation = observations.find(obs => obs.name === 'Gen');
+    const otherObservations = observations.filter(obs => obs.name !== 'Gen');
+    
+    //Shuffle the other observations only
+    shuffleArray(otherObservations);
+    
+    // Append 'Gen' at the end of the array
+    const shuffledObservations = [...otherObservations, genObservation];
+    
+    // Use the shuffledObservations array here instead of the original observations array
+    shuffledObservations.forEach(observation => {
+      
+   // observations.forEach(observation => {
     let assigned = 0;
     let loopCounter = 0;
 
@@ -75,41 +89,93 @@ for (let hour = 9; hour <= 19; hour++) {
         console.log(`Unable to assign observation: ${observation.name} at hour: ${hour}`);
         break;
       }
+      
+      
 /* ---------------  sORTING  ------------------------- */
 
       // Calculate scores for each staff member
       let staffWithScores = staff.map(staffMember => {
         let score = 0;
         
+      if(staffMember.security === undefined){
+      	
+        if(hour > 17){
+        	score += maxObs - staffMember.numObservations;
+        } else {
         score += maxObs - staffMember.numObservations;
+        }
+        
+       if(observation.name === 'Gen' && staffMember.observations[hour - 1] === '-'){
+       	score -= 6;
+       }
+        
+       if (hour === 9 && staffMember.observations[8] === 'Gen') {
        
-        if (hour >= 2 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 2] !== '-') {
+   score += 2;
+  }
+
+        if(staffMember.observations[hour - 1] === 'Gen' && staffMember.observations[hour - 2] === '-' ){
+        score += 3000;
+        }
+        
+        if (hour >= 10 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 2] !== '-') {
           score-=2;
         }
-        if (hour >= 3 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 2] !== '-' && staffMember.observations[hour - 3] !== '-') {
+        if (hour >= 11 && staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 2] !== '-' && staffMember.observations[hour - 3] !== '-') {
           score-=3;
         }
-        if (staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 1] !== 'Gen') {
-        score -= 100; 
+        if (staffMember.observations[hour - 1] !== '-' ) {
+        score -= 5; 
     }
-	      if (observation.name === 'Gen') {
-          if (hour >= 9 && 
-            (staffMember.observations[hour - 1] === 'Gen' || staffMember.observations[hour - 2] === 'Gen')
+    
+    for (let k = 1; k <= 4; k++) { // Look back 4 hours
+    
+    if (hour - k < 8) {
+        break;
+    }
+    
+    if (staffMember.observations[hour - k] === 'Gen') {
+        // If 'gen' was observed in the last 4 hours
+        if (observation.name !== 'Gen') {
+            
+            score += 1; // Increase the score
+            
+        }
+        break; 
+    }
+}
+	     /* if (observation.name === 'Gen') {
+          if (hour >= 10 && 
+            (staffMember.observations[hour - 1] === 'Gen' || staffMember.observations[hour - 2] === 'Gen' || staffMember.observations[hour - 3] === 'Gen' || staffMember.observations[hour - 4] === 'Gen' || staffMember.observations[hour - 5] === 'Gen' || staffMember.observations[hour - 6] === 'Gen' )
            ) {
-            score -= 4000;
-        }}
-
+            score -= 2;
+        }}*/
+			
+      if(observation.name !== 'Gen'){
         for (let k = 1; k <= 2 && hour - k >= 8; k++) {
         if (staffMember.observations[hour - k] === observation.name) {
-            score -= 2; 
+            score -= 6; 
             break; 
         }
       }
-        if (hour === 16 && staffMember.security !== undefined) {
-        score -= 3; 
+     }
+    
+    }
+    
+    
+    
+       if(staffMember.security !== undefined){
+       
+       		 if (staffMember.observations[hour - 1] !== '-' && staffMember.observations[hour - 2] !== '-' && staffMember.observations[hour - 3] !== '-') {
+         score -= 2000000;
+        }
+        
+        	 score += maxObs - staffMember.numObservations - 2;
       }
 
-      
+      /*if(hour < 12 & staffMember.security !== undefined){
+      	score -= 4;
+      }*/
 
         return { ...staffMember, score };
       }
@@ -258,6 +324,7 @@ function addDragAndDropToCells() {
             }
         }
     }
-    addDragAndDropToCells();
+   // addDragAndDropToCells();
     
 }
+allocateObservations(staff, observations);
