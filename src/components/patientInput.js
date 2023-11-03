@@ -45,35 +45,38 @@ function PatientInput({ observations, setObservations }) {
 };
 
 
-  const nextIdRef = useRef(0);
+const addObservation = (e) => {
+  e.preventDefault(); // Add this line to prevent the default form submission behavior
 
-  function generateId() {
-    const id = nextIdRef.current;
-    nextIdRef.current += 1;
-    return id;
+  let observationToAdd = { ...newObservation };
+
+  if (newObservation.observationType === "other") {
+    observationToAdd.staffRequired = otherStaffRequired;
   }
 
-  const addObservation = (e) => {
-    e.preventDefault();
+  setObservations((prevObservations) => {
+    const maxId = prevObservations.reduce((max, item) => Math.max(max, item.id), -1);
+    const newId = maxId + 1;
+    return [...prevObservations, { ...observationToAdd, id: newId }];
+  });
 
-    let observationToAdd = { ...newObservation };
-
-    if (newObservation.observationType === "other") {
-      observationToAdd.staffRequired = otherStaffRequired.split(":")[0]; // Extract the staff number from "4:1" type strings
-    }
-
-    const observationWithId = { ...observationToAdd, id: generateId() };
-    setObservations([...observations, observationWithId]);
-    setNewObservation(prevState => ({ ...prevState, name: "" }));
-
-    console.log("Observation to Add:", observationToAdd);
+  // Reset the newObservation state to its initial values
+  setNewObservation({
+    name: "",
+    observationType: "1:1",
+    staffRequired: "1",
+  });
+  // If 'other' was selected, reset otherStaffRequired as well
+  if (newObservation.observationType === "other") {
+    setOtherStaffRequired("");
+  }
 };
 
 
-
-  const removeObservation = (observationIdToRemove) => {
-    setObservations(prevObservations => prevObservations.filter(observation => observation.id !== observationIdToRemove));
+  const removeObservation = (observationId) => {
+    setObservations((prevObservations) => prevObservations.filter(obs => obs.id !== observationId));
   };
+  
 
   return (
     <section className={styles.container}>

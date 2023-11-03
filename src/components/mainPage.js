@@ -1,7 +1,7 @@
 // MainPage.jsx
 import React, {useState} from 'react';
 import styles from './mainPage.module.css'; // Make sure the path is correct
-import AllocationInput from './allocationInput'; // Adjust the path if necessary
+import AllocationInput from './staffInput'; // Adjust the path if necessary
 import PatientInput from './patientInput';
 import NavigationButtons from './navigationButtons';
 

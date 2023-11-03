@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import styles from "./allocationInput.module.css";
+import styles from "./staffInput.module.css";
 
 function AllocationInput({staff, setStaff, observations}) {
   
@@ -82,7 +82,7 @@ function AllocationInput({staff, setStaff, observations}) {
       const newStaff = [...staff];
       newStaff[staffIndex] = {
         ...newStaff[staffIndex],
-        observationId: observationName, // Update the observationName instead of observationId
+        firstObservation: observationName, // Update the observationName instead of observationId
       };
   
       // Update the staff state
