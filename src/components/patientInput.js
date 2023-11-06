@@ -1,4 +1,4 @@
-import React, { useState, useRef,} from "react";
+import React, { useState, useRef } from "react";
 import styles from "./patientInput.module.css";
 
 function PatientInput({ observations, setObservations }) {
@@ -25,7 +25,7 @@ function PatientInput({ observations, setObservations }) {
           staff: 1, // Renamed from staffRequired
         };
       } else if (["2:1", "3:1"].includes(value)) {
-        updatedObservation.staff = Number(value.split(":")[0]) // Renamed from staffRequired
+        updatedObservation.staff = Number(value.split(":")[0]); // Renamed from staffRequired
         if (newObservation.observationType === "Generals") {
           updatedObservation.name = "";
         }
@@ -51,7 +51,10 @@ function PatientInput({ observations, setObservations }) {
     }
 
     setObservations((prevObservations) => {
-      const maxId = prevObservations.reduce((max, item) => Math.max(max, item.id), -1);
+      const maxId = prevObservations.reduce(
+        (max, item) => Math.max(max, item.id),
+        -1
+      );
       const newId = maxId + 1;
       return [...prevObservations, { ...observationToAdd, id: newId }];
     });
@@ -65,7 +68,9 @@ function PatientInput({ observations, setObservations }) {
   };
 
   const removeObservation = (observationId) => {
-    setObservations((prevObservations) => prevObservations.filter((obs) => obs.id !== observationId));
+    setObservations((prevObservations) =>
+      prevObservations.filter((obs) => obs.id !== observationId)
+    );
   };
 
   return (
@@ -93,7 +98,7 @@ function PatientInput({ observations, setObservations }) {
 
         <label className={styles.patientText}>
           Observation type:
-          <select 
+          <select
             name="observationType"
             value={newObservation.observationType}
             onChange={handleInputChange}
@@ -106,9 +111,8 @@ function PatientInput({ observations, setObservations }) {
             <option value="Generals">Generals</option>
             <option value="other">Other</option>
           </select>
-
           {newObservation.observationType === "other" && (
-            <select 
+            <select
               name="staffRequired"
               value={otherStaff}
               onChange={(e) => setOtherStaff(e.target.value)}
@@ -132,7 +136,9 @@ function PatientInput({ observations, setObservations }) {
           <section key={index} className={styles.patientMember}>
             <span>{`${index + 1}:`}</span>
             <h2>
-              {observation.name === "Generals" ? "Generals" : `Patient: ${observation.name}`}
+              {observation.name === "Generals"
+                ? "Generals"
+                : `Patient: ${observation.name}`}
             </h2>
 
             <label className={styles.patientText}>
