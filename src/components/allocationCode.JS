@@ -1,3 +1,5 @@
+
+
 const staff = [
   //{ name: 'Alex', 		 break: 14, numObservations: 0, 8: '-', security: 3 },
   { name: 'Charl',     break: 14, numObservations: 0, 8: '-' },
@@ -23,7 +25,7 @@ const observations = [
   
 ];
 
-//allocationCode.js
+//allocationCode.JS
 
 export function allocateObservations(staff, observations) {
 

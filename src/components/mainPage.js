@@ -1,27 +1,38 @@
 // MainPage.jsx
 import React, {useState} from 'react';
-import styles from './mainPage.module.css'; // Make sure the path is correct
-import AllocationInput from './staffInput'; // Adjust the path if necessary
+import styles from './mainPage.module.css'; 
+import StaffInput from './staffInput'; 
 import PatientInput from './patientInput';
 import NavigationButtons from './navigationButtons';
+import AllocationCreation from './allocationCreation';
+
 
 
 function MainPage({observations, setObservations, staff, setStaff}) {
   
 
-  const [currentPage, setCurrentPage] = useState('patient'); // 'patient' or 'allocation'
+  const [currentPage, setCurrentPage] = useState('patient'); 
   
 
   const handleNext = () => {
     if (currentPage === 'patient') {
+      setCurrentPage('staff');
+    } else if (currentPage === 'staff') {
+      // When on the 'staff' page, move to 'allocation'
       setCurrentPage('allocation');
     }
+    
   };
 
+  // Update the handleBack function
   const handleBack = () => {
-    if (currentPage === 'allocation') {
+    if (currentPage === 'staff') {
       setCurrentPage('patient');
+    } else if (currentPage === 'allocation') {
+      // When on the 'allocation' page, go back to 'staff'
+      setCurrentPage('staff');
     }
+    
   };
 
   return (
@@ -53,8 +64,8 @@ function MainPage({observations, setObservations, staff, setStaff}) {
           <span>Create Allocation</span>
         </button>*/}
         {currentPage === 'patient' && <PatientInput observations={observations} setObservations={setObservations} />}
-          {currentPage === 'allocation' && <AllocationInput staff={staff} setStaff={setStaff} observations={observations}/>}
-
+        {currentPage === 'staff' && <StaffInput staff={staff} setStaff={setStaff} observations={observations}/>}
+        {currentPage === 'allocation' && <AllocationCreation staff={staff} observations={observations}/>}
         </div>
         <NavigationButtons currentPage={currentPage} onNext={handleNext} onBack={handleBack} />
 

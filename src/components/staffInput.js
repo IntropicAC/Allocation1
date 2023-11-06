@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import styles from "./staffInput.module.css";
 
-function AllocationInput({staff, setStaff, observations}) {
+function StaffInput({staff, setStaff, observations}) {
   
   const [newStaff, setNewStaff] = useState({
     name: "",
@@ -198,4 +198,4 @@ function AllocationInput({staff, setStaff, observations}) {
     );
   }
 
-export default AllocationInput;
+export default StaffInput;
