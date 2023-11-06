@@ -52,19 +52,19 @@
   }
   
   .inputText:focus, .selectNumber:focus, .observationType:focus {
-    border-color: #4CAF50;
+    border-color: #d6e4ff;
     outline: none;
-    box-shadow: 0 0 0.3rem #4CAF50;
+    box-shadow: 0 0 0.3rem ;
   }
   
   .button {
-    background-color: #4CAF50;
+    background-color: hsl(0, 0%, 12%);
     color: white;
     cursor: pointer;
   }
   
   .button:hover {
-    background-color: #45a049;
+    background-color: grey;
   }
   
   /* Patient Styles */

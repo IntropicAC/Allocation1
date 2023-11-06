@@ -16,14 +16,14 @@
     border: 0.1rem solid black;
     border-radius: 0.8rem;
     transition: all 0.2s ease;
-    background-color: #4CAF50;
+    background-color: hsl(0, 0%, 12%);
     color: white;
     cursor: pointer;
     font-size: 1.6rem;
   }
   
   .backButton:hover, .nextButton:hover {
-    background-color: #45a049;
+    background-color: grey;
   }
   .back-button, .spacer {
     flex: 1;

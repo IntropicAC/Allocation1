@@ -7,6 +7,7 @@ function AllocationInput({staff, setStaff, observations}) {
     name: "",
     break: "8:00", // default break time
     security: false,
+    numObservations: 0,
   });
 
   const handleInputChange = (e) => {
@@ -24,13 +25,9 @@ function AllocationInput({staff, setStaff, observations}) {
     console.log('staff Array:', staff);
   }, [staff]);
   
-  const nextIdRef = React.useRef(0);
-  function generateId() {
-    const id = nextIdRef.current;
-    nextIdRef.current += 1;
-    return id;
-  }
-  
+  function capitalizeWords(name) {
+    return name.replace(/\b(\w)/g, s => s.toUpperCase());
+  }  
 
   const nameInputRef = useRef(null);
   const addStaffMember = (e) => {
@@ -38,15 +35,22 @@ function AllocationInput({staff, setStaff, observations}) {
     const doesNameExist = staff.some(staffMember => staffMember.name.toLowerCase() === newStaff.name.toLowerCase());
 
     if (doesNameExist) {
-        
         alert('A staff member with this name already exists!');
         return; 
     }
-
-    const staffWithId = { ...newStaff, id: generateId() }; // use generateId to assign a unique id
-    setStaff([...staff, staffWithId]);
-    setNewStaff({ id: null, name: "", break: "8:00", security: false }); // reset fields
     
+    // Find the current max ID in the staff list and add 1
+    const maxId = staff.reduce((max, item) => Math.max(max, item.id), -1);
+    const newId = maxId + 1;
+    
+    const staffWithIdAndObservations = {
+      ...newStaff,
+      id: newId, // Using the new ID
+      numObservations: 0
+    };
+    
+    setStaff([...staff, staffWithIdAndObservations]);
+    setNewStaff({ name: "", break: "8:00", security: false, numObservations: 0 });
   };
 
   const removeStaffMember = (staffIdToRemove) => {
@@ -74,19 +78,19 @@ function AllocationInput({staff, setStaff, observations}) {
     setStaff(updatedStaff);
   };
 
-  const assignObservation = (observationName, staffId) => {
+  const assignObservation = (observationId, staffId) => {
     // Find the index of the staff member with the given staffId
     const staffIndex = staff.findIndex(s => s.id === staffId);
     if (staffIndex !== -1) {
-      // Create a new staff array with the updated observationName for the selected staff member
-      const newStaff = [...staff];
-      newStaff[staffIndex] = {
-        ...newStaff[staffIndex],
-        firstObservation: observationName, // Update the observationName instead of observationId
+      // Create a new staff array with the updated observationId for the selected staff member
+      const newStaffList = [...staff];
+      newStaffList[staffIndex] = {
+        ...newStaffList[staffIndex],
+        observationId, // Set the observationId here
       };
   
       // Update the staff state
-      setStaff(newStaff);
+      setStaff(newStaffList);
     }
   };
   // Generate break time options from 8:00 to 19:00
@@ -101,10 +105,10 @@ function AllocationInput({staff, setStaff, observations}) {
 
     return (
       <section className={styles.container}>
+        <form className={styles.form} onSubmit={addStaffMember}>
         <header>
           <h1 className={styles.h1}>Staff members</h1>
         </header>
-        <form className={styles.form} onSubmit={addStaffMember}>
           <label className={styles.staffText}>
             Name:
             <input
@@ -140,7 +144,7 @@ function AllocationInput({staff, setStaff, observations}) {
           {staff.map((staffMember, index) => (
             <section key={staffMember.id} className={styles.staffMember}>
               <span>{`${index + 1}:`}</span>
-              <h2>{staffMember.name}</h2>
+              <h2>{capitalizeWords(staffMember.name)}</h2>
   
               <label className={styles.staffText}>
                 Break Time:

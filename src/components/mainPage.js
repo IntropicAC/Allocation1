@@ -4,11 +4,13 @@ import styles from './mainPage.module.css'; // Make sure the path is correct
 import AllocationInput from './staffInput'; // Adjust the path if necessary
 import PatientInput from './patientInput';
 import NavigationButtons from './navigationButtons';
+import { allocateObservations } from './';
 
-function MainPage() {
-  const [observations, setObservations] = useState([]);
+function MainPage({observations, setObservations, staff, setStaff}) {
+  
+
   const [currentPage, setCurrentPage] = useState('patient'); // 'patient' or 'allocation'
-  const [staff, setStaff] = useState([]);
+  
 
   const handleNext = () => {
     if (currentPage === 'patient') {

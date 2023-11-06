@@ -2,12 +2,11 @@ import React, { useState, useRef,} from "react";
 import styles from "./patientInput.module.css";
 
 function PatientInput({ observations, setObservations }) {
-
-  const [otherStaffRequired, setOtherStaffRequired] = useState("");
+  const [otherStaff, setOtherStaff] = useState(""); // Renamed from otherStaffRequired
   const [newObservation, setNewObservation] = useState({
     name: "",
     observationType: "1:1",
-    staffRequired: "1",
+    staff: 1, // Renamed from staffRequired
   });
 
   const handleInputChange = (e) => {
@@ -15,7 +14,7 @@ function PatientInput({ observations, setObservations }) {
 
     let updatedObservation = {
       ...newObservation,
-      [name]: value
+      [name]: value,
     };
 
     if (name === "observationType") {
@@ -23,18 +22,16 @@ function PatientInput({ observations, setObservations }) {
         updatedObservation = {
           ...updatedObservation,
           name: "Generals",
-          staffRequired: "1"
+          staff: 1, // Renamed from staffRequired
         };
       } else if (["2:1", "3:1"].includes(value)) {
-        updatedObservation.staffRequired = value.split(":")[0];
-        // Reset the name only if the previous value was "Generals"
+        updatedObservation.staff = Number(value.split(":")[0]) // Renamed from staffRequired
         if (newObservation.observationType === "Generals") {
           updatedObservation.name = "";
         }
       } else if (value === "other") {
-        setOtherStaffRequired("4");  // Set the default value here
-      } else { 
-        // Reset the name only if the previous value was "Generals"
+        setOtherStaff("4"); // Set the default value here, renamed from otherStaffRequired
+      } else {
         if (newObservation.observationType === "Generals") {
           updatedObservation.name = "";
         }
@@ -42,41 +39,34 @@ function PatientInput({ observations, setObservations }) {
     }
 
     setNewObservation(updatedObservation);
-};
+  };
 
+  const addObservation = (e) => {
+    e.preventDefault();
 
-const addObservation = (e) => {
-  e.preventDefault(); // Prevent the default form submission behavior
+    let observationToAdd = { ...newObservation };
 
-  let observationToAdd = { ...newObservation };
+    if (newObservation.observationType === "other" && otherStaff) {
+      observationToAdd.staff = Number(otherStaff.split(":")[0]);
+    }
 
-  // If 'other' was selected, update the staffRequired to be the first number of the selection
-  if (newObservation.observationType === "other" && otherStaffRequired) {
-    const staffNumber = otherStaffRequired.split(":")[0]; // Extract the number before the colon
-    observationToAdd.staffRequired = staffNumber;
-  }
+    setObservations((prevObservations) => {
+      const maxId = prevObservations.reduce((max, item) => Math.max(max, item.id), -1);
+      const newId = maxId + 1;
+      return [...prevObservations, { ...observationToAdd, id: newId }];
+    });
 
-  setObservations((prevObservations) => {
-    const maxId = prevObservations.reduce((max, item) => Math.max(max, item.id), -1);
-    const newId = maxId + 1;
-    return [...prevObservations, { ...observationToAdd, id: newId }];
-  });
-
-  // Reset the form state
-  setNewObservation({
-    name: "",
-    observationType: "1:1",
-    staffRequired: "1",
-  });
-  setOtherStaffRequired(""); // Reset the otherStaffRequired as well
-};
-
-
+    setNewObservation({
+      name: "",
+      observationType: "1:1",
+      staff: 1, // Renamed from staffRequired
+    });
+    setOtherStaff(""); // Reset the otherStaff as well, renamed from otherStaffRequired
+  };
 
   const removeObservation = (observationId) => {
-    setObservations((prevObservations) => prevObservations.filter(obs => obs.id !== observationId));
+    setObservations((prevObservations) => prevObservations.filter((obs) => obs.id !== observationId));
   };
-  
 
   return (
     <section className={styles.container}>
@@ -120,8 +110,8 @@ const addObservation = (e) => {
           {newObservation.observationType === "other" && (
             <select 
               name="staffRequired"
-              value={otherStaffRequired}
-              onChange={(e) => setOtherStaffRequired(e.target.value)}
+              value={otherStaff}
+              onChange={(e) => setOtherStaff(e.target.value)}
               required
               className={styles.selectNumber}
             >
@@ -147,7 +137,7 @@ const addObservation = (e) => {
 
             <label className={styles.patientText}>
               Staff Required:
-              <span>{observation.staffRequired}</span>
+              <span>{observation.staff}</span>
             </label>
 
             <button

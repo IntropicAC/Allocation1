@@ -23,7 +23,7 @@ const observations = [
   
 ];
 
-function allocateObservations(staff, observations) {
+export function allocateObservations(staff, observations) {
 
   const totalObs = observations.reduce((sum, observation) => sum + observation.staff, 0) * 12;
   const numStaffMembers = staff.length;
@@ -260,7 +260,7 @@ function allocateObservations(staff, observations) {
 }
 
 
-function createTable() {
+export function createTable() {
 
   staff.forEach(staffMember => {
     staffMember.obsCount = Object.values(staffMember.observations).filter(val => val !== '-').length;
