@@ -264,7 +264,7 @@ export function allocateObservations(staff, observations) {
 }
 
 
-export function createTable() {
+export default function createTable() {
 
   staff.forEach(staffMember => {
     staffMember.obsCount = Object.values(staffMember.observations).filter(val => val !== '-').length;
@@ -361,4 +361,6 @@ export function createTable() {
   //addDragAndDropToCells();
 
 }
-allocateObservations(staff, observations);
+
+
+

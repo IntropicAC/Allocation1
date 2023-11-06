@@ -1,5 +1,5 @@
 // MainPage.jsx
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import styles from './mainPage.module.css'; 
 import StaffInput from './staffInput'; 
 import PatientInput from './patientInput';
@@ -8,10 +8,12 @@ import AllocationCreation from './allocationCreation';
 
 
 
+
 function MainPage({observations, setObservations, staff, setStaff}) {
   
-
+  const [allocatedStaff, setAllocatedStaff] = useState(null);
   const [currentPage, setCurrentPage] = useState('patient'); 
+  
   
 
   const handleNext = () => {
@@ -67,7 +69,13 @@ function MainPage({observations, setObservations, staff, setStaff}) {
         {currentPage === 'staff' && <StaffInput staff={staff} setStaff={setStaff} observations={observations}/>}
         {currentPage === 'allocation' && <AllocationCreation staff={staff} observations={observations}/>}
         </div>
-        <NavigationButtons currentPage={currentPage} onNext={handleNext} onBack={handleBack} />
+        <NavigationButtons 
+        currentPage={currentPage} 
+        onNext={handleNext} 
+        onBack={handleBack}
+        allocatedStaff={allocatedStaff}
+        setAllocatedStaff={setAllocatedStaff}
+         />
 
       </main>
     
