@@ -4,7 +4,7 @@ import styles from './mainPage.module.css'; // Make sure the path is correct
 import AllocationInput from './staffInput'; // Adjust the path if necessary
 import PatientInput from './patientInput';
 import NavigationButtons from './navigationButtons';
-import { allocateObservations } from './';
+
 
 function MainPage({observations, setObservations, staff, setStaff}) {
   
