@@ -84,6 +84,8 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
           onBack={handleBack}
           allocatedStaff={allocatedStaff}
           setAllocatedStaff={setAllocatedStaff}
+          staff={staff}
+          observations={observations}
         />
       </main>
 
