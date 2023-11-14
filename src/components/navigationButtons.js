@@ -32,6 +32,10 @@ function NavigationButtons({
 
   function allocateObservations() {
 
+    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!! REMINDER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ------------------ The code only works if the array has a GENERALS if theres an error this could be why---------*/ 
+
+
     const totalObs = observations.reduce((sum, observation) => sum + observation.staff, 0) * 12;
     const numStaffMembers = staff.length;
     const maxObs = Math.ceil(totalObs / numStaffMembers);
@@ -49,14 +53,16 @@ function NavigationButtons({
       staffMember.lastObservation = staffMember.observationId;
       staffMember.obsCounts = {};
       staffMember.lastReceived = {};
-      if (staffMember.security !== undefined) {
-        staffMember.lastSecurityObservationHour = null;
-      }
+
       for (let hour = 8; hour <= 19; hour++) {
-        staffMember.observations[hour] = hour === 8 ? staffMember.observationId : '-';
+        if (hour === 8) {
+          staffMember.observations[hour] = staffMember.observationId && staffMember.observationId !== '-' ? staffMember.observationId : '-';
+        } else {
+          staffMember.observations[hour] = '-';
+        }
       }
-  
-      if (staffMember.observationId !== '-') {
+    
+      if (staffMember.observationId && staffMember.observationId !== '-') {
         staffMember.obsCounts[staffMember.observationId] = 1;
         staffMember.numObservations = 1;
       } else {
@@ -325,14 +331,15 @@ let totalObservations = 0;
 staff.forEach(staffMember => {
   let line = staffMember.name;
   for (let hour = 8; hour <= 19; hour++) {
-    line += staffMember.break === hour ? '\t!!' : '\t' + staffMember.observations[hour];
+    // Check if the observation is 'Generals' and replace with 'Gen'
+    const observation = staffMember.observations[hour] === "Generals" ? "Gen" : staffMember.observations[hour];
+    line += staffMember.break === hour ? '\t!!' : '\t' + observation;
   }
   line += '\t' + staffMember.numObservations;
-  line += '\t  ' + staffMember.obsCount;
   console.log(line);
-  //totalObservations += staffMember.obsCount;
 });
 console.log('Total Observations Across All Staff: ' + totalObservations);
+
   }
   
 

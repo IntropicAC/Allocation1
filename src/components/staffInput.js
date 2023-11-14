@@ -1,32 +1,43 @@
 import React, { useState, useRef, useEffect } from "react";
 import styles from "./staffInput.module.css";
 
+
 function StaffInput({ staff, setStaff, observations }) {
   const [newStaff, setNewStaff] = useState({
     name: "",
-    break: "8:00", // default break time
+    break: 8, // default break time
     security: false,
     numObservations: 0,
   });
 
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+   
+    // If the input is for 'break', convert the value to a number
+    const updatedValue = name === "break" ? parseInt(value.split(":")[0]) : value;
+ 
     setNewStaff((prevState) => ({
       ...prevState,
-      [name]: value,
+      [name]: updatedValue,
     }));
   };
+
+
   useEffect(() => {
     console.log("observations Array:", observations);
   }, [observations]);
+
 
   useEffect(() => {
     console.log("staff Array:", staff);
   }, [staff]);
 
+
   function capitalizeWords(name) {
     return name.replace(/\b(\w)/g, (s) => s.toUpperCase());
   }
+
 
   const nameInputRef = useRef(null);
   const addStaffMember = (e) => {
@@ -36,14 +47,17 @@ function StaffInput({ staff, setStaff, observations }) {
         staffMember.name.toLowerCase() === newStaff.name.toLowerCase()
     );
 
+
     if (doesNameExist) {
       alert("A staff member with this name already exists!");
       return;
     }
 
+
     // Find the current max ID in the staff list and add 1
     const maxId = staff.reduce((max, item) => Math.max(max, item.id), -1);
     const newId = maxId + 1;
+
 
     const staffWithIdAndObservations = {
       ...newStaff,
@@ -51,18 +65,21 @@ function StaffInput({ staff, setStaff, observations }) {
       numObservations: 0,
     };
 
+
     setStaff([...staff, staffWithIdAndObservations]);
     setNewStaff({
       name: "",
-      break: "8:00",
+      break: 8,
       security: false,
       numObservations: 0,
     });
   };
 
+
   const removeStaffMember = (staffIdToRemove) => {
     setStaff((staff) => staff.filter((staff) => staff.id !== staffIdToRemove));
   };
+
 
   const handleSecurityChange = (e, index) => {
     const updatedStaff = staff.map((staffMember, i) => {
@@ -74,16 +91,20 @@ function StaffInput({ staff, setStaff, observations }) {
     setStaff(updatedStaff);
   };
 
+
   const handleBreakChange = (e, index) => {
+    const updatedBreakTime = parseInt(e.target.value.split(":")[0]);
+ 
     const updatedStaff = staff.map((staffMember, i) => {
       if (i === index) {
-        return { ...staffMember, break: e.target.value };
+        return { ...staffMember, break: updatedBreakTime };
       }
       return staffMember;
     });
-
+ 
     setStaff(updatedStaff);
   };
+
 
   const assignObservation = (observationId, staffId) => {
     // Find the index of the staff member with the given staffId
@@ -95,6 +116,7 @@ function StaffInput({ staff, setStaff, observations }) {
         ...newStaffList[staffIndex],
         observationId, // Set the observationId here
       };
+
 
       // Update the staff state
       setStaff(newStaffList);
@@ -109,6 +131,7 @@ function StaffInput({ staff, setStaff, observations }) {
       </option>
     );
   }
+
 
   return (
     <section className={styles.container}>
@@ -135,7 +158,7 @@ function StaffInput({ staff, setStaff, observations }) {
           <select
             className={styles.select}
             name="break"
-            value={newStaff.break}
+            value={`${newStaff.break}:00`}
             onChange={handleInputChange}
           >
             {breakTimeOptions}
@@ -147,22 +170,25 @@ function StaffInput({ staff, setStaff, observations }) {
         </button>
       </form>
 
+
       <form className={styles.staffContainer}>
         {staff.map((staffMember, index) => (
           <section key={staffMember.id} className={styles.staffMember}>
             <span>{`${index + 1}:`}</span>
             <h2>{capitalizeWords(staffMember.name)}</h2>
 
+
             <label className={styles.staffText}>
               Break Time:
               <select
                 className={styles.break}
-                value={staffMember.break}
+                value={`${staffMember.break}:00`}
                 onChange={(e) => handleBreakChange(e, index)}
               >
                 {breakTimeOptions}
               </select>
             </label>
+
 
             <label className={styles.staffText}>
               <input
@@ -172,6 +198,7 @@ function StaffInput({ staff, setStaff, observations }) {
               />
               Security
             </label>
+
 
             {/* Dropdown to assign an observation to a staff member */}
             <label className={styles.staffText}>
@@ -195,6 +222,7 @@ function StaffInput({ staff, setStaff, observations }) {
               </select>
             </label>
 
+
             <button
               className={styles.xButton}
               onClick={(e) => {
@@ -211,4 +239,7 @@ function StaffInput({ staff, setStaff, observations }) {
   );
 }
 
+
 export default StaffInput;
+
+
