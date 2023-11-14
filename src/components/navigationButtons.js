@@ -27,11 +27,6 @@ function NavigationButtons({
   };
 
 
-  const handleNext = () => {
-
-    onNext(); // Always call onNext regardless of the page
-  };
-
   function allocateObservations() {
 
     /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!! REMINDER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -327,24 +322,20 @@ function NavigationButtons({
         observationAverages[observation.name] = totalForObservation / numStaffMembers;
       });
     }
-
-    console.log('Name\t8\t9\t10\t11\t12\t13\t14\t15\t16\t17\t18\t19\tTotal True');
-let totalObservations = 0;
-staff.forEach(staffMember => {
-  let line = staffMember.name;
-  for (let hour = 8; hour <= 19; hour++) {
-    // Check if the observation is 'Generals' and replace with 'Gen'
-    const observation = staffMember.observations[hour] === "Generals" ? "Gen" : staffMember.observations[hour];
-    line += staffMember.break === hour ? '\t!!' : '\t' + observation;
-  }
-  line += '\t' + staffMember.numObservations;
-  console.log(line);
-});
-console.log('Total Observations Across All Staff: ' + totalObservations);
-
     return staff;
   }
   
+
+  const handleNext = () => {
+    if (currentPage === "staff") {
+      handleAllocate();
+      setTimeout(() => {
+        onNext();
+      }, 100); 
+    } else {
+      onNext();
+    }
+  };
 
   return (
     <div className={styles.navigationContainer}>
@@ -354,19 +345,15 @@ console.log('Total Observations Across All Staff: ' + totalObservations);
           Back
         </button>
       )}
-      {/* If not on staff or allocation page, add a spacer to push the next button to the right */}
+      {/* If not on staff or allocation page, add a spacer */}
       {!(currentPage === "staff" || currentPage === "allocation") && <div className={styles.spacer}></div>}
-      <button onClick={handleAllocate} className={styles.testButton}>
-          Test Log Arrays
-      </button>
+
       {/* Show next button for patient and staff pages */}
       {(currentPage === "patient" || currentPage === "staff") && (
-        <button className={styles.nextButton} onClick={onNext}>
-        Next
-      </button>
+        <button className={styles.nextButton} onClick={handleNext}>
+          Next
+        </button>
       )}
-
-      {/* No need to render a spacer after the next button as it's already being pushed to the right */}
     </div>
   );
 }

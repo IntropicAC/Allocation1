@@ -152,20 +152,6 @@ body {
   }
   
 
-  #observations-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: Arial;
-    
-  
-}
-
-#observations-table th, #observations-table td {
-    border: 1.5px solid black;
-    padding: 10px;
-    text-align: center;
-}
-
 .highlight {
   background-color: rgba(154, 206, 193, 0.5);
   

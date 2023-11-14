@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState} from "react";
 import styles from "./patientInput.module.css";
 
 function PatientInput({ observations, setObservations, setStaff }) {

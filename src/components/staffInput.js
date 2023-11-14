@@ -81,29 +81,30 @@ function StaffInput({ staff, setStaff, observations }) {
   };
 
 
-  const handleSecurityChange = (e, index) => {
-    const updatedStaff = staff.map((staffMember, i) => {
-      if (i === index) {
-        return { ...staffMember, security: e.target.checked };
-      }
-      return { ...staffMember, security: false }; // set all other members' security to false
+  const handleSecurityChange = (e, staffId) => {
+    const updatedStaff = staff.map(staffMember => {
+        // Set 'security' to true only for the selected staff member, and false for others
+        return {
+            ...staffMember,
+            security: staffMember.id === staffId ? e.target.checked : false
+        };
     });
     setStaff(updatedStaff);
-  };
+};
 
 
-  const handleBreakChange = (e, index) => {
-    const updatedBreakTime = parseInt(e.target.value.split(":")[0]);
- 
-    const updatedStaff = staff.map((staffMember, i) => {
-      if (i === index) {
-        return { ...staffMember, break: updatedBreakTime };
-      }
-      return staffMember;
-    });
- 
-    setStaff(updatedStaff);
-  };
+
+const handleBreakChange = (e, staffId) => {
+  const updatedBreakTime = parseInt(e.target.value.split(":")[0]);
+  const updatedStaff = staff.map(staffMember => {
+    if (staffMember.id === staffId) {
+      return { ...staffMember, break: updatedBreakTime };
+    }
+    return staffMember;
+  });
+  setStaff(updatedStaff);
+};
+
 
 
   const assignObservation = (observationName, staffId) => {
@@ -122,7 +123,7 @@ function StaffInput({ staff, setStaff, observations }) {
   const breakTimeOptions = [];
   for (let i = 8; i <= 19; i++) {
     breakTimeOptions.push(
-      <option key={i} value={`${i}:00`}>
+      <option key={i} value={`${i}:00`} className={styles.breakOption}>
         {i}:00
       </option>
     );
@@ -168,7 +169,8 @@ function StaffInput({ staff, setStaff, observations }) {
 
 
       <form className={styles.staffContainer}>
-        {staff.map((staffMember, index) => (
+        {[...staff].sort((a, b) => a.name.localeCompare(b.name))
+                 .map((staffMember, index) => (
           <section key={staffMember.id} className={styles.staffMember}>
             <span>{`${index + 1}:`}</span>
             <h2>{capitalizeWords(staffMember.name)}</h2>
@@ -179,7 +181,7 @@ function StaffInput({ staff, setStaff, observations }) {
               <select
                 className={styles.break}
                 value={`${staffMember.break}:00`}
-                onChange={(e) => handleBreakChange(e, index)}
+                onChange={(e) => handleBreakChange(e, staffMember.id)}
               >
                 {breakTimeOptions}
               </select>
@@ -190,7 +192,7 @@ function StaffInput({ staff, setStaff, observations }) {
               <input
                 type="checkbox"
                 checked={staffMember.security}
-                onChange={(e) => handleSecurityChange(e, index)}
+                onChange={(e) => handleSecurityChange(e, staffMember.id)}
               />
               Security
             </label>
