@@ -17,6 +17,8 @@ function NavigationButtons({
         [...staff],
         [...observations]
       );
+
+      setAllocatedStaff(allocationCopy)
   };
 
   const testLogArrays = () => {
@@ -340,6 +342,7 @@ staff.forEach(staffMember => {
 });
 console.log('Total Observations Across All Staff: ' + totalObservations);
 
+    return staff;
   }
   
 

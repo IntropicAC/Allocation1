@@ -75,7 +75,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
             />
           )}
           {currentPage === "allocation" && (
-            <AllocationCreation staff={staff} observations={observations} />
+            <AllocationCreation staff={staff} allocatedStaff={allocatedStaff}/>
           )}
         </div>
         <NavigationButtons
