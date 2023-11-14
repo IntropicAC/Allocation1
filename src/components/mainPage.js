@@ -50,14 +50,6 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
       {/* Main Content Area */}
       <main id="content-area">
         <div className="content-wrapper">
-          <table id="observations-table">
-            <thead>
-              <tr id="header-row">
-                {/* Table headers should be placed here */}
-              </tr>
-            </thead>
-            <tbody>{/* Table content should be placed here */}</tbody>
-          </table>
           {/*<button className="modern-button" id="modernButton">
           <span>Create Allocation</span>
         </button>*/}
@@ -65,6 +57,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
             <PatientInput
               observations={observations}
               setObservations={setObservations}
+              setStaff={setStaff}
             />
           )}
           {currentPage === "staff" && (
@@ -75,7 +68,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
             />
           )}
           {currentPage === "allocation" && (
-            <AllocationCreation staff={staff} allocatedStaff={allocatedStaff}/>
+            <AllocationCreation allocatedStaff={allocatedStaff}/>
           )}
         </div>
         <NavigationButtons

@@ -1,6 +1,10 @@
 import React from 'react';
 import styles from './allocationCreation.module.css';
 
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 function AllocationCreation({ allocatedStaff }) {
   allocatedStaff.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -11,7 +15,9 @@ function AllocationCreation({ allocatedStaff }) {
           <th>Time</th>
           {allocatedStaff.map(staffMember => {
             let totalObservations = Object.values(staffMember.observations).filter(val => val !== '-').length;
-            return <th key={staffMember.name}>{staffMember.name} - {totalObservations}</th>;
+            // Capitalize the first letter of each staff member's name
+            let capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
+            return <th key={staffMember.name}>{capitalizedStaffName} - {totalObservations}</th>;
           })}
         </tr>
       </thead>
@@ -19,11 +25,19 @@ function AllocationCreation({ allocatedStaff }) {
         {Array.from({ length: 12 }, (_, i) => 8 + i).map(hour => (
           <tr key={hour}>
             <td>{hour}</td>
-            {allocatedStaff.map(staffMember => (
-              <td key={staffMember.name + hour}>
-                {staffMember.break === hour ? <strong>Break</strong> : staffMember.observations[hour] || '-'}
-              </td>
-            ))}
+            {allocatedStaff.map(staffMember => {
+              // Check if the observation for the current hour is 'Generals', and replace it with 'Gen'
+              let observation = staffMember.observations[hour];
+              if (observation === 'Generals') {
+                observation = 'Gen';
+              }
+
+              return (
+                <td key={staffMember.name + hour}>
+                  {staffMember.break === hour ? <strong>Break</strong> : observation || '-'}
+                </td>
+              );
+            })}
           </tr>
         ))}
       </tbody>

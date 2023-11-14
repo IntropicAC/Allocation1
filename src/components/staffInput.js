@@ -106,22 +106,18 @@ function StaffInput({ staff, setStaff, observations }) {
   };
 
 
-  const assignObservation = (observationId, staffId) => {
-    // Find the index of the staff member with the given staffId
+  const assignObservation = (observationName, staffId) => {
     const staffIndex = staff.findIndex((s) => s.id === staffId);
     if (staffIndex !== -1) {
-      // Create a new staff array with the updated observationId for the selected staff member
-      const newStaffList = [...staff];
-      newStaffList[staffIndex] = {
-        ...newStaffList[staffIndex],
-        observationId, // Set the observationId here
-      };
-
-
-      // Update the staff state
-      setStaff(newStaffList);
+        const newStaffList = [...staff];
+        newStaffList[staffIndex] = {
+            ...newStaffList[staffIndex],
+            observationId: observationName, // Assign the observation name
+        };
+        setStaff(newStaffList);
     }
-  };
+};
+
   // Generate break time options from 8:00 to 19:00
   const breakTimeOptions = [];
   for (let i = 8; i <= 19; i++) {

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import styles from "./patientInput.module.css";
 
-function PatientInput({ observations, setObservations }) {
+function PatientInput({ observations, setObservations, setStaff }) {
   const [otherStaff, setOtherStaff] = useState(""); // Renamed from otherStaffRequired
   const [newObservation, setNewObservation] = useState({
     name: "",
@@ -67,11 +67,29 @@ function PatientInput({ observations, setObservations }) {
     setOtherStaff(""); // Reset the otherStaff as well, renamed from otherStaffRequired
   };
 
-  const removeObservation = (observationId) => {
-    setObservations((prevObservations) =>
-      prevObservations.filter((obs) => obs.id !== observationId)
-    );
-  };
+  const removeObservation = (observationIdToRemove) => {
+    // Find the name of the observation to be removed
+    const observationToRemove = observations.find(obs => obs.id === observationIdToRemove);
+
+    if (observationToRemove) {
+        // Remove the observation from the observations array
+        setObservations(prevObservations =>
+            prevObservations.filter(obs => obs.id !== observationIdToRemove)
+        );
+
+        // Update the staff array
+        setStaff(currentStaff =>
+            currentStaff.map(staffMember => {
+                if (staffMember.observationId === observationToRemove.name) {
+                    return { ...staffMember, observationId: '-' }; // Reset the observationId
+                }
+                return staffMember;
+            })
+        );
+    }
+};
+
+
 
   return (
     <section className={styles.container}>
