@@ -6,10 +6,10 @@
     align-items: center;
     padding: 1rem 2rem;
     background-color: white;
-    border-top: 0.1rem solid black;
+    border: 0.1rem solid black;
     border-radius: 0 0 0.8rem 0.8rem; /* Round the bottom corners only */
-    border: green solid 0.1rem
-
+  
+    
   }
   
   .backButton, .nextButton {

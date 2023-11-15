@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import styles from "./navigationButtons.module.css";
-import { allocateObservations } from "./allocationCode";
+//import { allocateObservations } from "./allocationCode";
 //import { createTable } from "./allocationCode";
 
 function NavigationButtons({
@@ -20,12 +20,6 @@ function NavigationButtons({
 
       setAllocatedStaff(allocationCopy)
   };
-
-  const testLogArrays = () => {
-    console.log('Staff:', staff);
-    console.log('Observations:', observations);
-  };
-
 
   function allocateObservations() {
 

@@ -19,7 +19,7 @@
     width: 100%;
     border-radius: 0.8rem;
     overflow-y: auto;
-    max-height: 60rem;
+    max-height: 50rem;
     scrollbar-width: thin;
     scrollbar-color: #888 #f5f5f5;
   }
@@ -52,9 +52,9 @@
   }
   
   .inputText:focus, .selectNumber:focus, .observationType:focus {
-    border-color: #d6e4ff;
+    border-color: grey;
     outline: none;
-    box-shadow: 0 0 0.3rem ;
+    box-shadow: 0 0 0.4rem ;
   }
   
   .button {

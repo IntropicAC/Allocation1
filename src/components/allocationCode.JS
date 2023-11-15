@@ -1,4 +1,4 @@
-/*const staff = [
+const staff = [
   //{ name: 'Alex', 		 break: 14, numObservations: 0, 8: '-', security: 3 },
   { name: "Charl", break: 14, numObservations: 0, 8: "-" },
   { name: "Jon", break: 13, numObservations: 0, 8: "-" },
@@ -19,7 +19,7 @@ const observations = [
   { name: "BS", staff: 2 },
   { name: "HH", staff: 1 },
   { name: "Gen", staff: 1 },
-];*/
+];
 
 //allocationCode.JS
 

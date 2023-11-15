@@ -9,6 +9,7 @@ function AllocationCreation({ allocatedStaff }) {
   allocatedStaff.sort((a, b) => a.name.localeCompare(b.name));
 
   return (
+    <>
     <div className={styles.tableContainer}>
     <table className={styles.allocationTable}>
       <thead>
@@ -44,6 +45,7 @@ function AllocationCreation({ allocatedStaff }) {
       </tbody>
     </table>
     </div>
+    </>
   );
 }
 
