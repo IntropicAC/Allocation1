@@ -1,5 +1,5 @@
 // MainPage.jsx
-import React, { useState} from "react";
+import React, { useState, useRef} from "react";
 import styles from "./mainPage.module.css";
 import StaffInput from "./staffInput";
 import PatientInput from "./patientInput";
@@ -29,8 +29,33 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
     }
   };
 
+  const tableRef = useRef(null);
+
+  const setTableRef = (ref) => {
+    tableRef.current = ref;
+  };
+
+  const copyTable = async () => {
+    const table = tableRef.current;
+    if (table) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(table);
+      selection.removeAllRanges();
+      selection.addRange(range);
+  
+      try {
+        // Use the Clipboard API to copy the selected range
+        document.execCommand('copy');
+        selection.removeAllRanges();
+      } catch (err) {
+        console.error('Failed to copy: ', err);
+      }
+    }
+  };
+
   return (
-    <div>
+    <body>
       {/* Navigation */}
       <nav>
         <ul>
@@ -68,10 +93,11 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
             />
           )}
           {currentPage === "allocation" && (
-            <AllocationCreation allocatedStaff={allocatedStaff}/>
+            <AllocationCreation allocatedStaff={allocatedStaff} setTableRef={setTableRef}/>
           )}
         </div>
         <NavigationButtons
+          copyTable={copyTable}
           currentPage={currentPage}
           onNext={handleNext}
           onBack={handleBack}
@@ -84,9 +110,9 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
 
       {/* Footer */}
       <footer>
-        <p>&copy; 2023 Alex</p>
+        <p>&copy; Alex 2023</p>
       </footer>
-    </div>
+    </body>
   );
 }
 

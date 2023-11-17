@@ -7,7 +7,7 @@
 }
 
 .staffText input[type="checkbox"] {
-  margin-right: 1rem; 
+  margin-left: 1rem; 
 }
 
 .staffText{
@@ -25,6 +25,7 @@
   max-height: 50rem; /* Adjust based on your needs */
   scrollbar-width: thin; /* "auto" or "thin" */
   scrollbar-color: #888 #f5f5f5; /* thumb and track color */
+  overflow-y: scroll;
 }
 
 .form {
@@ -40,6 +41,10 @@
   border: black solid 0.1rem;
 }
 
+.indexNumber {
+  margin-right: 16px; /* Adjust this value to increase/decrease the space */
+}
+
 .inputText, .select, .button{
   padding: 0.7rem;
   border: 0.1rem solid black;
@@ -51,10 +56,21 @@
   display: inline-block;
 }
 .break {
-  padding: 0.10rem;
+  padding: 0.4rem;
   border-radius: 0.8rem;
-  font-size: 1.4rem;
+  font-size: 1.7rem;
   cursor: pointer;
+  margin-left: 0.7rem;
+}
+
+.BreakText {
+  display: flex;
+  align-items: center; /* Aligns items vertically in the center */
+}
+
+.labelText {
+  margin-right: 0.4rem; /* Adjust as necessary for space */
+  white-space: nowrap;
 }
 
 
@@ -62,9 +78,9 @@
   padding: 0.5rem;
 }
 .inputText:focus, .select:focus {
-  border-color: grey;
+  border-color: black;
     outline: none;
-    box-shadow: 0 0 0.4rem ;
+    box-shadow: 0 0 0.3rem ;
 }
 
 
@@ -103,15 +119,14 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:checked {
-  background-color: #4CAF50;
-  border: 0.2rem solid #4CAF50;
+  background-color: #2a2abb;
+  border: 0.2rem solid black;
 }
 
 input[type="checkbox"]:checked:after {
   content: '';
   position: absolute;
   left: 0.5rem;
-  top: 0.2rem;
   width: 0.5rem;
   height: 1.2rem;
   border: solid white;
@@ -122,7 +137,7 @@ input[type="checkbox"]:checked:after {
 /* Staff Styles */
 .staffMember {
   background: white;
-  padding: 0.8rem;
+  padding: 0.4rem;
   margin: 0 0.5rem 0 0.5rem;
   border-radius: 0.8rem;
   box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.1);
@@ -158,8 +173,9 @@ input[type="checkbox"]:checked:after {
 .staffMember span {
   flex: 0.02;
   font-weight: bold;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   padding-left: 1rem;
+  
 }
 
 /* Custom Scrollbar styles */
@@ -210,4 +226,18 @@ input[type="checkbox"]:checked:after {
 .xButton:focus {
   outline: none; /* remove default focus outline */
   box-shadow: 0 0 0.3rem #f44336; /* adds a shadow when focused, matching your input focus style */
+}
+
+/*------------Fun addition-------------------*/
+@keyframes animateRainbow {
+  from {
+      filter: hue-rotate(0deg);
+  }
+  to {
+      filter: hue-rotate(360deg);
+  }
+}
+
+.rainbow-text {
+  animation: animateRainbow 5s linear infinite;
 }

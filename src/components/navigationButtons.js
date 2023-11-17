@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState,useEffect} from "react";
 import styles from "./navigationButtons.module.css";
 //import { allocateObservations } from "./allocationCode";
 //import { createTable } from "./allocationCode";
@@ -10,7 +10,10 @@ function NavigationButtons({
   setAllocatedStaff,
   staff,
   observations,
+  copyTable
 }) {
+
+  const [observationsWithStaffNeeded, setObservationsWithStaffNeeded] = useState([]);
 
   const handleAllocate = () => {
       let allocationCopy = allocateObservations(
@@ -22,10 +25,6 @@ function NavigationButtons({
   };
 
   function allocateObservations() {
-
-    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!! REMINDER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ------------------ The code only works if the array has a GENERALS if theres an error this could be why---------*/ 
-
 
     const totalObs = observations.reduce((sum, observation) => sum + observation.staff, 0) * 12;
     const numStaffMembers = staff.length;
@@ -70,19 +69,30 @@ function NavigationButtons({
   
       shuffleArray(staff);
   
-      // Separate 'Gen' from other observations
+      // Check if 'Generals' exists in the observations
       const genObservation = observations.find(obs => obs.name === 'Generals');
-      const otherObservations = observations.filter(obs => obs.name !== 'Generals');
-      
-      
-      //Shuffle the other observations only
-      shuffleArray(otherObservations);
-      
-      otherObservations.sort((a, b) => b.staff - a.staff);
-      // Append 'Gen' at the end of the array
-      const shuffledObservations = [...otherObservations, genObservation];
-  
-      // Use the shuffledObservations array here instead of the original observations array
+
+      let shuffledObservations;
+
+      if (genObservation) {
+        // 'Generals' exists, separate it from other observations
+        const otherObservations = observations.filter(obs => obs.name !== 'Generals');
+
+        // Shuffle the other observations only
+        shuffleArray(otherObservations);
+
+        // Sort other observations by staff value
+        otherObservations.sort((a, b) => b.staff - a.staff);
+
+        // Append 'Gen' at the end of the array
+        shuffledObservations = [...otherObservations, genObservation];
+      } else {
+        // 'Generals' does not exist, just shuffle and sort the original observations
+        shuffleArray(observations);
+        observations.sort((a, b) => b.staff - a.staff);
+        shuffledObservations = observations;
+      }
+
       shuffledObservations.forEach(observation => {
   
         //observations.forEach(observation => {
@@ -243,16 +253,12 @@ function NavigationButtons({
             }
           }
 
-          if (staffMember.security !== false) {
-            if (
-              staffMember.observations[hour - 1] !== "-" &&
-              staffMember.observations[hour - 2] !== "-" &&
-              staffMember.observations[hour - 3] !== "-"
-            ) {
-              score -= 2000000;
+          if (staffMember.security === true) {
+            if(hour === 10 || hour === 11 || hour === 13 || hour === 16) {
+              score -= 15;
             }
 
-            score += maxObs - staffMember.numObservations - 2;
+            
           }
   
             /*if (hour >= 8 && hour <= 19) {
@@ -318,9 +324,20 @@ function NavigationButtons({
     }
     return staff;
   }
-  
+
 
   const handleNext = () => {
+
+    if (currentPage === "patient" && observations.length < 1) {
+      alert("At least 1 observation is required");
+      return; // Prevents moving to the next page
+    }
+
+    if (currentPage === "staff" && staff.length < 2) {
+      alert("At least 1 staff member is required");
+      return; // Prevents moving to the next page
+    }
+
     if (currentPage === "staff") {
       handleAllocate();
       setTimeout(() => {
@@ -331,21 +348,72 @@ function NavigationButtons({
     }
   };
 
+  const updateStaffNeeded = () => {
+    return observations.map(observation => {
+      const assignedStaffCount = staff.filter(staffMember => staffMember.observationId === observation.id).length;
+      return {
+        ...observation,
+        staffNeeded: Math.max(0, observation.staff - assignedStaffCount),
+      };
+    });
+  };
+  
+
+useEffect(() => {
+  const updatedObservations = updateStaffNeeded();
+  setObservationsWithStaffNeeded(updatedObservations);
+}, [staff]); // Dependency array includes staff, so this effect runs whenever staff changes
+
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopyClick = () => {
+      copyTable();
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000); // Reset after 3 seconds
+    };
+
+
   return (
+
     <div className={styles.navigationContainer}>
-      {/* Show back button for staff and allocation pages */}
+      {/* Existing Back Button */}
       {(currentPage === "staff" || currentPage === "allocation") && (
         <button onClick={onBack} className={styles.backButton}>
           Back
         </button>
       )}
-      {/* If not on staff or allocation page, add a spacer */}
-      {!(currentPage === "staff" || currentPage === "allocation") && <div className={styles.spacer}></div>}
 
-      {/* Show next button for patient and staff pages */}
+      {currentPage === "allocation" && (
+        <button onClick={handleCopyClick} className={styles.animatedCopyButton}>
+          <span className={isCopied ? styles.buttonTextCopied : styles.buttonText}>
+            {isCopied ? 'Copied!' : 'Copy Table'}
+          </span>
+          {isCopied && <span className={styles.checkmark}>✓</span>}
+        </button>
+      )}
+
+      {/* Spacer for patient page */}
+      {currentPage !== "staff" && currentPage !== "allocation" && <div className={styles.spacer}></div>}
+
+      {/* Dynamic Display for Staff Page */}
+      {currentPage === "staff" && (
+        <div className={styles.observationsInfo}>
+           {observationsWithStaffNeeded.map((observation, index) => (
+        <div key={index} className={styles.observationDetail}>
+          <span>{observation.name}:</span>
+          <span> {observation.staffNeeded}</span>
+        </div>
+     ))}
+        </div>
+      )}
+
+      {/* Existing Next/Create Allocation Button */}
       {(currentPage === "patient" || currentPage === "staff") && (
-        <button className={styles.nextButton} onClick={handleNext}>
-          Next
+        <button 
+          className={currentPage === "patient" ? styles.nextButton : styles.createAllocation} 
+          onClick={handleNext}
+        >
+          {currentPage === "patient" ? "Next" : "Create Allocation"}
         </button>
       )}
     </div>

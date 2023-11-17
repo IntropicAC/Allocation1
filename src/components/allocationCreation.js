@@ -1,17 +1,25 @@
-import React from 'react';
+import React, {useRef, useEffect} from 'react';
 import styles from './allocationCreation.module.css';
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function AllocationCreation({ allocatedStaff }) {
+
+function AllocationCreation({ allocatedStaff, setTableRef }) {
+
   allocatedStaff.sort((a, b) => a.name.localeCompare(b.name));
+
+  const localTableRef = useRef(null);
+
+  useEffect(() => {
+    setTableRef(localTableRef.current);
+  }, []);
 
   return (
     <>
     <div className={styles.tableContainer}>
-    <table className={styles.allocationTable}>
+    <table ref={localTableRef} className={styles.allocationTable}>
       <thead>
         <tr>
           <th>Time</th>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef} from "react";
 import styles from "./staffInput.module.css";
 
 
@@ -22,17 +22,6 @@ function StaffInput({ staff, setStaff, observations }) {
       [name]: updatedValue,
     }));
   };
-
-
-  useEffect(() => {
-    console.log("observations Array:", observations);
-  }, [observations]);
-
-
-  useEffect(() => {
-    console.log("staff Array:", staff);
-  }, [staff]);
-
 
   function capitalizeWords(name) {
     return name.replace(/\b(\w)/g, (s) => s.toUpperCase());
@@ -111,9 +100,11 @@ const handleBreakChange = (e, staffId) => {
     const staffIndex = staff.findIndex((s) => s.id === staffId);
     if (staffIndex !== -1) {
         const newStaffList = [...staff];
+        const newObservationId = observationName === "Select Observation" ? "-" : observationName;
+
         newStaffList[staffIndex] = {
             ...newStaffList[staffIndex],
-            observationId: observationName, // Assign the observation name
+            observationId: newObservationId, // Assign the observation name
         };
         setStaff(newStaffList);
     }
@@ -128,6 +119,9 @@ const handleBreakChange = (e, staffId) => {
       </option>
     );
   }
+
+
+  const rainbowNames = ["Alex1","Charlotte2","Adna3","Aliah4"]
 
 
   return (
@@ -172,29 +166,35 @@ const handleBreakChange = (e, staffId) => {
         {[...staff].sort((a, b) => a.name.localeCompare(b.name))
                  .map((staffMember, index) => (
           <section key={staffMember.id} className={styles.staffMember}>
-            <span>{`${index + 1}:`}</span>
-            <h2>{capitalizeWords(staffMember.name)}</h2>
+            <h2>
+        <span className={styles.indexNumber}>{index + 1}:</span>
+        {/* Check if the name is in the rainbowNames array */}
+        <span className={rainbowNames.includes(staffMember.name) ? `${styles.staffName} rainbow-text` : styles.staffName}>
+          {capitalizeWords(staffMember.name)}
+        </span>
+      </h2>
+
+
+          <label className={styles.BreakText}>
+            <span className={styles.labelText}>Break Time:</span>
+            <select
+              className={`${styles.inputText} ${styles.break}`}
+              value={`${staffMember.break}:00`}
+              onChange={(e) => handleBreakChange(e, staffMember.id)}
+            >
+              {breakTimeOptions}
+            </select>
+          </label>
+
 
 
             <label className={styles.staffText}>
-              Break Time:
-              <select
-                className={styles.break}
-                value={`${staffMember.break}:00`}
-                onChange={(e) => handleBreakChange(e, staffMember.id)}
-              >
-                {breakTimeOptions}
-              </select>
-            </label>
-
-
-            <label className={styles.staffText}>
+            Security:
               <input
                 type="checkbox"
                 checked={staffMember.security}
                 onChange={(e) => handleSecurityChange(e, staffMember.id)}
               />
-              Security
             </label>
 
 

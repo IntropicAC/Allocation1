@@ -43,6 +43,11 @@ function PatientInput({ observations, setObservations, setStaff }) {
 
   const addObservation = (e) => {
     e.preventDefault();
+    
+    if (newObservation.name.toLowerCase() === "gen") {
+      alert("Gen is a reserved name. If you trying to add Generals, select it within observation type.");
+      return; // Prevents adding the observation and exits the function
+    }
 
     let observationToAdd = { ...newObservation };
 
