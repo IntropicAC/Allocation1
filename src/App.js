@@ -1,15 +1,28 @@
-//App.js
 import React, { useState } from 'react';
 import MainPage from './components/mainPage';
+import LoginForm from './components/loginForm';
 
 function App() {
+  const [observations, setObservations] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-const [observations, setObservations] = useState([]);
-const [staff, setStaff] = useState([]);
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
 
   return (
     <>
-      <MainPage observations={observations} setObservations={setObservations} staff={staff} setStaff={setStaff}/>
+      {!isLoggedIn ? (
+        <LoginForm onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <MainPage 
+          observations={observations} 
+          setObservations={setObservations} 
+          staff={staff} 
+          setStaff={setStaff}
+        />
+      )}
     </>
   );
 }
