@@ -80,6 +80,8 @@ export function allocateObservations() {
     // Append 'Gen' at the end of the array
     const shuffledObservations = [...otherObservations, genObservation];
 
+
+    
     // Use the shuffledObservations array here instead of the original observations array
     shuffledObservations.forEach(observation => {
 
