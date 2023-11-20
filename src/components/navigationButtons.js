@@ -243,7 +243,7 @@ function NavigationButtons({
               }
 
               if ( 
-                maxObs < 8 &&
+                maxObs < 7 &&
                 staffMember.observations[hour - 1] !== observation.name &&
                 staffMember.observations[hour - 2] !== observation.name &&
                 staffMember.observations[hour - 3] !== observation.name
