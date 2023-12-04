@@ -32,7 +32,7 @@ function NavigationButtons({
       // Check if there's only one maxStaffObservation
       if (maxStaffObservations.length === 1) {
           // Include the maxStaffObservation with other observations
-          otherObservations.push(...maxStaffObservations);
+          otherObservations.unshift(...maxStaffObservations);
           otherObservations.forEach(obs => {
               for (let i = 0; i < obs.staff; i++) {
                   interleavedObservations.push({ name: obs.name, staff: 1 });
