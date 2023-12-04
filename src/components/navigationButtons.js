@@ -16,29 +16,90 @@ function NavigationButtons({
     useState([]);
 
 
+    
     function createInterleavedObservationsList(observations) {
-      // Find the maximum staff requirement
+
+		
+
       let maxStaffRequirement = Math.max(...observations.map(obs => obs.staff));
   
-      // Filter observations that have the maximum staff requirement
-      let highestStaffObservations = observations.filter(obs => obs.staff === maxStaffRequirement);
+      // Separate observations into those with max staff and those with less
+      let maxStaffObservations = observations.filter(obs => obs.staff === maxStaffRequirement);
+      let otherObservations = observations.filter(obs => obs.staff < maxStaffRequirement);
   
-      // Interleave only these observations
       let interleavedObservations = [];
-      for (let i = 0; i < maxStaffRequirement; i++) {
-          highestStaffObservations.forEach(observation => {
-              if (observation.staff > i) {
-                  interleavedObservations.push(observation);
+  
+      // Check if there's only one maxStaffObservation
+      if (maxStaffObservations.length === 1) {
+          // Include the maxStaffObservation with other observations
+          otherObservations.push(...maxStaffObservations);
+          otherObservations.forEach(obs => {
+              for (let i = 0; i < obs.staff; i++) {
+                  interleavedObservations.push({ name: obs.name, staff: 1 });
+              }
+          });
+      } else {
+          // Initialize counters for each max staff observation
+          let counters = maxStaffObservations.map(() => 0);
+  
+          // Interleave only observations with the maximum staff requirement
+          for (let i = 0; i < maxStaffRequirement; i++) {
+              maxStaffObservations.forEach((obs, index) => {
+                  if (counters[index] < obs.staff) {
+                      interleavedObservations.push(obs);
+                      counters[index]++;
+                  }
+              });
+          }
+  
+          // Expand and append the other observations
+          otherObservations.forEach(obs => {
+              for (let i = 0; i < obs.staff; i++) {
+                  interleavedObservations.push({ name: obs.name, staff: 1 });
               }
           });
       }
   
-      // Append remaining observations (with lower staff requirements)
-      let remainingObservations = observations.filter(obs => obs.staff < maxStaffRequirement);
-      interleavedObservations = interleavedObservations.concat(remainingObservations);
-  
       return interleavedObservations;
   }
+  
+  function assignDifferentObservationFirst(observations, hour, firstObservationEachHour) {
+      let maxStaffRequirement = Math.max(...observations.map(obs => obs.staff));
+      let highestStaffObservations = observations.filter(obs => obs.staff === maxStaffRequirement);
+  
+      let interleavedLists = [];
+      highestStaffObservations.forEach((firstObservation, index) => {
+          let tempObservations = [...highestStaffObservations];
+  
+          // Identify and remove the matching observation
+          const matchingIndex = tempObservations.findIndex(obs => obs.name === firstObservationEachHour[hour]);
+          if (matchingIndex !== -1) {
+              let [matchingObservation] = tempObservations.splice(matchingIndex, 1); // Remove the matching observation
+  
+              // Add the matching observation to the end
+              tempObservations.push(matchingObservation);
+          }
+  
+          // Interleave the rest of the observations
+          let interleavedObservations = [];
+          for (let i = 0; i < maxStaffRequirement; i++) {
+              tempObservations.forEach(observation => {
+                  if (observation.staff > i) {
+                      interleavedObservations.push(observation);
+                  }
+              });
+          }
+  
+          let remainingObservations = observations.filter(obs => obs.staff < maxStaffRequirement);
+          interleavedObservations = interleavedObservations.concat(remainingObservations);
+  
+          interleavedLists.push(interleavedObservations);
+      });
+  
+      return interleavedLists;
+  }
+  
+  
   
   function calculateMaxObservations(observations, staff) {
     const totalObs = observations.reduce((sum, observation) => sum + observation.staff, 0) * 12;
@@ -68,11 +129,14 @@ function NavigationButtons({
   }
   
   function separateAndInterleaveObservations(observations) {
+  
+    observations.sort((a, b) => b.staff - a.staff);
+  
     const genObservation = observations.find(obs => obs.name === 'Generals');
     const otherObservations = observations.filter(obs => obs.name !== 'Generals');
   
     shuffleArray(otherObservations);
-    const interleavedObservations = createInterleavedObservationsList(otherObservations);
+    let interleavedObservations = createInterleavedObservationsList(otherObservations);
   
     if (genObservation) {
       interleavedObservations.push(genObservation);
@@ -86,6 +150,7 @@ function NavigationButtons({
     let score = 0;
      let lastLoggedObservation = "";
     if (staffMember.security === false) {
+  
               score += maxObs - staffMember.numObservations;
   
   
@@ -112,7 +177,7 @@ function NavigationButtons({
                 staffMember.observations[hour - 2] !== "-" &&
                 staffMember.observations[hour - 3] !== "-"
               ) {
-                score -= 20;
+                score -= 30;
               }
               if (
                 hour >= 12 &&
@@ -121,7 +186,7 @@ function NavigationButtons({
                 staffMember.observations[hour - 3] !== "-" &&
                 staffMember.observations[hour - 4] !== "-"
               ) {
-                score -= 20;
+                score -= 50;
               }
               if (
                 hour >= 12 &&
@@ -131,7 +196,7 @@ function NavigationButtons({
                 staffMember.observations[hour - 4] !== "-" &&
                 staffMember.observations[hour - 5] !== "-"
               ) {
-                score -= 15;
+                score -= 20;
               }
   
               //----------- Free hour additions ---------
@@ -187,7 +252,7 @@ function NavigationButtons({
                   staffMember.observations[hour - 2] === observation.name;
   
                 if (hasReceivedObservationRecently) {
-                  score -= 20; // Subtract from the score to reduce the likelihood of assigning the same observation
+                  score -= 10; // Subtract from the score to reduce the likelihood of assigning the same observation
                 }
               }
   
@@ -207,7 +272,7 @@ function NavigationButtons({
                 staffMember.observations[hour - 1] !== observation.name &&
                 staffMember.observations[hour - 2] !== observation.name 
               ) {
-                score += 15;
+                score += 0;
               }
   
               if (observation.name === staffMember.observations[hour - 1]) {
@@ -268,8 +333,14 @@ function NavigationButtons({
               if (hour === 9 || hour === 13 ||hour === 14 || hour === 15 ||hour === 18)
               score =+ 20;
             }
+              if(staffMember.observations[hour - 1] !== '-'){
+                score -=50;
+              }
+              if(staffMember.observations[hour - 2] !== '-'){
+                score -=50;
+              }
   
-        console.log(`Hour: ${hour}, Observation: ${observation.name}, Staff Member: ${staffMember.name}, Score: ${score}`);
+        //console.log(`Hour: ${hour}, Observation: ${observation.name}, Staff Member: ${staffMember.name}, Score: ${score}`);
     return score;
   }
   
@@ -307,7 +378,7 @@ function NavigationButtons({
   
   
   function checkAssignmentConditions(staffMember, hour, observation, maxObs) {
-    let hadObservationLastHour = staffMember.lastObservation === observation.name;
+    let hadObservationLastHour = staffMember.observations[hour-1] === observation.name;
     let hasObservationAlready = staffMember.observations[hour] !== "-";
   
     let maxObsSecurity = staffMember.security === true && staffMember.numObservations >= 4;
@@ -322,7 +393,6 @@ function NavigationButtons({
   function assignObservation(staffMember, hour, observation) {
     staffMember.observations[hour] = observation.name;
     staffMember.numObservations++;
-    staffMember.lastObservation = observation.name;
   
     if (staffMember.security === true) {
       staffMember.lastSecurityObservationHour = hour;
@@ -337,15 +407,29 @@ function NavigationButtons({
     // console.log(`Assigned to ${staffMember.name} at hour ${hour} with score ${staffMember.score}`);
   }
   
-  function assignObservationsToStaff(staff, staffWithScores, hour, observation, maxObservations) {
-    for (let i = 0; i < staffWithScores.length; i++) {
-      let staffMember = staff.find(member => member.name === staffWithScores[i].name);
-      if (checkAssignmentConditions(staffMember, hour, observation, maxObservations)) {
-        assignObservation(staffMember, hour, observation);
-        console.log(`Assigning ${observation.name} to ${staffMember.name} at hour ${hour}`);
-        break;
+  function assignObservationsToStaff(staff, staffWithScores, hour, observation, maxObservations, firstObservationEachHour) {
+  
+  let assigned = false;
+  
+      for (let i = 0; i < staffWithScores.length; i++) {
+          let staffMember = staff.find(member => member.name === staffWithScores[i].name);
+          // Check if the staff member already has an observation for this hour
+          if (!checkAssignmentConditions(staffMember, hour, observation, maxObservations)) {
+              continue; // Skip to the next staff member if conditions are not met
+          }
+  
+          assignObservation(staffMember, hour, observation);
+  
+          if (firstObservationEachHour[hour] === undefined) {
+              firstObservationEachHour[hour] = observation.name;
+          }
+          //console.log(`Hour ${hour}: '${observation.name}' assigned to ${staffMember.name}`);
+          assigned = true;
+          break; // Break after assigning to one staff member
       }
-    }
+      if (!assigned) {
+          console.log(`Hour ${hour}: Unable to assign '${observation.name}' to any staff member`);
+      }
   }
   
   
@@ -356,19 +440,68 @@ function NavigationButtons({
   
     initializeStaffMembers(staff);
   
-   const interleavedObservations = separateAndInterleaveObservations(observations);
-  for (let hour = 9; hour <= 19; hour++) {
-     
-    interleavedObservations.forEach(observation => {
     
-      const staffWithScores = sortStaffByScore(staff, hour, maxObs, observation, maxObs);
+    const interleavedObservations = separateAndInterleaveObservations(observations);
   
-      assignObservationsToStaff(staff, staffWithScores, hour, observation, maxObs);
-    
-  });
-  }
+    let firstObservationEachHour = {};
+    for (let hour = 9; hour <= 19; hour++) {
+        
+      // Backup the current state before iteration
+     /*const backupState = staff.map(staffMember => ({
+        name: staffMember.name,
+        observations: {...staffMember.observations},
+        numObservations: staffMember.numObservations,
+        lastObservation: staffMember.lastObservation,
+        obsCount: staffMember.obsCounts,
+        lastReceived: staffMember.lastReceived
+      }));*/
+  
+      // Iteration for the hour
+      
+      interleavedObservations.forEach(observation => {
+  
+        const staffWithScores = sortStaffByScore(staff, hour, maxObs, observation, maxObs);
+        assignObservationsToStaff(staff, staffWithScores, hour, observation, maxObs, firstObservationEachHour);
+      });
+  
+      // Check for three consecutive observations
+  
+      /*let resetNeeded = staff.some(staffMember => 
+        hour >= 11 &&
+        staffMember.observations[hour] !== '-' &&
+        staffMember.observations[hour - 1] !== '-' &&
+        staffMember.observations[hour - 2] !== '-'
+      );
+  
+      // Reset state if needed and re-iterate
+     if (resetNeeded) {
+        // Reset to backup state
+        /*backupState.forEach(backup => {
+          let staffMember = staff.find(member => member.name === backup.name);
+          staffMember.observations = backup.observations;
+          staffMember.numObservations = backup.numObservations;
+          staffMember.lastObservation = backup.lastObservation;
+          staffMember.obsCounts = backup.obsCounts;
+          staffMember.lastReceived = backup.lastReceived;
+        });
+        staff.forEach(staffMember=> {
+        staffMember.observations[hour] = '-'
+        })
+  
+  
+           const interleavedLists = assignDifferentObservationFirst(observations, hour, firstObservationEachHour);
+  
+  
+        interleavedLists.forEach(observation => {
+              const staffWithScores = sortStaffByScore(staff, hour, maxObs, observation, maxObs);
+        assignObservationsToStaff(staff, staffWithScores, hour, observation, maxObs, firstObservationEachHour);
+          });
+        
+      }*/
+    }
     return staff;
   }
+  
   
 
 
