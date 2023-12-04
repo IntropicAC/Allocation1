@@ -129,14 +129,15 @@ function NavigationButtons({
   }
   
   function separateAndInterleaveObservations(observations) {
-  
-    observations.sort((a, b) => b.staff - a.staff);
-  
+
     const genObservation = observations.find(obs => obs.name === 'Generals');
     const otherObservations = observations.filter(obs => obs.name !== 'Generals');
   
     shuffleArray(otherObservations);
+  
     let interleavedObservations = createInterleavedObservationsList(otherObservations);
+  
+    interleavedObservations.sort((a, b) => b.staff - a.staff);
   
     if (genObservation) {
       interleavedObservations.push(genObservation);
@@ -144,7 +145,6 @@ function NavigationButtons({
   
     return interleavedObservations;
   }
-  
   
   function calculateStaffScore(staffMember, hour, maxObs, observation) {
     let score = 0;
