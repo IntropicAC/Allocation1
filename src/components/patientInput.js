@@ -1,7 +1,7 @@
 import React, { useState} from "react";
 import styles from "./patientInput.module.css";
 
-function PatientInput({ observations, setObservations, setStaff }) {
+function PatientInput({ observations, setObservations, setStaff, setUnassignedObs, UnassignedObs }) {
   const [otherStaff, setOtherStaff] = useState(""); 
   const [newObservation, setNewObservation] = useState({
     name: "",
@@ -82,10 +82,14 @@ function PatientInput({ observations, setObservations, setStaff }) {
     const observationToRemove = observations.find(obs => obs.id === observationIdToRemove);
 
     if (observationToRemove) {
-        // Remove the observation from the observations array
-        setObservations(prevObservations =>
-            prevObservations.filter(obs => obs.id !== observationIdToRemove)
-        );
+      setObservations(prevObservations => {
+          const updatedObservations = prevObservations.filter(obs => obs.id !== observationIdToRemove);
+          
+          // Update unassignedObs with a shallow copy using .map
+          setUnassignedObs(updatedObservations.map(obs => ({ ...obs })));
+
+          return updatedObservations;
+      });
 
         // Update the staff array
         setStaff(currentStaff =>

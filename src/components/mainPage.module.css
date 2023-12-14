@@ -89,6 +89,7 @@ body {
     box-shadow: inset -9px 9px 13px #b6c2d9,
                 inset 9px -9px 13px #b6c2d9;
     flex-direction: column;
+    
   }
 
   .content-wrapper {

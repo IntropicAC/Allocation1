@@ -2,7 +2,7 @@ import React, { useState, useRef} from "react";
 import styles from "./staffInput.module.css";
 
 
-function StaffInput({ staff, setStaff, observations }) {
+function StaffInput({ staff, setStaff, observations, setUnassignedObs, unassignedObs }) {
   const [newStaff, setNewStaff] = useState({
     name: "",
     break: 8, // default break time
@@ -96,19 +96,35 @@ const handleBreakChange = (e, staffId) => {
 
 
 
-  const assignObservation = (observationName, staffId) => {
-    const staffIndex = staff.findIndex((s) => s.id === staffId);
-    if (staffIndex !== -1) {
-        const newStaffList = [...staff];
-        const newObservationId = observationName === "Select Observation" ? "-" : observationName;
+const assignObservation = (observationName, staffId) => {
+  const staffIndex = staff.findIndex((s) => s.id === staffId);
+  if (staffIndex !== -1) {
+      // Store the previous observation for comparison
+      const previousObservationName = staff[staffIndex].observationId;
 
-        newStaffList[staffIndex] = {
-            ...newStaffList[staffIndex],
-            observationId: newObservationId, // Assign the observation name
-        };
-        setStaff(newStaffList);
-    }
+      // Assign the new observation
+      const newStaffList = [...staff];
+      const newObservationId = observationName === "Select Observation" ? "-" : observationName;
+      newStaffList[staffIndex] = {
+          ...newStaffList[staffIndex],
+          observationId: newObservationId,
+      };
+      setStaff(newStaffList);
+
+      // Update unassignedObs for the new observation
+      const updatedUnassignedObs = unassignedObs.map(obs => {
+          if (obs.name === observationName) {
+              return {...obs, staff: Math.max(0, obs.staff - 1)};
+          } else if (obs.name === previousObservationName) {
+              return {...obs, staff: obs.staff + 1};
+          }
+          return obs;
+      });
+      setUnassignedObs(updatedUnassignedObs);
+  }
 };
+
+
 
   // Generate break time options from 8:00 to 19:00
   const breakTimeOptions = [];

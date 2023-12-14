@@ -9,6 +9,7 @@ import AllocationCreation from "./allocationCreation";
 function MainPage({ observations, setObservations, staff, setStaff }) {
   const [allocatedStaff, setAllocatedStaff] = useState(null);
   const [currentPage, setCurrentPage] = useState("patient");
+  const [unassignedObs, setUnassignedObs] = useState([]);
 
   const handleNext = () => {
     if (currentPage === "patient") {
@@ -83,6 +84,8 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
               observations={observations}
               setObservations={setObservations}
               setStaff={setStaff}
+              unassignedObs={unassignedObs}
+              setUnassignedObs={setUnassignedObs}
             />
           )}
           {currentPage === "staff" && (
@@ -90,6 +93,8 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
               staff={staff}
               setStaff={setStaff}
               observations={observations}
+              unassignedObs={unassignedObs}
+              setUnassignedObs={setUnassignedObs}
             />
           )}
           {currentPage === "allocation" && (
@@ -105,6 +110,8 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
           setAllocatedStaff={setAllocatedStaff}
           staff={staff}
           observations={observations}
+          unassignedObs={unassignedObs}
+          setUnassignedObs={setUnassignedObs}
         />
       </main>
 

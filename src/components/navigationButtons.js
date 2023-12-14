@@ -11,11 +11,10 @@ function NavigationButtons({
   staff,
   observations,
   copyTable,
+  unassignedObs,
+  setUnassignedObs
+
 }) {
-  const [observationsWithStaffNeeded, setObservationsWithStaffNeeded] =
-    useState([]);
-
-
     
     function createInterleavedObservationsList(observations) {
 
@@ -550,7 +549,7 @@ staffMember.observations[hour-1] !== observation.name
 
   useEffect(() => {
     const updatedObservations = updateStaffNeeded();
-    setObservationsWithStaffNeeded(updatedObservations);
+    setUnassignedObs(updatedObservations);
   }, [staff]); // Dependency array includes staff, so this effect runs whenever staff changes
 
   const [isCopied, setIsCopied] = useState(false);
@@ -589,10 +588,10 @@ staffMember.observations[hour-1] !== observation.name
       {/* Dynamic Display for Staff Page */}
       {currentPage === "staff" && (
         <div className={styles.observationsInfo}>
-          {observationsWithStaffNeeded.map((observation, index) => (
+          {unassignedObs.map((observation, index) => (
             <div key={index} className={styles.observationDetail}>
               <span>{observation.name}:</span>
-              <span> {observation.staffNeeded}</span>
+              <span> {observation.staff}</span>
             </div>
           ))}
         </div>
