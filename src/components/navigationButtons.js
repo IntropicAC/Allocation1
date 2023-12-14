@@ -63,6 +63,7 @@ function NavigationButtons({
       return interleavedObservations;
   }
   
+  
   function assignDifferentObservationFirst(observations, hour, firstObservationEachHour) {
       let maxStaffRequirement = Math.max(...observations.map(obs => obs.staff));
       let highestStaffObservations = observations.filter(obs => obs.staff === maxStaffRequirement);
@@ -151,194 +152,193 @@ function NavigationButtons({
      let lastLoggedObservation = "";
     if (staffMember.security === false) {
   
-              score += maxObs - staffMember.numObservations;
-  
-  
-              if (
-                staffMember.observations[hour - 1] === "Generals" &&
-                staffMember.observations[hour - 2] === "-"
-              ) {
-                score += 5;
-              }
-  
-              if (staffMember.observations[hour - 1] !== "-") {
-                score -= 15;
-              }
-              if (
-                hour >= 10 &&
-                staffMember.observations[hour - 1] !== "-" &&
-                staffMember.observations[hour - 2] !== "-"
-              ) {
-                score -= 15;
-              }
-              if (
-                hour >= 11 &&
-                staffMember.observations[hour - 1] !== "-" &&
-                staffMember.observations[hour - 2] !== "-" &&
-                staffMember.observations[hour - 3] !== "-"
-              ) {
-                score -= 30;
-              }
-              if (
-                hour >= 12 &&
-                staffMember.observations[hour - 1] !== "-" &&
-                staffMember.observations[hour - 2] !== "-" &&
-                staffMember.observations[hour - 3] !== "-" &&
-                staffMember.observations[hour - 4] !== "-"
-              ) {
-                score -= 50;
-              }
-              if (
-                hour >= 12 &&
-                staffMember.observations[hour - 1] !== "-" &&
-                staffMember.observations[hour - 2] !== "-" &&
-                staffMember.observations[hour - 3] !== "-" &&
-                staffMember.observations[hour - 4] !== "-" &&
-                staffMember.observations[hour - 5] !== "-"
-              ) {
-                score -= 20;
-              }
-  
-              //----------- Free hour additions ---------
-  
-              if (staffMember.observations[hour - 1] === "-") {
-                score += 15;
-              }
-  
-              if (
-                hour >= 10 &&
-                staffMember.observations[hour - 1] === "-" &&
-                staffMember.observations[hour - 2] === "-"
-              ) {
-                score += 15;
-              }
-              if (
-                hour >= 11 &&
-                staffMember.observations[hour - 1] === "-" &&
-                staffMember.observations[hour - 2] === "-" &&
-                staffMember.observations[hour - 3] === "-"
-              ) {
-                score += 5;
-              }
-              if (
-                hour >= 12 &&
-                staffMember.observations[hour - 1] === "-" &&
-                staffMember.observations[hour - 2] === "-" &&
-                staffMember.observations[hour - 3] === "-" &&
-                staffMember.observations[hour - 4] === "-"
-              ) {
-                score += 5;
-              }
-  
-              for (let k = 1; k <= 4; k++) {
-                // Look back 4 hours
-  
-                if (hour - k < 8) {
-                  break;
-                }
-  
-                if (staffMember.observations[hour - k] === "Generals") {
-                  // If 'gen' was observed in the last 4 hours
-                  if (observation.name === "Generals") {
-                    score -= 10; // Increase the score
-                  }
-                  break;
-                }
-              }
-  
-  
-              if (observation.name !== "Generals") {
-                let hasReceivedObservationRecently =
-                  staffMember.observations[hour - 2] === observation.name;
-  
-                if (hasReceivedObservationRecently) {
-                  score -= 10; // Subtract from the score to reduce the likelihood of assigning the same observation
-                }
-              }
-  
-              if (
-                hour + 1 === staffMember.break &&
-                staffMember.observations[hour - 1] !== "-" &&
-                staffMember.observations[hour - 1] !== "Generals" &&
-                staffMember.observations[hour - 2] === "-"
-              ) {
-                if (observation.name === "Generals") {
-                  score += 20; // Increase the score significantly to prioritize this staff member for 'Gen'
-                }
-              }
-  
-  // HAVING THIS ON 0 CREATED BEST RESULT WHEN BW X2 GG X2 HH X1 GEN X1
-              if ( 
-                staffMember.observations[hour - 1] !== observation.name &&
-                staffMember.observations[hour - 2] !== observation.name 
-              ) {
-                score += 0;
-              }
-  
-              if (observation.name === staffMember.observations[hour - 1]) {
-                score -= 1000;
-              }
-  
-  
-              let noOneElseCanReceive = staff.every(member =>
-                member.observations[hour - 1] !== '-' || // did not have a free hour previously
-                member.observations[hour] !== '-' || // already has an observation this hour
-                (member.observations[hour - 1] === '-' && observation.name === member.observations[hour - 1]) // had a free hour but cannot receive the same observation
-              );
-  
-              if (noOneElseCanReceive && staffMember.observations[hour - 2] === '-' && staffMember.observations[hour - 1] === 'Generals' && observation.name !== 'Generals') {
-                score += 1000; // Increase the score by Y amount, where Y is a significant value
-  
-              }
-              if (staffMember.break === 19 && staffMember.numObservations <= maxObs && staffMember.observations[hour - 1] === '-') {
-                score += 10;
-              }
-  
-              if (
-                staffMember.observations[hour - 1] !== '-' &&
-                staffMember.observations[hour - 2] !== '-' &&
-                staffMember.observations[hour - 3] !== '-' &&
-                observation.name !== 'Generals'
-              ) {
-                score -= 15;
-              }
-  
-  
-              
-             /* if (
-                staffMember.observations[hour - 1] !== observation.name &&
-                staffMember.observations[hour - 2] !== '-'
-              ) {
-                score -= 15;
-              }
-  
-              /*if(
-        staffMember.observations[hour-1] !== observation.name
-        
-        
-        )
-            if( staffMember.observations[hour - 1] !== '-' &&
-                staffMember.observations[hour - 2] !== '-' &&){
-            
-            }*/
-  
-  
-  
-            }
-  
-            if (staffMember.security === true) {
-              if (hour === 10 || hour === 11 || hour === 13 || hour === 16) {
-                score -= 25;
-              }
-              if (hour === 9 || hour === 13 ||hour === 14 || hour === 15 ||hour === 18)
-              score =+ 20;
-            }
-              if(staffMember.observations[hour - 1] !== '-'){
-                score -=50;
-              }
-              if(staffMember.observations[hour - 2] !== '-'){
-                score -=50;
-              }
+      //score += maxObs - staffMember.numObservations ;
+
+
+      if (
+        staffMember.observations[hour - 1] === "Generals" &&
+        staffMember.observations[hour - 2] === "-"
+      ) {
+        score += 5;
+      }
+
+      if (staffMember.observations[hour - 1] !== "-") {
+        score -= 15;
+      }
+      if (
+        hour >= 10 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-"
+      ) {
+        score -= 15;
+      }
+      if (
+        hour >= 11 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-" &&
+        staffMember.observations[hour - 3] !== "-"
+      ) {
+        score -= 30;
+      }
+      if (
+        hour >= 12 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-" &&
+        staffMember.observations[hour - 3] !== "-" &&
+        staffMember.observations[hour - 4] !== "-"
+      ) {
+        score -= 50;
+      }
+      if (
+        hour >= 12 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-" &&
+        staffMember.observations[hour - 3] !== "-" &&
+        staffMember.observations[hour - 4] !== "-" &&
+        staffMember.observations[hour - 5] !== "-"
+      ) {
+        score -= 20;
+      }
+
+      //----------- Free hour additions ---------
+
+      if (staffMember.observations[hour - 1] === "-") {
+        score += 15;
+      }
+
+      if (
+        hour >= 10 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-"
+      ) {
+        score += 15;
+      }
+      if (
+        hour >= 11 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-" &&
+        staffMember.observations[hour - 3] === "-"
+      ) {
+        score += 5;
+      }
+      if (
+        hour >= 12 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-" &&
+        staffMember.observations[hour - 3] === "-" &&
+        staffMember.observations[hour - 4] === "-"
+      ) {
+        score += 5;
+      }
+
+      for (let k = 1; k <= 4; k++) {
+        // Look back 4 hours
+
+        if (hour - k < 8) {
+          break;
+        }
+
+        if (staffMember.observations[hour - k] === "Generals") {
+          // If 'gen' was observed in the last 4 hours
+          if (observation.name === "Generals") {
+            score -= 10; // Increase the score
+          }
+          break;
+        }
+      }
+      if (staffMember.break === 19) {
+  // Check if 'Generals' has not been received in any previous hours
+  let hasReceivedNoGenerals = Object.values(staffMember.observations).every(obs => obs !== 'Generals');
+
+  if (hasReceivedNoGenerals && observation.name === "Generals") {
+      // Increase the score if the current observation is 'Generals'
+      score += 10; // Adjust this value as needed
+  }
+}
+
+
+      if (observation.name !== "Generals") {
+  let hasReceivedObservationRecently = staffMember.observations[hour - 2] === observation.name;
+
+  // Generate a random number between 0 and 1
+  let randomNumber = Math.random();
+
+  // Apply the condition with a 70% probability
+  if (randomNumber < 0.9 && hasReceivedObservationRecently) {
+      score -= 10; // Subtract from the score
+  }
+}
+
+      if (
+        hour + 1 === staffMember.break &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 1] !== "Generals" &&
+        staffMember.observations[hour - 2] === "-"
+      ) {
+        if (observation.name === "Generals") {
+          score += 20; // Increase the score significantly to prioritize this staff member for 'Gen'
+        }
+      }
+
+      if (observation.name === staffMember.observations[hour - 1]) {
+        score -= 1000;
+      }
+
+
+      let noOneElseCanReceive = staff.every(member =>
+        member.observations[hour - 1] !== '-' || // did not have a free hour previously
+        member.observations[hour] !== '-' || // already has an observation this hour
+        (member.observations[hour - 1] === '-' && observation.name === member.observations[hour - 1]) // had a free hour but cannot receive the same observation
+      );
+
+      if (noOneElseCanReceive && staffMember.observations[hour - 2] === '-' && staffMember.observations[hour - 1] === 'Generals' && observation.name !== 'Generals') {
+        score += 1000; // Increase the score by Y amount, where Y is a significant value
+
+      }
+      if (staffMember.break === 19 && staffMember.numObservations <= maxObs && staffMember.observations[hour - 1] === '-') {
+        score += 10;
+      }
+
+      
+
+
+      
+     /* if (
+        staffMember.observations[hour - 1] !== observation.name &&
+        staffMember.observations[hour - 2] !== '-'
+      ) {
+        score -= 15;
+      }
+
+      /*if(
+staffMember.observations[hour-1] !== observation.name
+
+
+)
+    if( staffMember.observations[hour - 1] !== '-' &&
+        staffMember.observations[hour - 2] !== '-' &&){
+    
+    }*/
+
+
+
+    }
+
+    if (staffMember.security === true) {
+      if (hour === 10 || hour === 11 || hour === 13 || hour === 16) {
+        score -= 25;
+      }
+      if (hour === 9 || hour === 13 ||hour === 14 || hour === 15 ||hour === 18)
+      score += 30;
+
+      if(staffMember.observations[hour - 1] !== '-'){
+        score -=50;
+      }
+      if(staffMember.observations[hour - 2] !== '-'){
+        score -=40;
+      }
+    }
+    
   
         //console.log(`Hour: ${hour}, Observation: ${observation.name}, Staff Member: ${staffMember.name}, Score: ${score}`);
     return score;

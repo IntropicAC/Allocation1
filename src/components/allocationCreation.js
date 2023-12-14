@@ -8,7 +8,15 @@ function capitalizeFirstLetter(string) {
 
 function AllocationCreation({ allocatedStaff, setTableRef }) {
 
-  allocatedStaff.sort((a, b) => a.name.localeCompare(b.name));
+  allocatedStaff.sort((a, b) => {
+    if (a.security === true && b.security !== true) {
+      return -1; // Place a before b
+    } else if (b.security === true && a.security !== true) {
+      return 1; // Place b before a
+    }
+    return a.name.localeCompare(b.name); // Alphabetical order for others
+  });
+
 
   const localTableRef = useRef(null);
 

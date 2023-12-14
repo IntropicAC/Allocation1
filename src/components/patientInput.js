@@ -2,7 +2,7 @@ import React, { useState} from "react";
 import styles from "./patientInput.module.css";
 
 function PatientInput({ observations, setObservations, setStaff }) {
-  const [otherStaff, setOtherStaff] = useState(""); // Renamed from otherStaffRequired
+  const [otherStaff, setOtherStaff] = useState(""); 
   const [newObservation, setNewObservation] = useState({
     name: "",
     observationType: "1:1",
@@ -61,15 +61,20 @@ function PatientInput({ observations, setObservations, setStaff }) {
         -1
       );
       const newId = maxId + 1;
-      return [...prevObservations, { ...observationToAdd, id: newId }];
+      const updatedObservations = [...prevObservations, { ...observationToAdd, id: newId }];
+
+      // Update unassignedObs to mirror updated observations
+      setUnassignedObs(updatedObservations.map(obs => ({ ...obs })));
+
+      return updatedObservations;
     });
 
     setNewObservation({
       name: "",
       observationType: "1:1",
-      staff: 1, // Renamed from staffRequired
+      staff: 1, 
     });
-    setOtherStaff(""); // Reset the otherStaff as well, renamed from otherStaffRequired
+    setOtherStaff(""); // Reset the otherStaff as well
   };
 
   const removeObservation = (observationIdToRemove) => {
