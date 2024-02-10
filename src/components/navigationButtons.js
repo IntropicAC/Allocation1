@@ -61,7 +61,19 @@ function NavigationButtons({
   
       return interleavedObservations;
   }
-  
+
+  function calculateAvailabilityForEachObservation(observations, staff, hour) {
+    let availabilityCounts = {};
+
+    observations.forEach(observation => {
+        availabilityCounts[observation.name] = staff.filter(staffMember => 
+            checkAssignmentConditions(staffMember, hour, observation, calculateMaxObservations(observations, staff))
+        ).length;
+    });
+
+    return availabilityCounts;
+}
+
   
   function assignDifferentObservationFirst(observations, hour, firstObservationEachHour) {
       let maxStaffRequirement = Math.max(...observations.map(obs => obs.staff));
@@ -189,7 +201,7 @@ function NavigationButtons({
         score -= 50;
       }
       if (
-        hour >= 12 &&
+        hour >= 13 &&
         staffMember.observations[hour - 1] !== "-" &&
         staffMember.observations[hour - 2] !== "-" &&
         staffMember.observations[hour - 3] !== "-" &&
@@ -253,9 +265,12 @@ function NavigationButtons({
       // Increase the score if the current observation is 'Generals'
       score += 10; // Adjust this value as needed
   }
-}
-
-
+}     
+    if(observation.name === 'Generals'){
+      if(staffMember.break === hour + 1){
+        score += 15;
+      }
+    }     
       if (observation.name !== "Generals") {
   let hasReceivedObservationRecently = staffMember.observations[hour - 2] === observation.name;
 
@@ -263,7 +278,7 @@ function NavigationButtons({
   let randomNumber = Math.random();
 
   // Apply the condition with a 70% probability
-  if (randomNumber < 0.9 && hasReceivedObservationRecently) {
+  if (hasReceivedObservationRecently) {
       score -= 10; // Subtract from the score
   }
 }
@@ -443,26 +458,17 @@ staffMember.observations[hour-1] !== observation.name
     const interleavedObservations = separateAndInterleaveObservations(observations);
   
     let firstObservationEachHour = {};
+    let availabilityRecord = {};
     for (let hour = 9; hour <= 19; hour++) {
-        
-      // Backup the current state before iteration
-     /*const backupState = staff.map(staffMember => ({
-        name: staffMember.name,
-        observations: {...staffMember.observations},
-        numObservations: staffMember.numObservations,
-        lastObservation: staffMember.lastObservation,
-        obsCount: staffMember.obsCounts,
-        lastReceived: staffMember.lastReceived
-      }));*/
-  
-      // Iteration for the hour
+      availabilityRecord[hour] = calculateAvailabilityForEachObservation(observations, staff, hour);
+      
       
       interleavedObservations.forEach(observation => {
   
         const staffWithScores = sortStaffByScore(staff, hour, maxObs, observation, maxObs);
         assignObservationsToStaff(staff, staffWithScores, hour, observation, maxObs, firstObservationEachHour);
       });
-  
+      console.log(availabilityRecord);
       // Check for three consecutive observations
   
       /*let resetNeeded = staff.some(staffMember => 
@@ -504,12 +510,11 @@ staffMember.observations[hour-1] !== observation.name
   
 
 
-
-
   const handleAllocate = () => {
     let allocationCopy = allocateObservations([...observations], [...staff] );
 
     setAllocatedStaff(allocationCopy);
+    console.log(allocationCopy)
   };
 
   
@@ -538,7 +543,7 @@ staffMember.observations[hour-1] !== observation.name
   const updateStaffNeeded = () => {
     return observations.map((observation) => {
       const assignedStaffCount = staff.filter(
-        (staffMember) => staffMember.observationId === observation.id
+        (staffMember) => staffMember.observationId === observation.name
       ).length;
       return {
         ...observation,
@@ -546,11 +551,12 @@ staffMember.observations[hour-1] !== observation.name
       };
     });
   };
-
+  
   useEffect(() => {
     const updatedObservations = updateStaffNeeded();
     setUnassignedObs(updatedObservations);
-  }, [staff]); // Dependency array includes staff, so this effect runs whenever staff changes
+  }, [staff, observations]); // Dependencies include both staff and observations
+  
 
   const [isCopied, setIsCopied] = useState(false);
 
