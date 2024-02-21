@@ -38,22 +38,45 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
 
   const copyTable = async () => {
     const table = tableRef.current;
-    if (table) {
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.selectNodeContents(table);
-      selection.removeAllRanges();
-      selection.addRange(range);
-  
-      try {
-        // Use the Clipboard API to copy the selected range
-        document.execCommand('copy');
-        selection.removeAllRanges();
-      } catch (err) {
-        console.error('Failed to copy: ', err);
-      }
+  if (table) {
+    // Clone the table to avoid altering the original
+    const clonedTable = table.cloneNode(true);
+
+    // Apply border and alignment styles to the cloned table, rows, and cells
+    clonedTable.style.borderCollapse = 'collapse'; // Ensures borders are collapsed into a single border
+    const cells = clonedTable.querySelectorAll('td, th');
+    cells.forEach(cell => {
+      // Reset padding and margin, set borders, and center align the text
+      cell.style.padding = '1.25';
+      cell.style.margin = '0';
+      cell.style.border = '1px solid black'; // Set cell borders
+      cell.style.textAlign = 'center'; // Center align horizontally
+      cell.style.verticalAlign = 'middle'; // Center align vertically
+    });
+
+    // Optional: If you also want to ensure the table itself has a border
+    clonedTable.style.border = '1px solid black';
+
+    // Serialize the cloned table to an HTML string
+    const serializer = new XMLSerializer();
+    let tableHtml = serializer.serializeToString(clonedTable);
+
+    try {
+      // Use the Clipboard API to copy the modified table HTML
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([tableHtml], { type: 'text/html' })
+        })
+      ]);
+      console.log('Table copied successfully!');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
     }
-  };
+  }
+};
+  
+  
+  
 
   return (
     <body>
