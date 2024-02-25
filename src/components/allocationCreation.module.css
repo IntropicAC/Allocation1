@@ -52,3 +52,14 @@
   line-height: 1;
 }
 
+.draggable {
+  opacity: 0.5;
+  background-color: green;
+}
+
+.droppable {
+  background-color: red;
+  border: 2px dashed #666;
+  cursor: pointer;
+}
+

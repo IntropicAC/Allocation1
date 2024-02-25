@@ -5,6 +5,9 @@ import StaffInput from "./staffInput";
 import PatientInput from "./patientInput";
 import NavigationButtons from "./navigationButtons";
 import AllocationCreation from "./allocationCreation";
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+
 
 function MainPage({ observations, setObservations, staff, setStaff }) {
   const [allocatedStaff, setAllocatedStaff] = useState(null);
@@ -79,7 +82,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
   
 
   return (
-    <body>
+    <div>
       {/* Navigation */}
       <nav>
         <ul>
@@ -121,7 +124,9 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
             />
           )}
           {currentPage === "allocation" && (
-            <AllocationCreation allocatedStaff={allocatedStaff} setTableRef={setTableRef}/>
+            <DndProvider backend={HTML5Backend}>
+            <AllocationCreation allocatedStaff={allocatedStaff} setAllocatedStaff={setAllocatedStaff} setTableRef={setTableRef}/>
+            </DndProvider>
           )}
         </div>
         <NavigationButtons
@@ -142,7 +147,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
       <footer>
         <p>&copy; Alex 2023</p>
       </footer>
-    </body>
+    </div>
   );
 }
 

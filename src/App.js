@@ -12,17 +12,17 @@ function App() {
   };
 
   return (
-    <>
+    <>{/*
       {!isLoggedIn ? (
         <LoginForm onLoginSuccess={handleLoginSuccess} />
-      ) : (
+      ) : (*/}
         <MainPage 
           observations={observations} 
           setObservations={setObservations} 
           staff={staff} 
           setStaff={setStaff}
         />
-      )}
+      {/*)}*/}
     </>
   );
 }
