@@ -25,33 +25,93 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef }) 
     console.log(allocatedStaff);
   }, [allocatedStaff]);
 
+  useEffect(() => {
+    setTableRef(localTableRef.current);
+  }, []);
 
+  const DragDropCell = ({ staffMember, hour, observation, moveObservation, updateObservation }) => {
+    // Existing drag and drop setup...
+  
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState(observation);
+    
 
-  const DragDropCell = ({ staffMember, hour, observation, moveObservation }) => {
     const [{ isDragging }, dragRef] = useDrag(() => ({
       type: 'observation',
-      item: { sourceStaffName: staffMember.name, sourceHour: hour }, // Specify source info
+      item: { sourceStaffName: staffMember.name, sourceHour: hour },
       collect: monitor => ({
         isDragging: monitor.isDragging(),
       }),
     }));
   
-    const [, dropRef] = useDrop({
+    const [{ isOver }, dropRef] = useDrop({
       accept: 'observation',
       drop: (item) => {
-        // Correctly call moveObservation with source and target info
         moveObservation(item.sourceStaffName, item.sourceHour, staffMember.name, hour);
       },
+      collect: monitor => ({
+        isOver: monitor.isOver(),
+      }),
     });
   
-    // Combine refs for drag and drop in one cell
+    // Function to toggle edit mode
+    const toggleEdit = () => setIsEditing(!isEditing);
+  
+    // Function to handle change in the input field
+    const handleInputChange = (e) => {
+      setEditValue(e.target.value);
+    };
+  
+    // Function to handle when editing is finished
+    const handleInputBlur = () => {
+      updateObservation(staffMember.name, hour, editValue); // Update the observation
+      setIsEditing(false); // Exit editing mode
+    };
+  
+    // Combine refs for drag and drop in one cell, ensuring it doesn't interfere with editing
     const ref = useRef(null);
     dragRef(dropRef(ref));
   
+    // Apply styles based on dragging and hovering states
+    const cellStyle = isDragging ? styles.draggingCell : isOver ? styles.hoveringCell : '';
+  
+    // Return editable input or static text based on editing state
+    if (isEditing) {
+      return (
+        <td ref={ref} className={`${cellStyle} ${styles.editableCell}`} onDoubleClick={() => toggleEdit()}>
+          <input
+            type="text"
+            value={editValue}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            className={styles.editableInput}
+            autoFocus
+          />
+        </td>
+      );
+    }
+  
     return (
-      <td ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <td ref={ref} className={cellStyle} onDoubleClick={() => toggleEdit()}>
         {observation}
       </td>
+    );
+  };
+  
+  const updateObservation = (staffName, hour, newObservation) => {
+    setAllocatedStaff(prevStaff =>
+      prevStaff.map(staffMember => {
+        if (staffMember.name === staffName) {
+          return {
+            ...staffMember,
+            observations: {
+              ...staffMember.observations,
+              [hour]: newObservation,
+            },
+          };
+        }
+        return staffMember;
+      })
     );
   };
   
@@ -99,7 +159,7 @@ if (sourceStaff.break === sourceHour) {
         <tr>
           <th>Time</th>
           {allocatedStaff.map(staffMember => {
-            let totalObservations = Object.values(staffMember.observations).filter(val => val !== '-').length;
+            let totalObservations = Object.values(staffMember.observations).filter(val => val !== '-' && val !== '').length;
             // Capitalize the first letter of each staff member's name
             let capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
             return <th key={staffMember.name}>{capitalizedStaffName} - {totalObservations}</th>;
@@ -120,6 +180,7 @@ if (sourceStaff.break === sourceHour) {
             hour={hour}
             observation={staffMember.break === hour ? <strong>Break</strong> : observation}
             moveObservation={moveObservation}
+            updateObservation={updateObservation} // Pass this function to update observations
           />
         );
       })}

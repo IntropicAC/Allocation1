@@ -14,23 +14,24 @@ body {
 
   }
 
-  body::-webkit-scrollbar{
-    width: 1rem; /* width of the scrollbar */
-    height: 0.6rem; /* height for horizontal scrollbars if applicable */
-  }
+  /* Custom scrollbar for #content-area */
+#content-area::-webkit-scrollbar {
+  width: 12px; /* Adjust scrollbar width */
+}
+
+#content-area::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Track background */
+}
+
+#content-area::-webkit-scrollbar-thumb {
+  background: #888; /* Scrollbar handle color */
+}
+
+#content-area::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Scrollbar handle color on hover */
+}
+
   
-  body::-webkit-scrollbar-track {
-    background-color: black; /* color of the track */
-  }
-  
-  body::-webkit-scrollbar-thumb {
-    background-color: #adadad; /* color of the scroll thumb */
-    border-radius: 5rem;
-  }
-  
-  body::-webkit-scrollbar-thumb:hover {
-    background-color: #696969; /* color when hovered over the thumb */
-  }
   
   h1 {
     font-size: 2rem;
@@ -83,7 +84,7 @@ body {
     justify-content: space-between;
     align-items: top;
     height: 56rem; 
-    margin: 9rem 14rem; 
+    margin: 6rem 14rem; 
     border-radius: 0px;
     background: #d6e4ff;
     box-shadow: inset -9px 9px 13px #b6c2d9,
@@ -180,10 +181,5 @@ body {
 .sourceHighlight {
   background-color: rgba(172, 83, 101, 0.5);
  
-}
-
-
-.draggable {
-  cursor: grab;
 }
 

@@ -82,7 +82,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
   
 
   return (
-    <div>
+    <div className="hero">
       {/* Navigation */}
       <nav>
         <ul>
