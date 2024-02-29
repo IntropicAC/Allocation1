@@ -576,10 +576,11 @@ function NavigationButtons({
       let NurseMax = staffMember.nurse === true && staffMember.numObservations >= 4;
       let isOnBreak = staffMember.break === hour;
       let isSecurityHour = (hour === 12 || hour === 17 || hour === 19) && staffMember.security === true ;
-  let isNurse = (hour === 8 || hour === 19) && staffMember.nurse === true && maxObs <= 9;
+      let isNurse = (hour === 8 || hour === 19) && staffMember.nurse === true && maxObs <= 9;
+      let canNotRecieve = staffMember.observations[hour] === "X";
     //let reduceSecurityObs = staffMember.security === true && maxObs <= 8;
   
-      return !hasObservationAlready && !hadObservationLastHour && !isOnBreak && !isSecurityHour && !maxObsSecurity && !NurseMax && !isNurse}
+      return !hasObservationAlready && !hadObservationLastHour && !isOnBreak && !isSecurityHour && !maxObsSecurity && !NurseMax && !isNurse && !canNotRecieve}
     
   function assignObservation(staffMember, hour, observation) {
       staffMember.observations[hour] = observation.name;
@@ -703,7 +704,6 @@ function NavigationButtons({
     let allocationCopy = allocateObservations([...observations], [...staff] );
 
     setAllocatedStaff(allocationCopy);
-    console.log(allocationCopy)
   };
 
   
@@ -722,7 +722,6 @@ function NavigationButtons({
     if (currentPage === "staff") {
       const updatedStaff = addObsAndReset(staff); // Get the updated staff array
       setAllocatedStaff(updatedStaff);
-      console.log(updatedStaff)
       setTimeout(() => {
         onNext();
       }, 100);

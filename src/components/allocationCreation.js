@@ -7,7 +7,7 @@ function capitalizeFirstLetter(string) {
 }
 
 
-function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef }) {
+function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef, observations }) {
 
   allocatedStaff.sort((a, b) => {
     if (a.security === true && b.security !== true) {
@@ -20,10 +20,6 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef }) 
 
 
   const localTableRef = useRef(null);
-
-  useEffect(() => {
-    console.log(allocatedStaff);
-  }, [allocatedStaff]);
 
   useEffect(() => {
     setTableRef(localTableRef.current);
@@ -45,9 +41,16 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef }) 
     }));
   
     const [{ isOver }, dropRef] = useDrop({
-      accept: 'observation',
-      drop: (item) => {
-        moveObservation(item.sourceStaffName, item.sourceHour, staffMember.name, hour);
+      accept: ['observation', 'externalObservation', 'specialObservation'], // Accept both types
+      drop: (item, monitor) => {
+        // Check the type of drag item and handle accordingly
+        if (monitor.getItemType() === 'externalObservation' || monitor.getItemType() === 'specialObservation') {
+          // For external observation, update the observation directly
+          updateObservation(staffMember.name, hour, item.observationName);
+        } else if (monitor.getItemType() === 'observation') {
+          // For internal moves, use the existing logic
+          moveObservation(item.sourceStaffName, item.sourceHour, staffMember.name, hour);
+        }
       },
       collect: monitor => ({
         isOver: monitor.isOver(),
@@ -80,6 +83,7 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef }) 
       return (
         <td ref={ref} className={`${cellStyle} ${styles.editableCell}`} onDoubleClick={() => toggleEdit()}>
           <input
+            maxLength={3}
             type="text"
             value={editValue}
             onChange={handleInputChange}
@@ -97,24 +101,6 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef }) 
       </td>
     );
   };
-  
-  const updateObservation = (staffName, hour, newObservation) => {
-    setAllocatedStaff(prevStaff =>
-      prevStaff.map(staffMember => {
-        if (staffMember.name === staffName) {
-          return {
-            ...staffMember,
-            observations: {
-              ...staffMember.observations,
-              [hour]: newObservation,
-            },
-          };
-        }
-        return staffMember;
-      })
-    );
-  };
-  
 
   const moveObservation = (sourceStaffName, sourceHour, targetStaffName, targetHour) => {
     let updatedAllocatedStaff = [...allocatedStaff];
@@ -143,7 +129,7 @@ if(sourceStaff.break === sourceHour && sourceStaff.name !== targetStaff.name){
 }
 if (sourceStaff.break === sourceHour) {
     sourceStaff.break = targetHour;
-    console.log(`Updated ${sourceStaff.name} to ${sourceStaff.break}`);
+  
 }
 
 
@@ -151,8 +137,70 @@ if (sourceStaff.break === sourceHour) {
     setAllocatedStaff(updatedAllocatedStaff);
 };
 
+const updateObservation = (staffName, hour, newObservation) => {
+  setAllocatedStaff(prevStaff =>
+    prevStaff.map(staffMember => {
+      if (staffMember.name === staffName) {
+        return {
+          ...staffMember,
+          observations: {
+            ...staffMember.observations,
+            [hour]: newObservation, // Update with the new observation
+          },
+        };
+      }
+      return staffMember;
+    })
+  );
+};
+
+const DraggableObservationCell = ({ observation }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'externalObservation', // A distinct type for external drags
+    item: { observationName: observation.name },
+    collect: monitor => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  return (
+    <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1 }}>
+      {observation.name}
+    </div>
+  );
+};
+
+const DraggableXCell = ({ value }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'specialObservation', // A distinct type for special drags like "X"
+    item: { observationName: value }, // Pass "X" or any special value
+    collect: monitor => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  return (
+    <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1, cursor: 'grab' }}>
+      {value}
+    </div>
+  );
+};
+
+
+
   return (
     <>
+    <div className={styles.draggableObsContainer}>
+    <div className={styles.obsCells}>
+        <DraggableXCell value="X" />
+      </div>
+      {observations.map((observation, index) => (
+        <div key={index} className={styles.obsCells}> {/* Use a div or span here for individual cells */}
+          <DraggableObservationCell observation={observation} />
+        </div>
+      ))}
+    </div>
+
     <div className={styles.tableContainer}>
     <table ref={localTableRef} className={styles.allocationTable}>
       <thead>

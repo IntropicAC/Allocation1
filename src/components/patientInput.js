@@ -166,7 +166,7 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
       <form className={styles.patientContainer}>
         {observations.map((observation, index) => (
           <section key={index} className={styles.patientMember}>
-            <span>{`${index + 1}:`}</span>
+            <span className={styles.indexNumber}>{`${index + 1}`}</span>
             <h2>
               {observation.name === "Generals"
                 ? "Generals"
@@ -175,7 +175,7 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
 
             <label className={styles.patientText}>
               Staff Required:
-              <span>{observation.staff}</span>
+              <span className={styles.obAmount}>{observation.staff}</span>
             </label>
 
             <button

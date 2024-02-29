@@ -20,8 +20,7 @@
     border-radius: 0.8rem;
     overflow-y: auto;
     max-height: 50rem;
-    scrollbar-width: thin;
-    scrollbar-color: #888 #f5f5f5;
+
   }
   
   .form {
@@ -96,33 +95,6 @@
     flex: 0.2;
   }
   
-  .patient span {
-    flex: 0.02;
-    font-weight: bold;
-    font-size: 1.5rem;
-    padding-left: 1rem;
-  }
-  
-  /* Custom Scrollbar styles */
-  .container::-webkit-scrollbar {
-    width: 0.6rem;
-    height: 0.6rem;
-  }
-  
-  .container::-webkit-scrollbar-track {
-    background-color: #f5f5f5;
-    border-radius: 0.8rem;
-  }
-  
-  .container::-webkit-scrollbar-thumb {
-    background-color: #888;
-    border-radius: 0.8rem;
-  }
-  
-  .container::-webkit-scrollbar-thumb:hover {
-    background-color: #555;
-  }
-  
   .xButton {
     display: inline-block;
     background-color: #f44336;
@@ -175,23 +147,41 @@
     flex: 0.2;
     font-weight: bold;
     color: #333;
+  
   }
   
   .patientMember label:nth-of-type(1) {
     display: flex;
     flex: 0.2;
+    justify-content: center;
+    align-items: center;
+
   }
   
   .patientMember label:nth-of-type(2) {
     flex: 0.2;
     display: flex;
+    justify-content: center;
     align-items: center;
   }
   
-  .patientMember span {
-    flex: 0.02;
+  .obAmount {
+    display: flex;
     font-weight: bold;
     font-size: 1.5rem;
-    padding-left: 1rem;
+    border-radius: 200rem;
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    justify-content: center;
+    align-items: center;
+  }
+  .indexNumber {
+    display: flex;
+    font-weight: bold;
+    font-size: 1.5rem;
+    border: black solid 0.1rem;
+    border-radius: 200rem;
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    justify-content: center;
+    align-items: center;
   }
   

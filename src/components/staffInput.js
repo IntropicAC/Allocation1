@@ -179,7 +179,7 @@ const assignObservation = (observationName, staffId) => {
                  .map((staffMember, index) => (
           <section key={staffMember.id} className={styles.staffMember}>
             <h2>
-        <span className={styles.indexNumber}>{index + 1}:</span>
+        <span className={styles.indexNumber}>{index + 1}</span>
         {/* Check if the name is in the rainbowNames array */}
         <span className={rainbowNames.includes(staffMember.name) ? `${styles.staffName} rainbow-text` : styles.staffName}>
           {capitalizeWords(staffMember.name)}
@@ -188,7 +188,7 @@ const assignObservation = (observationName, staffId) => {
 
 
           <label className={styles.BreakText}>
-            <span className={styles.labelText}>Break Time:</span>
+            <span className={styles.labelText}>Break</span>
             <select
               className={`${styles.inputText} ${styles.break}`}
               value={`${staffMember.break}:00`}
@@ -201,7 +201,7 @@ const assignObservation = (observationName, staffId) => {
 
 
             <label className={styles.staffText}>
-            Security:
+            Security
               <input
                 type="checkbox"
                 checked={staffMember.security}
@@ -212,7 +212,7 @@ const assignObservation = (observationName, staffId) => {
 
             {/* Dropdown to assign an observation to a staff member */}
             <label className={styles.staffText}>
-              Initial Observation:
+              
               <select
                 value={staffMember.observationId || ""}
                 onChange={(e) =>
@@ -223,7 +223,7 @@ const assignObservation = (observationName, staffId) => {
                 }
                 className={styles.select}
               >
-                <option value="">Select Observation</option>
+                <option value="">Initial Observation</option>
                 {observations.map((observation) => (
                   <option key={observation.id} value={observation.name}>
                     {observation.name}

@@ -50,12 +50,15 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
     const cells = clonedTable.querySelectorAll('td, th');
     cells.forEach(cell => {
       // Reset padding and margin, set borders, and center align the text
-      cell.style.padding = '1.25';
+      cell.style.padding = '0';
       cell.style.margin = '0';
       cell.style.border = '1px solid black'; // Set cell borders
       cell.style.textAlign = 'center'; // Center align horizontally
       cell.style.verticalAlign = 'middle'; // Center align vertically
+      cell.style.whiteSpace = 'nowrap'; // Prevent text wrapping
+      cell.style.minWidth = '100px'
     });
+    
 
     // Optional: If you also want to ensure the table itself has a border
     clonedTable.style.border = '1px solid black';
@@ -125,7 +128,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
           )}
           {currentPage === "allocation" && (
             <DndProvider backend={HTML5Backend}>
-            <AllocationCreation allocatedStaff={allocatedStaff} setAllocatedStaff={setAllocatedStaff} setTableRef={setTableRef}/>
+            <AllocationCreation allocatedStaff={allocatedStaff} setAllocatedStaff={setAllocatedStaff} setTableRef={setTableRef} observations={observations}/>
             </DndProvider>
           )}
         </div>
