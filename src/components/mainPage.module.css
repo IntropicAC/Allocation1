@@ -14,24 +14,6 @@ body {
 
   }
 
-  /* Custom scrollbar for #content-area */
-#content-area::-webkit-scrollbar {
-  width: 12px; /* Adjust scrollbar width */
-}
-
-#content-area::-webkit-scrollbar-track {
-  background: #f1f1f1; /* Track background */
-}
-
-#content-area::-webkit-scrollbar-thumb {
-  background: #888; /* Scrollbar handle color */
-}
-
-#content-area::-webkit-scrollbar-thumb:hover {
-  background: #555; /* Scrollbar handle color on hover */
-}
-
-  
   
   h1 {
     font-size: 2rem;

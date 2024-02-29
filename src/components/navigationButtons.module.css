@@ -12,8 +12,8 @@
     
   }
   
-  .backButton, .nextButton {
-    padding: 1rem 2rem;
+  .backButton, .nextButton{
+    padding: 1rem 1.7rem;
     border: 0.1rem solid black;
     border-radius: 0.8rem;
     transition: all 0.2s ease;
@@ -50,7 +50,7 @@
 
   .animatedCopyButton {
     /* Add base styles for your button */
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
     border: none;
     background-color: black;
     color: white;
@@ -61,6 +61,7 @@
     transition: background-color 0.3s;
     width: 11rem;
     height: 4rem;
+    font-size: 1.4rem;
   }
   
   .buttonText {
@@ -82,43 +83,35 @@
   .animatedCopyButton:hover {
     background-color: grey; /* Darker shade for hover effect */
   }
-  
-  /*refreshButton*/
-.refresh-button {
-  padding: 10px 20px;
-  border: none;
-  background-color: #4caf50;
-  color: white;
-  cursor: pointer;
-  border-radius: 5px;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.icon {
-  display: inline-block;
-  transition: transform 0.2s; /* Smooth transition for the spin */
-}
-
-.spinning .icon {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 .observationDetail{
   margin: 0.5rem;
   display: inline-block;
   font-size: 1.5rem;
   font-weight: bold;
+}
+
+.navigationContainer {
+  display: flex;
+  justify-content: space-between; /* Spreads items to the left and right */
+  align-items: center;
+  width: 100%; /* Ensures the container takes full width */
+}
+
+.rightButtonsContainer {
+  display: flex;
+  gap: 1rem; /* Adjusts the space between your right-aligned buttons */
+}
+
+.fa-arrows-rotate.fa-spin {
+  animation: fa-spin-custom 0.5s infinite linear;
+}
+
+@keyframes fa-spin-custom {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
