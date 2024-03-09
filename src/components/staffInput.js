@@ -104,7 +104,7 @@ const assignObservation = (observationName, staffId) => {
 
     newStaffList[staffIndex] = {
       ...newStaffList[staffIndex],
-      observationId: observationName === "Select Observation" ? "-" : observationName,
+      observationId: observationName === "Initial Observation" ? "-" : observationName,
     };
     setStaff(newStaffList);
 
@@ -178,7 +178,7 @@ const assignObservation = (observationName, staffId) => {
         {[...staff].sort((a, b) => a.name.localeCompare(b.name))
                  .map((staffMember, index) => (
           <section key={staffMember.id} className={styles.staffMember}>
-            <h2>
+            <h2 className={styles.indexAndName}>
         <span className={styles.indexNumber}>{index + 1}</span>
         {/* Check if the name is in the rainbowNames array */}
         <span className={rainbowNames.includes(staffMember.name) ? `${styles.staffName} rainbow-text` : styles.staffName}>
@@ -200,7 +200,7 @@ const assignObservation = (observationName, staffId) => {
 
 
 
-            <label className={styles.staffText}>
+            <label className={styles.security}>
             Security
               <input
                 type="checkbox"
@@ -211,7 +211,7 @@ const assignObservation = (observationName, staffId) => {
 
 
             {/* Dropdown to assign an observation to a staff member */}
-            <label className={styles.staffText}>
+            <label className={styles.intialObservation}>
               
               <select
                 value={staffMember.observationId || ""}
@@ -223,7 +223,7 @@ const assignObservation = (observationName, staffId) => {
                 }
                 className={styles.select}
               >
-                <option value="">Initial Observation</option>
+                <option value="-">Initial Observation</option>
                 {observations.map((observation) => (
                   <option key={observation.id} value={observation.name}>
                     {observation.name}

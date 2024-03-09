@@ -1,15 +1,16 @@
 import React, {useRef, useEffect, useState} from 'react';
 import styles from './allocationCreation.module.css';
 import { useDrag, useDrop } from 'react-dnd';
+import AmPmToggle from './helperComponents/AmPmToggle';
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 
-function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef, observations }) {
+function AllocationCreation({ staff, setStaff, setTableRef, observations }) {
 
-  allocatedStaff.sort((a, b) => {
+  staff.sort((a, b) => {
     if (a.security === true && b.security !== true) {
       return -1; // Place a before b
     } else if (b.security === true && a.security !== true) {
@@ -18,7 +19,10 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef, ob
     return a.name.localeCompare(b.name); // Alphabetical order for others
   });
 
-
+  useEffect(()=> {
+    console.log(staff)
+  }, [staff])
+  
   const localTableRef = useRef(null);
 
   useEffect(() => {
@@ -58,7 +62,14 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef, ob
     });
   
     // Function to toggle edit mode
-    const toggleEdit = () => setIsEditing(!isEditing);
+    const toggleEdit = () => {
+      // Check if the current hour matches the staff member's break hour
+      if (hour === staffMember.break) {
+        // If it's the staff member's break hour, do not toggle the edit mode
+        return;
+      }
+      setIsEditing(!isEditing);
+    };
   
     // Function to handle change in the input field
     const handleInputChange = (e) => {
@@ -81,17 +92,24 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef, ob
     // Return editable input or static text based on editing state
     if (isEditing) {
       return (
-        <td ref={ref} className={`${cellStyle} ${styles.editableCell}`} onDoubleClick={() => toggleEdit()}>
-          <input
-            maxLength={3}
-            type="text"
-            value={editValue}
-            onChange={handleInputChange}
-            onBlur={handleInputBlur}
-            className={styles.editableInput}
-            autoFocus
-          />
-        </td>
+        <td
+      ref={ref}
+      className={`${cellStyle} ${styles.editableCell}`}
+      onDoubleClick={() => toggleEdit()}
+      style={{padding: 0, maxWidth: '3rem'}}
+      
+    >
+      <input
+        maxLength={3}
+        type="text"
+        value={editValue}
+        onChange={handleInputChange}
+        onBlur={handleInputBlur}
+        className={styles.editableInput}
+        autoFocus
+        style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}
+      />
+    </td>
       );
     }
   
@@ -103,11 +121,11 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef, ob
   };
 
   const moveObservation = (sourceStaffName, sourceHour, targetStaffName, targetHour) => {
-    let updatedAllocatedStaff = [...allocatedStaff];
+    let updatedStaff = [...staff];
 
     // Find indexes
-    let sourceStaffIndex = updatedAllocatedStaff.findIndex(staff => staff.name === sourceStaffName);
-    let targetStaffIndex = updatedAllocatedStaff.findIndex(staff => staff.name === targetStaffName);
+    let sourceStaffIndex = updatedStaff.findIndex(staff => staff.name === sourceStaffName);
+    let targetStaffIndex = updatedStaff.findIndex(staff => staff.name === targetStaffName);
 
     if (sourceStaffIndex === -1 || targetStaffIndex === -1) {
         console.error('Source or target staff not found');
@@ -115,8 +133,8 @@ function AllocationCreation({ setAllocatedStaff, allocatedStaff, setTableRef, ob
     }
 
     // Access the staff objects directly
-    let sourceStaff = updatedAllocatedStaff[sourceStaffIndex];
-    let targetStaff = updatedAllocatedStaff[targetStaffIndex];
+    let sourceStaff = updatedStaff[sourceStaffIndex];
+    let targetStaff = updatedStaff[targetStaffIndex];
 
     // Swap observations
     let tempObservation = sourceStaff.observations[sourceHour] || '-';
@@ -134,11 +152,11 @@ if (sourceStaff.break === sourceHour) {
 
 
 
-    setAllocatedStaff(updatedAllocatedStaff);
+    setStaff(updatedStaff);
 };
 
 const updateObservation = (staffName, hour, newObservation) => {
-  setAllocatedStaff(prevStaff =>
+  setStaff(prevStaff =>
     prevStaff.map(staffMember => {
       if (staffMember.name === staffName) {
         return {
@@ -164,7 +182,7 @@ const DraggableObservationCell = ({ observation }) => {
   }));
 
   return (
-    <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1 }}>
+    <div ref={drag} className={styles.obsCells} style={{ cursor: 'grab', borderRadius: 10, opacity: isDragging ? 0.3 : 1 }}>
       {observation.name}
     </div>
   );
@@ -172,15 +190,15 @@ const DraggableObservationCell = ({ observation }) => {
 
 const DraggableXCell = ({ value }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'specialObservation', // A distinct type for special drags like "X"
-    item: { observationName: value }, // Pass "X" or any special value
+    type: 'specialObservation',
+    item: { observationName: value },
     collect: monitor => ({
       isDragging: !!monitor.isDragging(),
     }),
   }));
 
   return (
-    <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1, cursor: 'grab' }}>
+    <div ref={drag} className={styles.obsCells} style={{ cursor: 'grab', borderRadius: 10, opacity: isDragging ? 0.3 : 1 }}>
       {value}
     </div>
   );
@@ -190,24 +208,26 @@ const DraggableXCell = ({ value }) => {
 
   return (
     <>
-    <div className={styles.draggableObsContainer}>
-    <div className={styles.obsCells}>
+      <div className={styles.draggableObsContainer}>
+      <div>
         <DraggableXCell value="X" />
       </div>
       {observations.map((observation, index) => (
-        <div key={index} className={styles.obsCells}> {/* Use a div or span here for individual cells */}
+        <div key={index}>
           <DraggableObservationCell observation={observation} />
         </div>
       ))}
     </div>
+  
+
 
     <div className={styles.tableContainer}>
     <table ref={localTableRef} className={styles.allocationTable}>
       <thead>
         <tr>
           <th>Time</th>
-          {allocatedStaff.map(staffMember => {
-            let totalObservations = Object.values(staffMember.observations).filter(val => val !== '-' && val !== '').length;
+          {staff.map(staffMember => {
+            let totalObservations = Object.values(staffMember.observations).filter(val => val !== '-' && val !== '' && val !== 'X').length;
             // Capitalize the first letter of each staff member's name
             let capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
             return <th key={staffMember.name}>{capitalizedStaffName} - {totalObservations}</th>;
@@ -215,24 +235,24 @@ const DraggableXCell = ({ value }) => {
         </tr>
       </thead>
       <tbody>
-  {Array.from({ length: 12 }, (_, i) => 8 + i).map(hour => (
-    <tr key={hour}>
-      <td>{hour}</td>
-      {allocatedStaff.map(staffMember => {
-        let observation = staffMember.observations[hour] === 'Generals' ? 'Gen' : staffMember.observations[hour] || '-';
-        // Use DragDropCell for each observation
-        return (
-          <DragDropCell
-            key={staffMember.name + hour}
-            staffMember={staffMember}
-            hour={hour}
-            observation={staffMember.break === hour ? <strong>Break</strong> : observation}
-            moveObservation={moveObservation}
-            updateObservation={updateObservation} // Pass this function to update observations
-          />
-        );
-      })}
-    </tr>
+      {Array.from({ length: 12 }, (_, i) => 8 + i).map(hour => (
+  <tr key={hour}>
+    <td className={styles.hourCell}>{hour}</td>
+    {staff.map(staffMember => {
+      let observation = staffMember.observations[hour] === 'Generals' ? 'Gen' : staffMember.observations[hour] || '-';
+      // Use DragDropCell for each observation
+      return (
+        <DragDropCell
+          key={staffMember.name + hour}
+          staffMember={staffMember}
+          hour={hour}
+          observation={staffMember.break === hour ? <strong>Break</strong> : observation}
+          moveObservation={moveObservation}
+          updateObservation={updateObservation} // Pass this function to update observations
+        />
+      );
+    })}
+  </tr>
   ))}
     </tbody>
     </table>

@@ -7,13 +7,12 @@ function NavigationButtons({
   onBack,
   onNext,
   currentPage,
-  setAllocatedStaff,
   staff,
   observations,
   copyTable,
   unassignedObs,
-  setUnassignedObs
-
+  setUnassignedObs,
+  setStaff
 }) {
     
 
@@ -521,9 +520,7 @@ function NavigationButtons({
         }
       }
     }
-    
-          console.log(`Hour: ${hour}, Observation: ${observation.name}, Staff Member: ${staffMember.name}, Score: ${score}`);
-   
+    console.log(`Hour: ${hour}, Observation: ${observation.name}, Staff Member: ${staffMember.name}, Score: ${score}`);
       return score;
     }
     
@@ -595,8 +592,6 @@ function NavigationButtons({
       } else {
         staffMember.obsCounts[observation.name]++;
       }
-    
-      console.log(`Assigned to ${staffMember.name} at hour ${hour} with score ${staffMember.score}`);
     }
     
   function assignObservationsToStaff(staff, staffWithScores, hour, observation, maxObservations, firstObservationEachHour) {
@@ -703,7 +698,7 @@ function NavigationButtons({
   const handleAllocate = () => {
     let allocationCopy = allocateObservations([...observations], [...staff] );
 
-    setAllocatedStaff(allocationCopy);
+    setStaff(allocationCopy);
   };
 
   
@@ -721,7 +716,7 @@ function NavigationButtons({
 
     if (currentPage === "staff") {
       const updatedStaff = addObsAndReset(staff); // Get the updated staff array
-      setAllocatedStaff(updatedStaff);
+      setStaff(updatedStaff);
       setTimeout(() => {
         onNext();
       }, 100);
@@ -729,7 +724,7 @@ function NavigationButtons({
       onNext();
     }
   };
-
+  
   const updateStaffNeeded = () => {
     return observations.map((observation) => {
       const assignedStaffCount = staff.filter(
@@ -760,8 +755,8 @@ function NavigationButtons({
     handleAllocate();
   };
 
-  function addObsAndReset(staff, resetObservations = false) {
-    return staff.map(staffMember => {
+  function addObsAndReset(Staff, resetObservations = false) {
+    return Staff.map(staffMember => {
       // If we're not resetting observations and the staff member already has observations, return them unmodified
       if (!resetObservations && staffMember.observations) {
         return staffMember;
@@ -786,7 +781,7 @@ function NavigationButtons({
   const handleReset = () => {
   setIsSpinning(true); // Start spinning
   const resetStaff = addObsAndReset(staff, true); // Your reset logic
-  setAllocatedStaff(resetStaff); // Assuming this updates your component's state
+  setStaff(resetStaff); // Assuming this updates your component's state
   setTimeout(() => setIsSpinning(false), 1000);
 };
 

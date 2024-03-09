@@ -1,0 +1,66 @@
+/* AmPmToggle.css */
+.toggle-container {
+    display: flex;
+    align-items: center;
+  }
+  
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 3.6rem; /* Reduced from 4.8rem for a smaller toggle */
+    height: 2rem; /* Adjusted height for a smaller toggle */
+  }
+  
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 2rem; /* Adjusted to fit the new height */
+  }
+  
+  .switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 1.6rem; /* Adjusted for new size */
+    width: 1.6rem; /* Adjusted for new size */
+    left: 0.2rem; /* Adjusted for new size */
+    bottom: 0.2rem; /* Adjusted for new size */
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .switch-slider {
+    background-color: #2196F3;
+  }
+  
+  input:checked + .switch-slider:before {
+    transform: translateX(1.8rem); /* Adjusted for the new smaller width */
+  }
+  
+  .toggle-label {
+    font-size: 1rem; /* Slightly reduced font size */
+    color: #666;
+    font-weight: bold;
+    user-select: none;
+  }
+  
+  .left {
+    margin-right: 0.4rem; /* Slightly reduced spacing */
+  }
+  
+  .right {
+    margin-left: 0.4rem; /* Slightly reduced spacing */
+  }
+  

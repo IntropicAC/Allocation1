@@ -73,16 +73,19 @@
   height: 100%;
 }
 
-.allocationTable th, .allocationTable td {
-  max-width: 15rem;
+.allocationTable th, .hourCell, table td {
+  max-width: 13rem;
   border: 0.1rem solid black;
   text-align: center;
   white-space: nowrap;
   padding: 0.6rem;
+  min-width: 3rem
 }
-.allocationTable td:hover {
-  background-color: #e2e2e2;
+
+table td:not(.hourCell):hover {
+  background-color: rgb(214, 214, 214);
 }
+
 /* Add these styles to your stylesheet */
 .draggingCell {
   background-color: rgb(172, 172, 172); /* Green background for the cell being dragged */
@@ -113,26 +116,22 @@
 }
 
 /* In your CSS module or stylesheet */
-.editableInput {
-  width: 100%; /* Ensures input occupies full cell width */
+.editableInput { /* Ensures input occupies full cell width */
   padding: 0; /* Matches cell padding or set explicitly */
   margin: 0; /* Removes any default margin */
-  border: none; /* Removes border or matches cell border */
   font-size: inherit; /* Inherits font size from parent */
   font-family: inherit; /* Inherits font family from parent */
   box-sizing: border-box; /* Includes padding and border in height calculation */
   background-color: transparent; /* Optional: Makes input background match cell */
-}
-
-/* Ensures input is visually centered if vertical alignment is an issue */
-.editableInput {
-  display: block;
-  height: 100%; /* Match cell height */
   text-align: center; /* Keeps text centered */
+  border: none;
 }
 
 .editableInput:focus {
   outline: none; /* Remove focus outline to maintain cell appearance */
 }
 
+.AmPmToggle {
+  margin-right: 5rem;
+}
 

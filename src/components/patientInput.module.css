@@ -97,21 +97,17 @@
   
   .xButton {
     display: inline-block;
-    background-color: #f44336;
-    color: #ffffff;
+    background-color: #f44336; /* red color */
+    color: #ffffff; /* white text color */
     font-weight: bold;
-    width: 1.5rem;
-    height: 1.5rem;
-    line-height: 1.6rem;
-    text-align: center;
-    border-radius: 0.4rem;
-    border: none;
+    border-radius: 0.5rem; /* makes it slightly rounded */
+    border: solid black 0.1rem;
+    padding: 0.3rem 0.5rem;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.3s;
-    font-size: 1.5rem;
-    box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.1);
-    flex: 0.04;
+    transition: background-color 0.3s, transform 0.3s; /* smooth transition for hover effects */
+    font-size: 1.5rem; /* size of the "X" character */
     margin-right: 1rem;
+    
   }
   
   .xButton:hover {
@@ -180,7 +176,7 @@
     font-size: 1.5rem;
     border: black solid 0.1rem;
     border-radius: 200rem;
-    padding: 0.5rem 1rem 0.5rem 1rem;
+    padding: 0.6rem 1rem 0.5rem 1rem;
     justify-content: center;
     align-items: center;
   }

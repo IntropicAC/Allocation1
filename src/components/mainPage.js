@@ -1,5 +1,5 @@
 // MainPage.jsx
-import React, { useState, useRef} from "react";
+import React, { useState, useRef, useEffect} from "react";
 import styles from "./mainPage.module.css";
 import StaffInput from "./staffInput";
 import PatientInput from "./patientInput";
@@ -81,7 +81,9 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
   }
 };
   
-  
+useEffect(()=>{
+  console.log(allocatedStaff)
+})
   
 
   return (
@@ -124,11 +126,17 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
               observations={observations}
               unassignedObs={unassignedObs}
               setUnassignedObs={setUnassignedObs}
+              setAllocatedStaff={setAllocatedStaff}
             />
           )}
           {currentPage === "allocation" && (
             <DndProvider backend={HTML5Backend}>
-            <AllocationCreation allocatedStaff={allocatedStaff} setAllocatedStaff={setAllocatedStaff} setTableRef={setTableRef} observations={observations}/>
+            <AllocationCreation allocatedStaff={allocatedStaff} 
+            setAllocatedStaff={setAllocatedStaff} 
+            setTableRef={setTableRef} 
+            observations={observations} 
+            staff={staff}
+            setStaff={setStaff}/>
             </DndProvider>
           )}
         </div>
@@ -140,6 +148,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
           allocatedStaff={allocatedStaff}
           setAllocatedStaff={setAllocatedStaff}
           staff={staff}
+          setStaff={setStaff}
           observations={observations}
           unassignedObs={unassignedObs}
           setUnassignedObs={setUnassignedObs}
