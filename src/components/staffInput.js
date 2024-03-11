@@ -143,7 +143,7 @@ const assignObservation = (observationName, staffId) => {
           <h1 className={styles.h1}>Staff members</h1>
         </header>
         <label className={styles.staffText}>
-          Name:
+          Name
           <input
             maxLength={8}
             type="text"
@@ -157,7 +157,7 @@ const assignObservation = (observationName, staffId) => {
           />
         </label>
         <label className={styles.staffText}>
-          Break Time:
+          Break Time
           <select
             className={styles.select}
             name="break"

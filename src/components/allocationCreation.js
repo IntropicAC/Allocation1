@@ -88,7 +88,7 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations }) {
   
     // Apply styles based on dragging and hovering states
     const cellStyle = isDragging ? styles.draggingCell : isOver ? styles.hoveringCell : '';
-  
+    
     // Return editable input or static text based on editing state
     if (isEditing) {
       return (

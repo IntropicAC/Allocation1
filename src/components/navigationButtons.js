@@ -724,6 +724,11 @@ function NavigationButtons({
       onNext();
     }
   };
+
+  const handlePrint = () => {
+    window.print();
+  };
+  
   
   const updateStaffNeeded = () => {
     return observations.map((observation) => {
@@ -797,6 +802,7 @@ return (
     {/* Right-aligned buttons for the "allocation" page */}
     {currentPage === "allocation" && (
       <div className={styles.rightButtonsContainer}>
+        <button onClick={handlePrint} className={styles.backButton}>Print Table</button>
         <button onClick={handleCopyClick} className={styles.animatedCopyButton} title="Copy table to clipboard">
           <span className={isCopied ? styles.buttonTextCopied : styles.buttonText}>
             {isCopied ? "Copied!" : "Copy Table"}

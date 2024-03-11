@@ -10,7 +10,6 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 
 
 function MainPage({ observations, setObservations, staff, setStaff }) {
-  const [allocatedStaff, setAllocatedStaff] = useState(null);
   const [currentPage, setCurrentPage] = useState("patient");
   const [unassignedObs, setUnassignedObs] = useState([]);
 
@@ -81,10 +80,6 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
   }
 };
   
-useEffect(()=>{
-  console.log(allocatedStaff)
-})
-  
 
   return (
     <div className="hero">
@@ -126,13 +121,11 @@ useEffect(()=>{
               observations={observations}
               unassignedObs={unassignedObs}
               setUnassignedObs={setUnassignedObs}
-              setAllocatedStaff={setAllocatedStaff}
             />
           )}
           {currentPage === "allocation" && (
             <DndProvider backend={HTML5Backend}>
-            <AllocationCreation allocatedStaff={allocatedStaff} 
-            setAllocatedStaff={setAllocatedStaff} 
+            <AllocationCreation
             setTableRef={setTableRef} 
             observations={observations} 
             staff={staff}
@@ -145,8 +138,6 @@ useEffect(()=>{
           currentPage={currentPage}
           onNext={handleNext}
           onBack={handleBack}
-          allocatedStaff={allocatedStaff}
-          setAllocatedStaff={setAllocatedStaff}
           staff={staff}
           setStaff={setStaff}
           observations={observations}

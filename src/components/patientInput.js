@@ -114,7 +114,7 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
 
         {newObservation.observationType !== "Generals" && (
           <label className={styles.patientText}>
-            Observation name:
+            Observation name
             <input
               maxLength={3}
               type="text"
@@ -129,7 +129,7 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
         )}
 
         <label className={styles.patientText}>
-          Observation type:
+          Observation type
           <select
             name="observationType"
             value={newObservation.observationType}
@@ -170,11 +170,11 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
             <h2>
               {observation.name === "Generals"
                 ? "Generals"
-                : `Patient: ${observation.name}`}
+                : `${observation.name}`}
             </h2>
 
             <label className={styles.patientText}>
-              Staff Required:
+              Staff Required
               <span className={styles.obAmount}>{observation.staff}</span>
             </label>
 

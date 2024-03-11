@@ -20,7 +20,7 @@
     background-color: hsl(0, 0%, 12%);
     color: white;
     cursor: pointer;
-    font-size: 1.6rem;
+    font-size: 1.4rem;
   }
   
   .backButton:hover, .nextButton:hover {
@@ -50,9 +50,9 @@
 
   .animatedCopyButton {
     /* Add base styles for your button */
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.7rem;
     border: none;
-    background-color: black;
+    background-color: hsl(0, 0%, 12%);
     color: white;
     cursor: pointer;
     border-radius: 0.8rem;
