@@ -22,7 +22,7 @@
   width: 100%;
   border-radius: 0.8rem;
   overflow-y: auto; /* Add vertical scrolling */
-  max-height: 50rem; /* Adjust based on your needs */
+  max-height: 52rem; /* Adjust based on your needs */
   height: 100%;
 }
 

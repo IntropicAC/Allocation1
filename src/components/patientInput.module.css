@@ -20,8 +20,30 @@
     width: 100%;
     border-radius: 0.8rem;
     overflow-y: auto;
-    max-height: 50rem;
+    max-height: 52rem;
 
+  }
+  
+  .container::-webkit-scrollbar{
+    width: 1rem; /* width of the scrollbar */
+    height: 0.6rem; /* height for horizontal scrollbars if applicable */
+    opacity: 0.1;
+  }
+  
+  .container::-webkit-scrollbar-track {
+    background-color: transparent; /* color of the track */
+    opacity: 0.1;
+  }
+  
+  .container::-webkit-scrollbar-thumb {
+    background-color: #adadad; /* color of the scroll thumb */
+    border-radius: 5rem;
+    opacity: 0.1;
+  }
+  
+  .container::-webkit-scrollbar-thumb:hover {
+    background-color: #696969; /* color when hovered over the thumb */
+    opacity: 0.1;
   }
   
   .form {

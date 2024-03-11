@@ -246,7 +246,7 @@ const DraggableXCell = ({ value }) => {
           key={staffMember.name + hour}
           staffMember={staffMember}
           hour={hour}
-          observation={staffMember.break === hour ? <strong>Break</strong> : observation}
+          observation={staffMember.break === hour ? <strong className={styles.break}>Break</strong> : observation}
           moveObservation={moveObservation}
           updateObservation={updateObservation} // Pass this function to update observations
         />

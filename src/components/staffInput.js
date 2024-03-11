@@ -145,7 +145,7 @@ const assignObservation = (observationName, staffId) => {
         <label className={styles.staffText}>
           Name
           <input
-            maxLength={8}
+            maxLength={10}
             type="text"
             className={styles.inputText}
             name="name"

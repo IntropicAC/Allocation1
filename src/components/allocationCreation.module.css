@@ -10,7 +10,7 @@
 
 
 .tableContainer {
-  max-height: 45rem;
+  max-height: 47rem;
   height: 100vh;
   width: 100%;
   /* For Firefox */
@@ -74,7 +74,7 @@
 }
 
 .allocationTable th, .hourCell, table td {
-  max-width: 13rem;
+  max-width: 20rem;
   border: 0.1rem solid black;
   text-align: center;
   white-space: nowrap;
@@ -181,6 +181,10 @@ table td:not(.hourCell):hover {
     word-wrap: break-word; /* Allow long words to break and wrap */ 
     white-space: normal; /* Ensure whitespace is handled normally, allowing wrapping */
   }
+  .break {
+    font-size: 13pt; /* Example: Reduce font size for printing */
+  }
+  
   
 }
 
