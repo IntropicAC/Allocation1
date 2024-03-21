@@ -22,7 +22,7 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
         updatedObservation = {
           ...updatedObservation,
           name: "Generals",
-          staff: 1, // Renamed from staffRequired
+          staff: 1, 
         };
       } else if (["2:1", "3:1"].includes(value)) {
         updatedObservation.staff = Number(value.split(":")[0]); // Renamed from staffRequired
@@ -44,9 +44,16 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
   const addObservation = (e) => {
     e.preventDefault();
     
+    if (observations.length >= 10) {
+      alert("The maximum number of 10 patients has been reached, please remove a patient to add another.");
+      return; // Exit the function early
+    }
+
     if (newObservation.name.toLowerCase() === "gen") {
-      alert("Gen is a reserved name. If you trying to add Generals, select it within observation type.");
+      alert("Gen is a reserved name. If you are trying to add Generals, select it within observation type.");
       return; // Prevents adding the observation and exits the function
+    } else if (newObservation.name.toLowerCase() === "gens"){
+      alert("Gens is a reserved name. If you are trying to add Generals, select it within observation type.");
     }
 
     let observationToAdd = { ...newObservation };
@@ -112,21 +119,21 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
           <h1 className={styles.h1}>Patient Observations</h1>
         </header>
 
-        {newObservation.observationType !== "Generals" && (
-          <label className={styles.patientText}>
-            Observation name
-            <input
-              maxLength={3}
-              type="text"
-              className={styles.inputText}
-              name="name"
-              value={newObservation.name}
-              onChange={handleInputChange}
-              placeholder="Max 3 characters"
-              required
-            />
-          </label>
-        )}
+    
+        <label className={styles.patientText}>
+          Observation name
+          <input
+            maxLength={3}
+            type="text"
+            className={styles.inputText}
+            name="name"
+            value={newObservation.observationType === "Generals" ? "Generals" : newObservation.name}
+            onChange={handleInputChange}
+            placeholder="Max 3 characters"
+            required
+            disabled={newObservation.observationType === "Generals"}
+          />
+        </label>
 
         <label className={styles.patientText}>
           Observation type

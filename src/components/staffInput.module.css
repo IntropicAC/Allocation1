@@ -59,6 +59,14 @@
   padding: 1rem;
   background-color: white;
   border: 0.1rem black solid;
+  position: -webkit-sticky; /* For Safari */
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+}
+
+.spacer {
+  height: 6rem;
 }
 
 .indexNumber {

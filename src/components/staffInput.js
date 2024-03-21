@@ -31,6 +31,12 @@ function StaffInput({ staff, setStaff, observations, setUnassignedObs, unassigne
   const nameInputRef = useRef(null);
   const addStaffMember = (e) => {
     e.preventDefault();
+
+    if (staff.length >= 20) {
+      alert("The maximum number of 20 staff members has been reached. No more staff members can be added.");
+      return; // Exit the function early
+    }
+    
     const doesNameExist = staff.some(
       (staffMember) =>
         staffMember.name.toLowerCase() === newStaff.name.toLowerCase()
@@ -172,7 +178,6 @@ const assignObservation = (observationName, staffId) => {
           Add Staff Member
         </button>
       </form>
-
 
       <form className={styles.staffContainer}>
         {[...staff].sort((a, b) => a.name.localeCompare(b.name))

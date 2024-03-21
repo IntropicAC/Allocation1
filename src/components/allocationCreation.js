@@ -105,6 +105,13 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations }) {
         value={editValue}
         onChange={handleInputChange}
         onBlur={handleInputBlur}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            // If Enter key is pressed, trigger the blur handler to update the observation
+            // and exit editing mode
+            handleInputBlur();
+          }
+        }}
         className={styles.editableInput}
         autoFocus
         style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}

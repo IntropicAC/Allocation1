@@ -44,8 +44,9 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
     // Clone the table to avoid altering the original
     const clonedTable = table.cloneNode(true);
 
-    // Apply border and alignment styles to the cloned table, rows, and cells
-    clonedTable.style.borderCollapse = 'collapse'; // Ensures borders are collapsed into a single border
+    // Apply border and alignment styles to the cloned table, rows, and cells // Ensures borders are collapsed into a single border
+    clonedTable.style.minHeight = '100%';
+    clonedTable.style.minHeight = '100vh'; 
     const cells = clonedTable.querySelectorAll('td, th');
     cells.forEach(cell => {
       // Reset padding and margin, set borders, and center align the text
@@ -55,7 +56,6 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
       cell.style.textAlign = 'center'; // Center align horizontally
       cell.style.verticalAlign = 'middle'; // Center align vertically
       cell.style.whiteSpace = 'nowrap'; // Prevent text wrapping
-      cell.style.minWidth = '100px'
     });
     
 
