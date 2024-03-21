@@ -235,7 +235,7 @@ function NavigationButtons({
        let lastLoggedObservation = "";
       if (staffMember.security === false) {
     
-        //score += maxObs - staffMember.numObservations ;
+        score += maxObs - staffMember.numObservations ;
   
    let noOneHadFreeHour = staff.every(member =>
           member.observations[hour - 1] !== '-')
