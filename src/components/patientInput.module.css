@@ -57,7 +57,8 @@
     padding: 1rem;
     background-color: white;
     border-bottom: black solid 0.1rem;
-    
+    border-top: solid black 0.2rem;
+    border-bottom: solid black 0.2rem;
   }
   
   .inputText, .observationType, .selectNumber, .button {

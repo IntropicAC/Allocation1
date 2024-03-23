@@ -5,11 +5,15 @@
     justify-content: space-between;  /* Ensures the back and next buttons are at opposite ends */
     align-items: center;
     padding: 1rem 2rem;
-    background-color: rgb(237, 237, 237);
+    background-color: white;
     border-top: solid black 0.2rem;
     border-radius: 0 0 0.8rem 0.8rem; /* Round the bottom corners only */
     height: 6rem;
-    
+    border-bottom: solid black 0.2rem;
+    display: flex;
+    justify-content: space-between; /* Spreads items to the left and right */
+    align-items: center;
+    width: 100%; /* Ensures the container takes full width */
   }
   
   .backButton, .nextButton{
@@ -89,13 +93,6 @@
   display: inline-block;
   font-size: 1.5rem;
   font-weight: bold;
-}
-
-.navigationContainer {
-  display: flex;
-  justify-content: space-between; /* Spreads items to the left and right */
-  align-items: center;
-  width: 100%; /* Ensures the container takes full width */
 }
 
 .rightButtonsContainer {

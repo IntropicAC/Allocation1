@@ -20,10 +20,10 @@
 }
 .draggableObsContainer {
   display: flex;
-  height: 5.5rem;
+  height: 5rem;
   width: 100%;
   background-color: white;
-  border-top: 0.1rem solid black;
+  border-top: 0.2rem solid black;
   border-right: 0.1rem solid black;
   border-left: 0.1rem solid black;
   border-radius: 0.8rem 0.8rem 0 0;

@@ -63,6 +63,8 @@
   position: sticky;
   top: 0;
   z-index: 10000;
+  border-top: solid black 0.2rem;
+  border-bottom: solid black 0.2rem;
 }
 
 .spacer {

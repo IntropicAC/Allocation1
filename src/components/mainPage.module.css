@@ -74,7 +74,8 @@ body {
     height: 58rem; 
     margin: 6rem 14rem 30rem 14rem; 
     border-radius: 0px;
-    border: black solid 0.2rem;
+    border-right: black solid 0.2rem;
+    border-left: black solid 0.2rem;
     border-radius: 0.8rem;
     flex-direction: column;
     box-shadow: inset -9px 9px 13px #4646466b,
