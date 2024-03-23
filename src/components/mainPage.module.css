@@ -1,7 +1,7 @@
 /* mainPage.modules.css*/
 html {
   font-size: 10px;
-
+  
 }
 
 
@@ -12,7 +12,12 @@ html {
 }
 body {
     font-family: Arial, sans-serif;
-    background: #d6e4ff;
+    background: #B0E0E6;
+    background-image: url(./images/layered-waves-haikei.svg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+  
   }
   
   
@@ -22,7 +27,7 @@ body {
   
   /* Navigation styles */
   nav {
-    background-color: hsl(0, 0%, 12%);
+    background-color: #1f1f1f;
     z-index: 10;
     position: relative;
     height: 4rem; 
@@ -67,13 +72,13 @@ body {
     justify-content: space-between;
     align-items: top;
     height: 58rem; 
-    margin: 6rem 14rem 0rem 14rem; 
+    margin: 6rem 14rem 30rem 14rem; 
     border-radius: 0px;
-    background: #d6e4ff;
-    box-shadow: inset -9px 9px 13px #b6c2d9,
-                inset 9px -9px 13px #b6c2d9;
+    border: black solid 0.2rem;
+    border-radius: 0.8rem;
     flex-direction: column;
-    
+    box-shadow: inset -9px 9px 13px #4646466b,
+                inset 9px -9px 13px #4646466b;
   }
 
   .content-wrapper {
@@ -93,13 +98,14 @@ body {
     align-items: flex-end;
     text-align: center;
     padding: 0.2rem;
-    background-image: url(./images/wave-haikei.svg.jpg);
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center;
     font-size: 1.2rem; 
     height: 20rem;
     color: white;
+    background-image: url(./images/wave-footer.svg);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    width: 100%;
   }
   /*  Button styles */
   .modern-button {

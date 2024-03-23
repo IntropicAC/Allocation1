@@ -58,7 +58,7 @@
   border-radius: 0.8rem;
   padding: 1rem;
   background-color: white;
-  border: 0.1rem black solid;
+  border-bottom: 0.1rem black solid;
   position: -webkit-sticky; /* For Safari */
   position: sticky;
   top: 0;

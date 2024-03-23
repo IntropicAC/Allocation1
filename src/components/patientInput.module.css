@@ -21,7 +21,7 @@
     border-radius: 0.8rem;
     overflow-y: auto;
     max-height: 52rem;
-
+    
   }
   
   .container::-webkit-scrollbar{
@@ -56,7 +56,8 @@
     border-radius: 0.8rem;
     padding: 1rem;
     background-color: white;
-    border: black solid 0.1rem;
+    border-bottom: black solid 0.1rem;
+    
   }
   
   .inputText, .observationType, .selectNumber, .button {
@@ -91,7 +92,7 @@
   
   /* Patient Styles */
   .patient {
-    background: white;
+    background: #386FA4;
     padding: 0.5rem;
     margin-right: 0.5rem;
     border-radius: 0.8rem;

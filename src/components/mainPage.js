@@ -101,6 +101,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
 
       {/* Main Content Area */}
       <main id="content-area">
+        
         <div className="content-wrapper">
           {/*<button className="modern-button" id="modernButton">
           <span>Create Allocation</span>
