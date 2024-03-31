@@ -710,9 +710,9 @@ function NavigationButtons({
     }
 
     if (currentPage === "staff") {
+      initializeStaffMembers(staff);
       const updatedStaff = addObsAndReset(staff); // Get the updated staff array
       setStaff(updatedStaff);
-      initializeStaffMembers(staff);
       setTimeout(() => {
         onNext();
       }, 100);
