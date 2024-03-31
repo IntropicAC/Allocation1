@@ -1,7 +1,7 @@
-import React, { useState} from "react";
+import React, { useState, useEffect} from "react";
 import styles from "./patientInput.module.css";
 
-function PatientInput({ observations, setObservations, setStaff, setUnassignedObs, UnassignedObs }) {
+function PatientInput({ observations, setObservations, setStaff, setUnassignedObs, unassignedObs }) {
   const [otherStaff, setOtherStaff] = useState(""); 
   const [newObservation, setNewObservation] = useState({
     name: "",
@@ -41,6 +41,13 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
     setNewObservation(updatedObservation);
   };
 
+  const updateObservationsWithStaffNeeded = (observations) => {
+    return observations.map(observation => ({
+      ...observation,
+      StaffNeeded: observation.staff, // Duplicate the `staff` value into `StaffNeeded`
+    }));
+  };
+  
   const addObservation = (e) => {
     e.preventDefault();
     
@@ -48,32 +55,23 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
       alert("The maximum number of 10 patients has been reached, please remove a patient to add another.");
       return; // Exit the function early
     }
-
-    if (newObservation.name.toLowerCase() === "gen") {
-      alert("Gen is a reserved name. If you are trying to add Generals, select it within observation type.");
+  
+    if (["gen", "gens"].includes(newObservation.name.toLowerCase())) {
+      alert(`${newObservation.name} is a reserved name. If you are trying to add Generals, select it within observation type.`);
       return; // Prevents adding the observation and exits the function
-    } else if (newObservation.name.toLowerCase() === "gens"){
-      alert("Gens is a reserved name. If you are trying to add Generals, select it within observation type.");
     }
 
-    let observationToAdd = { ...newObservation };
+  
+    let observationToAdd = { ...newObservation, StaffNeeded: newObservation.staff };
 
     if (newObservation.observationType === "other" && otherStaff) {
       observationToAdd.staff = Number(otherStaff.split(":")[0]);
     }
 
-    setObservations((prevObservations) => {
-      const maxId = prevObservations.reduce(
-        (max, item) => Math.max(max, item.id),
-        -1
-      );
+    setObservations(prevObservations => {
+      const maxId = prevObservations.reduce((max, item) => Math.max(max, item.id), -1);
       const newId = maxId + 1;
-      const updatedObservations = [...prevObservations, { ...observationToAdd, id: newId }];
-
-      // Update unassignedObs to mirror updated observations
-      setUnassignedObs(updatedObservations.map(obs => ({ ...obs })));
-
-      return updatedObservations;
+      return updateObservationsWithStaffNeeded([...prevObservations, { ...observationToAdd, id: newId }]);
     });
 
     setNewObservation({
@@ -91,9 +89,6 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
     if (observationToRemove) {
       setObservations(prevObservations => {
           const updatedObservations = prevObservations.filter(obs => obs.id !== observationIdToRemove);
-          
-          // Update unassignedObs with a shallow copy using .map
-          setUnassignedObs(updatedObservations.map(obs => ({ ...obs })));
 
           return updatedObservations;
       });
@@ -109,8 +104,9 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
         );
     }
 };
-
-
+useEffect(()=>{
+  console.log("Patient:", observations)
+},[observations])
 
   return (
     <section className={styles.container}>

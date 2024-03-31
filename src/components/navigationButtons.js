@@ -648,8 +648,6 @@ function NavigationButtons({
       const maxObs = calculateMaxObservations(observations, staff);
       console.log(maxObs);
     
-      initializeStaffMembers(staff);
-    
       let firstObservationEachHour = {}; // Object to store the first observation for each hour
       for (let hour = 9; hour <= 19; hour++) {
           const availabilityRecord = calculateAvailabilityForEachObservation(observations, staff, hour);
@@ -690,9 +688,6 @@ function NavigationButtons({
   
       return staff;
   }
-  
-
-  
 
 
   const handleAllocate = () => {
@@ -717,6 +712,7 @@ function NavigationButtons({
     if (currentPage === "staff") {
       const updatedStaff = addObsAndReset(staff); // Get the updated staff array
       setStaff(updatedStaff);
+      initializeStaffMembers(staff);
       setTimeout(() => {
         onNext();
       }, 100);
@@ -728,24 +724,6 @@ function NavigationButtons({
   const handlePrint = () => {
     window.print();
   };
-  
-  
-  const updateStaffNeeded = () => {
-    return observations.map((observation) => {
-      const assignedStaffCount = staff.filter(
-        (staffMember) => staffMember.observationId === observation.name
-      ).length;
-      return {
-        ...observation,
-        staffNeeded: Math.max(0, observation.staff - assignedStaffCount),
-      };
-    });
-  };
-  
-  useEffect(() => {
-    const updatedObservations = updateStaffNeeded();
-    setUnassignedObs(updatedObservations);
-  }, [staff, observations]); // Dependencies include both staff and observations
   
 
   const [isCopied, setIsCopied] = useState(false);
@@ -827,10 +805,10 @@ return (
     {/* Dynamic Display for "staff" Page */}
     {currentPage === "staff" && (
       <div className={styles.observationsInfo}>
-        {unassignedObs.map((observation, index) => (
+        {observations.map((observation, index) => (
           <div key={index} className={styles.observationDetail}>
-            <span>{observation.name}:</span>
-            <span> {observation.staff}</span>
+            <span>{observation.name}: </span>
+            <span>{observation.StaffNeeded}</span>
           </div>
         ))}
       </div>

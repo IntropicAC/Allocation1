@@ -17,7 +17,7 @@ body {
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
-  
+    min-height: 100vh;
   }
   
   
@@ -100,12 +100,9 @@ body {
     text-align: center;
     padding: 0.2rem;
     font-size: 1.2rem; 
-    height: 20rem;
+    height: 10rem;
     color: white;
-    background-image: url(./images/wave-footer.svg);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
+    background-color: #1F1F1F;
     width: 100%;
   }
   /*  Button styles */

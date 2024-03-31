@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect} from "react";
 import styles from "./staffInput.module.css";
 
 
-function StaffInput({ staff, setStaff, observations, setUnassignedObs, unassignedObs }) {
+function StaffInput({ staff, setStaff, observations, setObservations }) {
   const [newStaff, setNewStaff] = useState({
     name: "",
-    break: 8, // default break time
+    break: 9, // default break time
     security: false,
     numObservations: 0,
   });
@@ -64,7 +64,7 @@ function StaffInput({ staff, setStaff, observations, setUnassignedObs, unassigne
     setStaff([...staff, staffWithIdAndObservations]);
     setNewStaff({
       name: "",
-      break: 8,
+      break: 9,
       security: false,
       numObservations: 0,
     });
@@ -72,8 +72,27 @@ function StaffInput({ staff, setStaff, observations, setUnassignedObs, unassigne
 
 
   const removeStaffMember = (staffIdToRemove) => {
-    setStaff((staff) => staff.filter((staff) => staff.id !== staffIdToRemove));
-  };
+    // First, find the observationId of the staff member who is being removed.
+    const staffMemberBeingRemoved = staff.find(staff => staff.id === staffIdToRemove);
+    const observationIdOfRemovedStaff = staffMemberBeingRemoved ? staffMemberBeingRemoved.observationId : null;
+
+    // Now, filter out the staff member from the staff array.
+    setStaff(currentStaff => currentStaff.filter(staff => staff.id !== staffIdToRemove));
+
+    // If the staff member was assigned to an observation, update that observation's StaffNeeded.
+    if (observationIdOfRemovedStaff) {
+        setObservations(currentObservations => currentObservations.map(observation => {
+            // Check if this is the observation from which the staff is being removed.
+            if (observation.name === observationIdOfRemovedStaff) {
+                // Increment StaffNeeded for this observation.
+                return { ...observation, StaffNeeded: observation.StaffNeeded + 1 };
+            }
+            // For all other observations, return them unchanged.
+            return observation;
+        }));
+    }
+};
+
 
 
   const handleSecurityChange = (e, staffId) => {
@@ -103,29 +122,60 @@ const handleBreakChange = (e, staffId) => {
 
 
 const assignObservation = (observationName, staffId) => {
-  const staffIndex = staff.findIndex((s) => s.id === staffId);
+  const newStaffList = [...staff];
+  const staffIndex = newStaffList.findIndex(s => s.id === staffId);
+
+  // Initialize previousObservationId outside of the if-else blocks
+  let previousObservationId = "";
+
   if (staffIndex !== -1) {
-    const newStaffList = [...staff];
-    const previousObservationName = newStaffList[staffIndex].observationId;
+    // Define previousObservationId here to ensure it's accessible throughout
+    previousObservationId = newStaffList[staffIndex].observationId === "-" ? "Initial Observation" : newStaffList[staffIndex].observationId;
 
-    newStaffList[staffIndex] = {
-      ...newStaffList[staffIndex],
-      observationId: observationName === "Initial Observation" ? "-" : observationName,
-    };
-    setStaff(newStaffList);
+    if (observationName === "Initial Observation") {
+      newStaffList[staffIndex].observationId = "-";
+    } else {
+      const targetObservation = observations.find(obs => obs.name === observationName);
 
-    // Update unassignedObs based on the observation assignment
-    const updatedUnassignedObs = unassignedObs.map(obs => {
-      if (obs.name === observationName) {
-        return { ...obs, staffNeeded: Math.max(0, obs.staffNeeded - 1) };
-      } else if (obs.name === previousObservationName) {
-        return { ...obs, staffNeeded: obs.staffNeeded + 1 };
+      if (targetObservation && targetObservation.StaffNeeded < 1) {
+        const otherStaffIndex = newStaffList.findIndex((s, index) => s.observationId === observationName && index !== staffIndex);
+        
+        if (otherStaffIndex !== -1) {
+          newStaffList[otherStaffIndex].observationId = "-";
+          // Adjust the targetObservation directly since it's a reference
+          // Note: This would not directly affect the 'observations' array until it's set again
+          targetObservation.StaffNeeded += 1;
+        } else {
+          console.warn("No other staff to unassign for observation:", observationName);
+          return; // Exit if no adjustments can be made
+        }
       }
-      return obs;
+      
+      // This assignment is now safe because previousObservationId is defined in the broader scope
+      newStaffList[staffIndex].observationId = observationName;
+    }
+
+    // The rest of your logic remains the same
+
+    const updatedObservations = observations.map(obs => {
+        if (obs.name === observationName && observationName !== "Initial Observation") {
+          return { ...obs, StaffNeeded: Math.max(0, obs.StaffNeeded - 1) };
+        } else if (obs.name === previousObservationId && previousObservationId !== "Initial Observation") {
+          return { ...obs, StaffNeeded: Math.min(obs.staff, obs.StaffNeeded + 1) };
+        }
+        return obs;
     });
-    setUnassignedObs(updatedUnassignedObs);
+    
+    setObservations(updatedObservations);
+    setStaff(newStaffList);
   }
 };
+
+
+
+
+
+
 
 
   // Generate break time options from 8:00 to 19:00
@@ -137,7 +187,9 @@ const assignObservation = (observationName, staffId) => {
       </option>
     );
   }
-
+useEffect(()=>{
+  console.log(staff)
+},[staff])
 
   const rainbowNames = ["Alex1","Charlotte2","Adna3","Aliah4"]
 

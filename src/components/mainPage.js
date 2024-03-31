@@ -11,7 +11,6 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 
 function MainPage({ observations, setObservations, staff, setStaff }) {
   const [currentPage, setCurrentPage] = useState("patient");
-  const [unassignedObs, setUnassignedObs] = useState([]);
 
   const handleNext = () => {
     if (currentPage === "patient") {
@@ -111,8 +110,6 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
               observations={observations}
               setObservations={setObservations}
               setStaff={setStaff}
-              unassignedObs={unassignedObs}
-              setUnassignedObs={setUnassignedObs}
             />
           )}
           {currentPage === "staff" && (
@@ -120,8 +117,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
               staff={staff}
               setStaff={setStaff}
               observations={observations}
-              unassignedObs={unassignedObs}
-              setUnassignedObs={setUnassignedObs}
+              setObservations={setObservations}
             />
           )}
           {currentPage === "allocation" && (
@@ -142,8 +138,6 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
           staff={staff}
           setStaff={setStaff}
           observations={observations}
-          unassignedObs={unassignedObs}
-          setUnassignedObs={setUnassignedObs}
         />
       </main>
 

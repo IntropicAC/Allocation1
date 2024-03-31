@@ -128,39 +128,42 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations }) {
   };
 
   const moveObservation = (sourceStaffName, sourceHour, targetStaffName, targetHour) => {
-    let updatedStaff = [...staff];
-
-    // Find indexes
-    let sourceStaffIndex = updatedStaff.findIndex(staff => staff.name === sourceStaffName);
-    let targetStaffIndex = updatedStaff.findIndex(staff => staff.name === targetStaffName);
+    const updatedStaff = [...staff];
+    const sourceStaffIndex = updatedStaff.findIndex(staff => staff.name === sourceStaffName);
+    const targetStaffIndex = updatedStaff.findIndex(staff => staff.name === targetStaffName);
 
     if (sourceStaffIndex === -1 || targetStaffIndex === -1) {
         console.error('Source or target staff not found');
-        return;
+        return; // Immediate exit if staff members are not found
     }
 
-    // Access the staff objects directly
-    let sourceStaff = updatedStaff[sourceStaffIndex];
-    let targetStaff = updatedStaff[targetStaffIndex];
+    const sourceStaff = updatedStaff[sourceStaffIndex];
+    const targetStaff = updatedStaff[targetStaffIndex];
 
-    // Swap observations
-    let tempObservation = sourceStaff.observations[sourceHour] || '-';
+    // Check for any condition that would prevent the action
+    if (sourceStaff.name !== targetStaff.name && targetStaff.break === targetHour) {
+        return; // Exit without modifying state
+    } else if (sourceStaff.break === sourceHour && sourceStaff.name !== targetStaff.name) {
+        return; // Exit without modifying state
+    }
+
+    // At this point, all checks have passed, so proceed with the swap
+    const tempObservation = sourceStaff.observations[sourceHour] || '-';
     sourceStaff.observations[sourceHour] = targetStaff.observations[targetHour] || '-';
     targetStaff.observations[targetHour] = tempObservation;
-  
-// Condition to update break
-if(sourceStaff.break === sourceHour && sourceStaff.name !== targetStaff.name){
-  return
-}
-if (sourceStaff.break === sourceHour) {
-    sourceStaff.break = targetHour;
-  
-}
 
+    // Additional conditions that modify state should only be applied if all checks have passed
+    if (sourceStaff.break === sourceHour) {
+        sourceStaff.break = targetHour;
+    } else if (targetStaff.break === targetHour) {
+        targetStaff.break = sourceHour;
+    }
 
-
-    setStaff(updatedStaff);
+    setStaff(updatedStaff); // Update the React state only after all conditions have been checked and passed
 };
+
+
+
 
 const updateObservation = (staffName, hour, newObservation) => {
   setStaff(prevStaff =>
