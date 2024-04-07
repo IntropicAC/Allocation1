@@ -29,103 +29,135 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations }) {
     setTableRef(localTableRef.current);
   }, []);
 
-  const DragDropCell = ({ staffMember, hour, observation, moveObservation, updateObservation }) => {
-    // Existing drag and drop setup...
-  
-    const [isEditing, setIsEditing] = useState(false);
-    const [editValue, setEditValue] = useState(observation);
-    
 
-    const [{ isDragging }, dragRef] = useDrag(() => ({
-      type: 'observation',
-      item: { sourceStaffName: staffMember.name, sourceHour: hour },
-      collect: monitor => ({
-        isDragging: monitor.isDragging(),
-      }),
-    }));
-  
-    const [{ isOver }, dropRef] = useDrop({
-      accept: ['observation', 'externalObservation', 'specialObservation'], // Accept both types
-      drop: (item, monitor) => {
-        // Check the type of drag item and handle accordingly
-        if (monitor.getItemType() === 'externalObservation' || monitor.getItemType() === 'specialObservation') {
-          // For external observation, update the observation directly
-          updateObservation(staffMember.name, hour, item.observationName);
-        } else if (monitor.getItemType() === 'observation') {
-          // For internal moves, use the existing logic
-          moveObservation(item.sourceStaffName, item.sourceHour, staffMember.name, hour);
-        }
-      },
-      collect: monitor => ({
-        isOver: monitor.isOver(),
-      }),
-    });
-  
-    // Function to toggle edit mode
-    const toggleEdit = () => {
-      // Check if the current hour matches the staff member's break hour
-      if (hour === staffMember.break) {
-        // If it's the staff member's break hour, do not toggle the edit mode
-        return;
+  const DragDropCell = ({ staffMember, hour, observation, moveObservation, updateObservation }) => {
+  // Existing state variables
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(observation);
+
+  // State variable to track click-and-hold timeout
+  const [clickAndHoldTimeout, setClickAndHoldTimeout] = useState(null);
+
+  // Existing drag setup
+  const [{ isDragging }, dragRef, dragSource] = useDrag(() => ({
+    type: 'observation',
+    item: { sourceStaffName: staffMember.name, sourceHour: hour },
+    collect: monitor => ({ isDragging: monitor.isDragging() }),
+  }));
+
+  // Existing drop setup
+  const [{ isOver }, dropRef] = useDrop({
+    accept: ['observation', 'externalObservation', 'specialObservation'],
+    drop: (item, monitor) => {
+      if (monitor.getItemType() === 'externalObservation' || monitor.getItemType() === 'specialObservation') {
+        updateObservation(staffMember.name, hour, item.observationName);
+      } else if (monitor.getItemType() === 'observation') {
+        moveObservation(item.sourceStaffName, item.sourceHour, staffMember.name, hour);
       }
-      setIsEditing(!isEditing);
-    };
-  
-    // Function to handle change in the input field
-    const handleInputChange = (e) => {
-      setEditValue(e.target.value);
-    };
-  
-    // Function to handle when editing is finished
-    const handleInputBlur = () => {
-      updateObservation(staffMember.name, hour, editValue); // Update the observation
-      setIsEditing(false); // Exit editing mode
-    };
-  
-    // Combine refs for drag and drop in one cell, ensuring it doesn't interfere with editing
-    const ref = useRef(null);
-    dragRef(dropRef(ref));
-  
-    // Apply styles based on dragging and hovering states
-    const cellStyle = isDragging ? styles.draggingCell : isOver ? styles.hoveringCell : '';
-    
-    // Return editable input or static text based on editing state
-    if (isEditing) {
-      return (
-        <td
-      ref={ref}
-      className={`${cellStyle} ${styles.editableCell}`}
-      onDoubleClick={() => toggleEdit()}
-      style={{padding: 0, maxWidth: '3rem'}}
-      
-    >
-      <input
-        maxLength={3}
-        type="text"
-        value={editValue}
-        onChange={handleInputChange}
-        onBlur={handleInputBlur}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            // If Enter key is pressed, trigger the blur handler to update the observation
-            // and exit editing mode
-            handleInputBlur();
-          }
-        }}
-        className={styles.editableInput}
-        autoFocus
-        style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}
-      />
-    </td>
-      );
+    },
+    collect: monitor => ({ isOver: monitor.isOver() }),
+  });
+
+  // Combine refs for drag and drop in one cell
+  const ref = useRef(null);
+  dragRef(dropRef(ref));
+
+  // Function to toggle edit mode
+  const toggleEdit = () => {
+    if (hour === staffMember.break) {
+      return;
     }
+    setIsEditing(!isEditing);
+  };
+
+  // Function to handle input change
+  const handleInputChange = (e) => {
+    setEditValue(e.target.value);
+  };
+
+  // Function to handle when editing is finished
+  const handleInputBlur = () => {
+    updateObservation(staffMember.name, hour, editValue);
+    setIsEditing(false);
+  };
+
+  // Function to handle mouse down event
+  const handleCellMouseDown = () => {
+    // Start a timer for click-and-hold
+    const timeout = setTimeout(() => {
+      // After 300ms, consider it a click-and-hold and initiate dragging
+      if (dragSource.current) {
+        dragSource.current.startDrag();
+      }
+    }, 300);
   
+    // Save the timer reference to clear it on mouse up
+    setClickAndHoldTimeout(timeout);
+  };
+  useEffect(() => {
+    return () => {
+      // Clean up the dragSource reference when the component is unmounted
+      dragSource.current = null;
+    };
+  }, []);
+  // Function to handle mouse up event
+  const handleCellMouseUp = () => {
+    // Clear the click-and-hold timer
+    clearTimeout(clickAndHoldTimeout);
+
+    // If the timer hasn't expired yet, consider it a regular click
+    if (clickAndHoldTimeout) {
+      toggleEdit();
+    }
+
+    // Reset the timer reference
+    setClickAndHoldTimeout(null);
+  };
+
+  // Apply styles based on dragging and hovering states
+  const cellStyle = isDragging ? styles.draggingCell : isOver ? styles.hoveringCell : '';
+
+  // Editing state
+  if (isEditing) {
     return (
-      <td ref={ref} className={cellStyle} onDoubleClick={() => toggleEdit()}>
-        {observation}
+      <td
+        ref={ref}
+        className={`${cellStyle} ${styles.editableCell}`}
+        style={{ padding: 0, maxWidth: '3rem' }}
+        onMouseDown={handleCellMouseDown}
+        onMouseUp={handleCellMouseUp}
+      >
+        <input
+          maxLength={3}
+          type="text"
+          value={editValue}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleInputBlur();
+            }
+          }}
+          className={styles.editableInput}
+          autoFocus
+          style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}
+        />
       </td>
     );
-  };
+  }
+
+  // Non-editing state
+  return (
+    <td
+      ref={ref}
+      className={cellStyle}
+      onMouseDown={handleCellMouseDown}
+      onMouseUp={handleCellMouseUp}
+    >
+      {observation}
+    </td>
+  );
+};
 
   const moveObservation = (sourceStaffName, sourceHour, targetStaffName, targetHour) => {
     const updatedStaff = [...staff];

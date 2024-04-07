@@ -643,10 +643,25 @@ function NavigationButtons({
             console.error(`Hour ${hour}: Unable to assign '${observation.name}' to any staff member`);
         }
     }
+
+    function resetStaff(staff) {
+      staff.forEach(staffMember => {
+        staffMember.observations = {};
+        staffMember.lastObservation = staffMember.observationId;
+        staffMember.obsCounts = {};
+        staffMember.lastReceived = {};
+        for (let hour = 7; hour <= 19; hour++) {
+          staffMember.observations[hour] = (hour === 8 && staffMember.observationId && staffMember.observationId !== '-') ? staffMember.observationId : '-';
+          if (hour === 7) staffMember.observations[hour] = '-';
+        }
+        staffMember.numObservations = staffMember.observationId && staffMember.observationId !== '-' ? 1 : 0;
+      });
+    }
     
   function allocateObservations(observations, staff) {
       const maxObs = calculateMaxObservations(observations, staff);
-      console.log(maxObs);
+      
+      resetStaff(staff)
     
       let firstObservationEachHour = {}; // Object to store the first observation for each hour
       for (let hour = 9; hour <= 19; hour++) {

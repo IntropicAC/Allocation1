@@ -88,7 +88,7 @@ table td:not(.hourCell):hover {
 
 /* Add these styles to your stylesheet */
 .draggingCell {
-  background-color: rgb(172, 172, 172); /* Green background for the cell being dragged */
+  background-color: rgb(172, 172, 172); /* background for the cell being dragged */
   box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2), /* Inner shadow for depth */
               inset 0 -3px 8px rgba(0, 0, 0, 0.2);
 }
