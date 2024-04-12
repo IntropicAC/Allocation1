@@ -188,18 +188,28 @@ function NavigationButtons({
       }
     }
     
-  function initializeStaffMembers(staff) {
+    function initializeStaffMembers(staff) {
       staff.forEach(staffMember => {
-        staffMember.observations = {};
-        staffMember.lastObservation = staffMember.observationId;
-        staffMember.obsCounts = {};
-        staffMember.lastReceived = {};
-        for (let hour = 7; hour <= 19; hour++) {
-          staffMember.observations[hour] = (hour === 8 && staffMember.observationId && staffMember.observationId !== '-') ? staffMember.observationId : '-';
-          if (hour === 7) staffMember.observations[hour] = '-';
+        // Check if the staff member has already been initialized
+        if (!staffMember.initialized) {
+          staffMember.observations = {};
+          staffMember.lastObservation = staffMember.observationId;
+          staffMember.obsCounts = {};
+          staffMember.lastReceived = {};
+          for (let hour = 7; hour <= 19; hour++) {
+            staffMember.observations[hour] = (hour === 8 && staffMember.observationId && staffMember.observationId !== '-') ? staffMember.observationId : '-';
+            if (hour === 7) staffMember.observations[hour] = '-';
+          }
+          staffMember.numObservations = staffMember.observationId && staffMember.observationId !== '-' ? 1 : 0;
+    
+          // Mark this staff member as initialized
+          staffMember.initialized = true;
         }
-        staffMember.numObservations = staffMember.observationId && staffMember.observationId !== '-' ? 1 : 0;
+        if(staffMember.initialized) {
+          staffMember.observations[8] = staffMember.observationId ? staffMember.observationId : '-';
+        }
       });
+      
     }
     
    function separateAndInterleaveObservations(observations, availabilityRecord,firstObservationEachHour, hour, staff, shouldSwap, stillShouldSwap) {
@@ -710,6 +720,10 @@ function NavigationButtons({
 
     setStaff(allocationCopy);
   };
+
+  const assignObservationId= (staff) => {
+
+  }
 
   
 

@@ -58,6 +58,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
       ...newStaff,
       id: newId, // Using the new ID
       numObservations: 0,
+      observationId: "-"
     };
 
 
@@ -122,61 +123,62 @@ const handleBreakChange = (e, staffId) => {
 
 
 const assignObservation = (observationName, staffId) => {
-  const newStaffList = [...staff];
+  const newStaffList = [...staff]; // Clone the staff array for immutability
   const staffIndex = newStaffList.findIndex(s => s.id === staffId);
 
-  // Initialize previousObservationId outside of the if-else blocks
-  let previousObservationId = "";
+  if (staffIndex === -1) {
+    console.error("Staff member not found.");
+    return;
+  }
 
-  if (staffIndex !== -1) {
-    // Define previousObservationId here to ensure it's accessible throughout
-    previousObservationId = newStaffList[staffIndex].observationId === "-" ? "Initial Observation" : newStaffList[staffIndex].observationId;
+  // Retrieve the previous observationId for comparison and possible reassignment
+  let previousObservationId = newStaffList[staffIndex].observationId;
 
-    if (observationName === "Initial Observation") {
-      newStaffList[staffIndex].observationId = "-";
-    } else {
-      const targetObservation = observations.find(obs => obs.name === observationName);
-
-      if (targetObservation && targetObservation.StaffNeeded < 1) {
-        const otherStaffIndex = newStaffList.findIndex((s, index) => s.observationId === observationName && index !== staffIndex);
-        
-        if (otherStaffIndex !== -1) {
-          newStaffList[otherStaffIndex].observationId = "-";
-          // Adjust the targetObservation directly since it's a reference
-          // Note: This would not directly affect the 'observations' array until it's set again
-          targetObservation.StaffNeeded += 1;
-        } else {
-          console.warn("No other staff to unassign for observation:", observationName);
-          return; // Exit if no adjustments can be made
-        }
+  // Special handling for "Initial Observation" which unassigns any current observation
+  if (observationName === "Initial Observation") {
+    if (previousObservationId !== "-") {
+      // Increase the staff needed count for the previous observation only if it's not the default
+      const prevObservation = observations.find(obs => obs.name === previousObservationId);
+      if (prevObservation && prevObservation.StaffNeeded < prevObservation.staff) {
+        prevObservation.StaffNeeded += 1;
       }
-      
-      // This assignment is now safe because previousObservationId is defined in the broader scope
+    }
+    newStaffList[staffIndex].observationId = "-";
+    setStaff(newStaffList);
+    setObservations([...observations]); // Trigger state update
+    return;
+  }
+
+  // Find the observation object for the new assignment
+  const targetObservation = observations.find(obs => obs.name === observationName);
+  if (!targetObservation) {
+    console.error("Observation not found.");
+    return;
+  }
+
+  // Handle reassignment if the new observation is different from the current one
+  if (previousObservationId !== observationName) {
+    if (targetObservation.StaffNeeded > 0) {
+      targetObservation.StaffNeeded -= 1;
       newStaffList[staffIndex].observationId = observationName;
+    } else {
+      console.error("No staffing needs available for this observation.");
+      return;
     }
 
-    // The rest of your logic remains the same
-
-    const updatedObservations = observations.map(obs => {
-        if (obs.name === observationName && observationName !== "Initial Observation") {
-          return { ...obs, StaffNeeded: Math.max(0, obs.StaffNeeded - 1) };
-        } else if (obs.name === previousObservationId && previousObservationId !== "Initial Observation") {
-          return { ...obs, StaffNeeded: Math.min(obs.staff, obs.StaffNeeded + 1) };
-        }
-        return obs;
-    });
-    
-    setObservations(updatedObservations);
-    setStaff(newStaffList);
+    if (previousObservationId !== "-") {
+      // Increase the staff needed count for the previous observation, but do not exceed the total staff available
+      const prevObservation = observations.find(obs => obs.name === previousObservationId);
+      if (prevObservation && prevObservation.StaffNeeded < prevObservation.staff) {
+        prevObservation.StaffNeeded += 1;
+      }
+    }
   }
+
+  // Update the staff array and the observations array in the state
+  setStaff(newStaffList);
+  setObservations([...observations]);
 };
-
-
-
-
-
-
-
 
   // Generate break time options from 8:00 to 19:00
   const breakTimeOptions = [];
@@ -188,7 +190,8 @@ const assignObservation = (observationName, staffId) => {
     );
   }
 useEffect(()=>{
-  console.log(staff)
+  console.log("Staff",staff)
+  console.log("Observation:", observations)
 },[staff])
 
   const rainbowNames = ["Alex1","Charlotte2","Adna3","Aliah4"]

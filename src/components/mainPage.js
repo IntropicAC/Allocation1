@@ -126,7 +126,8 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
             <DndProvider backend={HTML5Backend}>
             <AllocationCreation
             setTableRef={setTableRef} 
-            observations={observations} 
+            observations={observations}
+            setObservations={setObservations}
             staff={staff}
             setStaff={setStaff}/>
             </DndProvider>

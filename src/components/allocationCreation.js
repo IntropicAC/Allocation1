@@ -8,7 +8,7 @@ function capitalizeFirstLetter(string) {
 }
 
 
-function AllocationCreation({ staff, setStaff, setTableRef, observations }) {
+function AllocationCreation({ staff, setStaff, setTableRef, observations, setObservations }) {
 
   staff.sort((a, b) => {
     if (a.security === true && b.security !== true) {
@@ -172,47 +172,107 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations }) {
     const sourceStaff = updatedStaff[sourceStaffIndex];
     const targetStaff = updatedStaff[targetStaffIndex];
 
+    // Check if the hours involved affect hour 8
+    const sourceIsHourEight = sourceHour === 8;
+    const targetIsHourEight = targetHour === 8;
+
+    if (sourceHour === 8 || targetHour === 8) {
+      if (sourceHour === 8 && targetHour === 8) {
+          updateStaffNeeded(sourceStaff.observations[sourceHour], true);
+          updateStaffNeeded(targetStaff.observations[targetHour], false);
+      } else if (sourceHour === 8) {
+          updateStaffNeeded(sourceStaff.observations[sourceHour], true);
+      } else if (targetHour === 8) {
+          updateStaffNeeded(targetStaff.observations[targetHour], false);
+      }
+  }
+
     // Check for any condition that would prevent the action
     if (sourceStaff.name !== targetStaff.name && targetStaff.break === targetHour) {
         return; // Exit without modifying state
     } else if (sourceStaff.break === sourceHour && sourceStaff.name !== targetStaff.name) {
         return; // Exit without modifying state
     }
+    
 
+    // Additional conditions that modify state should only be applied if all checks have passed
+    if (sourceStaff.break === sourceHour) {
+      sourceStaff.break = targetHour;
+    } else if (targetStaff.break === targetHour) {
+        targetStaff.break = sourceHour;
+    }
+
+    // Update observationId based on hour 8 conditions
+    if (sourceIsHourEight || targetIsHourEight) {
+      let tempObservationId = sourceStaff.observations[sourceHour];
+      if (sourceIsHourEight && targetIsHourEight) {
+          // Both are hour 8, just swap their observationIds
+          sourceStaff.observationId = targetStaff.observations[targetHour]
+          targetStaff.observationId = tempObservationId;
+      } else if (sourceIsHourEight) {
+          // Only source is hour 8, update sourceStaff's observationId to target's hour observation
+          sourceStaff.observationId = targetStaff.observations[targetHour];
+      } else if (targetIsHourEight) {
+          // Only target is hour 8, update targetStaff's observationId to source's hour observation
+          targetStaff.observationId = tempObservationId; // Should be the saved temp observation value, not sourceStaff's
+      }
+  }
+    if (sourceHour || targetHour !== 8){
     // At this point, all checks have passed, so proceed with the swap
     const tempObservation = sourceStaff.observations[sourceHour] || '-';
     sourceStaff.observations[sourceHour] = targetStaff.observations[targetHour] || '-';
     targetStaff.observations[targetHour] = tempObservation;
-
-    // Additional conditions that modify state should only be applied if all checks have passed
-    if (sourceStaff.break === sourceHour) {
-        sourceStaff.break = targetHour;
-    } else if (targetStaff.break === targetHour) {
-        targetStaff.break = sourceHour;
-    }
+}
+    
 
     setStaff(updatedStaff); // Update the React state only after all conditions have been checked and passed
 };
 
 
+function updateStaffNeeded(observationName, increment) {
+  setObservations(prevObservations => {
+    return prevObservations.map(obs => {
+      if (obs.name === observationName) {
+        let updatedStaffNeeded = increment ? obs.StaffNeeded + 1 : obs.StaffNeeded - 1;
+        // Ensure we do not exceed the total staff available nor go below zero
+        updatedStaffNeeded = Math.min(Math.max(updatedStaffNeeded, 0), obs.staff);
+        return { ...obs, StaffNeeded: updatedStaffNeeded };
+      }
+      return obs;
+    });
+  });
+}
 
 
 const updateObservation = (staffName, hour, newObservation) => {
   setStaff(prevStaff =>
     prevStaff.map(staffMember => {
       if (staffMember.name === staffName) {
-        return {
-          ...staffMember,
-          observations: {
-            ...staffMember.observations,
-            [hour]: newObservation, // Update with the new observation
-          },
-        };
+        // Check if the observation is being dropped into hour 8
+        if (hour === 8) {
+          return {
+            ...staffMember,
+            observations: {
+              ...staffMember.observations,
+              [hour]: newObservation, // Update the observation at the specific hour
+            },
+            observationId: newObservation // Update observationId when hour is 8
+          };
+        } else {
+          return {
+            ...staffMember,
+            observations: {
+              ...staffMember.observations,
+              [hour]: newObservation, // Only update the observation at the specific hour
+            }
+          };
+        }
       }
       return staffMember;
     })
   );
 };
+
 
 const DraggableObservationCell = ({ observation }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
