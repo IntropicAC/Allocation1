@@ -248,6 +248,11 @@ const updateObservation = (staffName, hour, newObservation) => {
   setStaff(prevStaff =>
     prevStaff.map(staffMember => {
       if (staffMember.name === staffName) {
+        // Check if the hour equals the staff member's break hour
+        if (staffMember.break === hour) {
+          return staffMember; 
+        }
+
         // Check if the observation is being dropped into hour 8
         if (hour === 8) {
           return {
@@ -272,6 +277,7 @@ const updateObservation = (staffName, hour, newObservation) => {
     })
   );
 };
+
 
 
 const DraggableObservationCell = ({ observation }) => {

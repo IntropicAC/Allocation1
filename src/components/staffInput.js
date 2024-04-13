@@ -5,7 +5,7 @@ import styles from "./staffInput.module.css";
 function StaffInput({ staff, setStaff, observations, setObservations }) {
   const [newStaff, setNewStaff] = useState({
     name: "",
-    break: 9, // default break time
+    break: 8, // default break time
     security: false,
     numObservations: 0,
   });
@@ -65,7 +65,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
     setStaff([...staff, staffWithIdAndObservations]);
     setNewStaff({
       name: "",
-      break: 9,
+      break: 8,
       security: false,
       numObservations: 0,
     });
@@ -112,13 +112,30 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
 const handleBreakChange = (e, staffId) => {
   const updatedBreakTime = parseInt(e.target.value.split(":")[0]);
   const updatedStaff = staff.map(staffMember => {
-    if (staffMember.id === staffId) {
-      return { ...staffMember, break: updatedBreakTime };
-    }
-    return staffMember;
+      if (staffMember.id === staffId) {
+          const currentObservationId = staffMember.observationId;
+          const restrictedObservation = observations.some(obs => obs.name === currentObservationId);
+
+          // If changing to a break at 8 and the observation is restricted, unassign it
+          if (updatedBreakTime === 8 && restrictedObservation) {
+              // Update the observation StaffNeeded as the staff member is unassigned from it
+              setObservations(currentObservations => currentObservations.map(observation => {
+                  if (observation.name === currentObservationId) {
+                      return { ...observation, StaffNeeded: observation.StaffNeeded + 1 };
+                  }
+                  return observation;
+              }));
+
+              staffMember.observationId = "-";
+          }
+
+          return { ...staffMember, break: updatedBreakTime };
+      }
+      return staffMember;
   });
   setStaff(updatedStaff);
 };
+
 
 
 
@@ -156,6 +173,12 @@ const assignObservation = (observationName, staffId) => {
     return;
   }
 
+  const shouldAdjustBreak = newStaffList[staffIndex].break === 8;
+  if (shouldAdjustBreak) {
+    newStaffList[staffIndex].break = 9; // Adjust break to 9
+  }
+
+
   // Handle reassignment if the new observation is different from the current one
   if (previousObservationId !== observationName) {
     if (targetObservation.StaffNeeded > 0) {
@@ -179,6 +202,7 @@ const assignObservation = (observationName, staffId) => {
   setStaff(newStaffList);
   setObservations([...observations]);
 };
+
 
   // Generate break time options from 8:00 to 19:00
   const breakTimeOptions = [];

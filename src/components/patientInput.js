@@ -41,10 +41,10 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
     setNewObservation(updatedObservation);
   };
 
-  const updateObservationsWithStaffNeeded = (observations) => {
+  const updateObservationsWithStaffNeeded = (observations, newId) => {
     return observations.map(observation => ({
       ...observation,
-      StaffNeeded: observation.staff, // Duplicate the `staff` value into `StaffNeeded`
+      StaffNeeded: observation.id >= newId ? observation.staff : observation.StaffNeeded,
     }));
   };
   
@@ -71,8 +71,8 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
     setObservations(prevObservations => {
       const maxId = prevObservations.reduce((max, item) => Math.max(max, item.id), -1);
       const newId = maxId + 1;
-      return updateObservationsWithStaffNeeded([...prevObservations, { ...observationToAdd, id: newId }]);
-    });
+      return updateObservationsWithStaffNeeded([...prevObservations, { ...observationToAdd, id: newId }], newId);
+});
 
     setNewObservation({
       name: "",
