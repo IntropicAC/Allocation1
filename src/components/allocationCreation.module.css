@@ -14,9 +14,11 @@
   height: 100vh;
   width: 100%;
   /* For Firefox */
-  overflow: overlay;
   border: solid black 0.1rem;
-
+  position: relative; /* Ensures the container can handle absolute positioning inside it */
+  overflow: auto; /* Enables scrolling */
+  /* Use the modern approach to attempt overlay scrollbars */
+  overflow: overlay;
 }
 .draggableObsContainer {
   display: flex;
@@ -74,12 +76,14 @@
 }
 
 .allocationTable th, .hourCell, table td {
-  max-width: 20rem;
   border: 0.1rem solid black;
   text-align: center;
-  white-space: nowrap;
   padding: 0.6rem;
-  min-width: 3rem;
+  width: 12rem;
+  height: 3rem;
+  white-space: normal; /* Allows text to wrap */
+  overflow-wrap: break-word; /* Allows the words to break and wrap */
+  word-break: break-all; /* Ensures that long words will break at any character */
 }
 
 table td:not(.hourCell):hover {

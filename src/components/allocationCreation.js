@@ -42,8 +42,13 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
   const [{ isDragging }, dragRef, dragSource] = useDrag(() => ({
     type: 'observation',
     item: { sourceStaffName: staffMember.name, sourceHour: hour },
+    canDrag: monitor => {
+      // Prevent dragging if the cell is in editing mode
+      return !isEditing;
+    },
     collect: monitor => ({ isDragging: monitor.isDragging() }),
   }));
+  
 
   // Existing drop setup
   const [{ isOver }, dropRef] = useDrop({
@@ -67,7 +72,15 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
     if (hour === staffMember.break) {
       return;
     }
+    console.log("Editing Mode before toggle:", isEditing);
     setIsEditing(!isEditing);
+    // When enabling editing, check if the current observation is "-"
+    if (!isEditing && observation === "-") {
+      setEditValue("");  // Set the editing value to be empty
+    } else {
+      setEditValue(observation);  // Otherwise, use the current observation value
+    }
+
   };
 
   // Function to handle input change
@@ -82,32 +95,40 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
   };
 
   // Function to handle mouse down event
-  const handleCellMouseDown = () => {
-    // Start a timer for click-and-hold
+  const handleCellMouseDown = (e) => {
+    if (isEditing) {
+      // If in editing mode, simply return to allow normal input interactions
+      return;
+    }
+  
+    // If not in editing mode, handle the drag normally
     const timeout = setTimeout(() => {
-      // After 300ms, consider it a click-and-hold and initiate dragging
       if (dragSource.current) {
         dragSource.current.startDrag();
       }
-    }, 300);
+    }, 300); // Delay to distinguish between click and drag
   
     // Save the timer reference to clear it on mouse up
     setClickAndHoldTimeout(timeout);
   };
+  
+  
+  
   useEffect(() => {
     return () => {
       // Clean up the dragSource reference when the component is unmounted
       dragSource.current = null;
     };
   }, []);
+
   // Function to handle mouse up event
   const handleCellMouseUp = () => {
     // Clear the click-and-hold timer
     clearTimeout(clickAndHoldTimeout);
 
     // If the timer hasn't expired yet, consider it a regular click
-    if (clickAndHoldTimeout) {
-      toggleEdit();
+    if (clickAndHoldTimeout && !isEditing) {
+    toggleEdit();
     }
 
     // Reset the timer reference
@@ -122,13 +143,12 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
     return (
       <td
         ref={ref}
-        className={`${cellStyle} ${styles.editableCell}`}
-        style={{ padding: 0, maxWidth: '3rem' }}
+        style={{ padding: 0, margin: 0, overflow: 'hidden' }}
         onMouseDown={handleCellMouseDown}
         onMouseUp={handleCellMouseUp}
       >
         <input
-          maxLength={3}
+          maxLength={12}
           type="text"
           value={editValue}
           onChange={handleInputChange}
@@ -140,7 +160,7 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
           }}
           className={styles.editableInput}
           autoFocus
-          style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}
+          style={{ width: '100%', height: '100%', boxSizing: 'border-box', overflow: 'hidden' }}
         />
       </td>
     );
