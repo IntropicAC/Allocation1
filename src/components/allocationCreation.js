@@ -333,7 +333,13 @@ const DraggableXCell = ({ value }) => {
   );
 };
 
-
+const countValidObservations = (staffObservations, observations) => {
+  // Create a set of valid observation names
+  const validNames = new Set(observations.map(obs => obs.name));
+  
+  // Count observations that are in the valid names set
+  return Object.values(staffObservations).filter(obs => validNames.has(obs) && obs !== '-').length;
+};
 
   return (
     <>
@@ -356,11 +362,10 @@ const DraggableXCell = ({ value }) => {
         <tr>
           <th>Time</th>
           {staff.map(staffMember => {
-            let totalObservations = Object.values(staffMember.observations).filter(val => val !== '-' && val !== '' && val !== 'X').length;
-            // Capitalize the first letter of each staff member's name
-            let capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
-            return <th key={staffMember.name}>{capitalizedStaffName} - {totalObservations}</th>;
-          })}
+          const totalObservations = countValidObservations(staffMember.observations, observations);
+          const capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
+          return <th key={staffMember.id}>{capitalizedStaffName} - {totalObservations}</th>;
+        })}
         </tr>
       </thead>
       <tbody>
