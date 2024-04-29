@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./navigationButtons.module.css";
+import { useReactToPrint } from 'react-to-print';
 //import { allocateObservations } from "./allocationCode";
 //import { createTable } from "./allocationCode";
 
@@ -12,7 +13,8 @@ function NavigationButtons({
   copyTable,
   unassignedObs,
   setUnassignedObs,
-  setStaff
+  setStaff,
+  tableRef
 }) {
     
 
@@ -721,12 +723,6 @@ function NavigationButtons({
     setStaff(allocationCopy);
   };
 
-  const assignObservationId= (staff) => {
-
-  }
-
-  
-
   const handleNext = () => {
     if (currentPage === "patient" && observations.length < 1) {
       alert("At least 1 observation is required");
@@ -750,10 +746,7 @@ function NavigationButtons({
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-  
+
 
   const [isCopied, setIsCopied] = useState(false);
 
@@ -796,6 +789,10 @@ function NavigationButtons({
   setStaff(resetStaff); // Assuming this updates your component's state
   setTimeout(() => setIsSpinning(false), 1000);
 };
+
+const handlePrint = useReactToPrint({
+  content: () => tableRef.current,
+});
 
 return (
   <div className={styles.navigationContainer}>
