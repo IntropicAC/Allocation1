@@ -11,17 +11,19 @@ html {
     box-sizing: border-box;
 }
 body {
-    font-family: Arial, sans-serif;
-    background: #B0E0E6;
-    height: 100%;
-    position: relative;
-  }
-  svg{
-    width: 100%;
-    height: 100%;
-    z-index: -2000; /* Keeps the background behind other content */
-    position: absolute;
+  font-family: Arial, sans-serif;
+  background-color: #B0E0E6;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 900 450' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='0' height='0' fill='%234682B4'%3E%3C/rect%3E%3Cpath d='M0 130L50 152C100 174 200 218 300 229.8C400 241.7 500 221.3 600 231.3C700 241.3 800 281.7 850 301.8L900 322L900 451L850 451C800 451 700 451 600 451C500 451 400 451 300 451C200 451 100 451 50 451L0 451Z' fill='rgba(0, 0, 0, 0.5)'%3E%3C/path%3E%3Cpath d='M0 243L50 241.8C100 240.7 200 238.3 300 265.2C400 292 500 348 600 373C700 398 800 392 850 389L900 386L900 451L850 451C800 451 700 451 600 451C500 451 400 451 300 451C200 451 100 451 50 451L0 451Z' fill='%23B0E0E6'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
 }
+
   
   h1 {
     font-size: 2rem;
@@ -74,7 +76,7 @@ body {
     justify-content: space-between;
     align-items: top;
     height: 58rem; 
-    margin: 6rem 14rem 30rem 14rem; 
+    margin: 6rem 14rem 15rem 14rem; 
     border-radius: 0px;
     border-right: black solid 0.2rem;
     border-left: black solid 0.2rem;
@@ -82,6 +84,7 @@ body {
     flex-direction: column;
     box-shadow: inset -9px 9px 13px #4646466b,
                 inset 9px -9px 13px #4646466b;
+    
   }
 
   .content-wrapper {

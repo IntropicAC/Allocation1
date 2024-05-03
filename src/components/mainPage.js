@@ -7,7 +7,7 @@ import NavigationButtons from "./navigationButtons";
 import AllocationCreation from "./allocationCreation";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import ReactToPrint from 'react-to-print';
+import ReactToPrint from "react-to-print";
 
 function MainPage({ observations, setObservations, staff, setStaff }) {
   const [currentPage, setCurrentPage] = useState("patient");
@@ -91,15 +91,15 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
         table {
           width: 100%; 
           border-collapse: collapse;
-          table-layout: fixed; /* Ensures columns have equal width *//*
-          margin: 20mm; /* Adjust the margin as needed *//*
+          table-layout: fixed; /* Ensures columns have equal width */ /*
+          margin: 20mm; /* Adjust the margin as needed */ /*
         }/*
         th, td {
           border: 1px solid black; 
           padding: 8px; 
           text-align: left; 
-          word-wrap: break-word; /* Ensures text wraps within the cell *//*
-          vertical-align: top; /* Aligns content to the top *//*
+          word-wrap: break-word; /* Ensures text wraps within the cell */ /*
+          vertical-align: top; /* Aligns content to the top */ /*
         }/*
       `);
       printWindow.document.write('</style></head><body>');
@@ -113,8 +113,6 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
   };
   
   */
-  
-  
 
   return (
     <div className="hero">
@@ -133,21 +131,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
           {/* Add more navigation links as necessary */}
         </ul>
       </nav>
-      <svg
-          className="svg-background"
-          viewBox="0 0 900 450"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <rect x="0" y="0" width="0" height="0" fill="#4682B4"></rect>
-          <path
-            d="M0 130L50 152C100 174 200 218 300 229.8C400 241.7 500 221.3 600 231.3C700 241.3 800 281.7 850 301.8L900 322L900 451L850 451C800 451 700 451 600 451C500 451 400 451 300 451C200 451 100 451 50 451L0 451Z"
-            fill="hsl(0, 0%, 12%)"
-          ></path>
-          <path
-            d="M0 243L50 241.8C100 240.7 200 238.3 300 265.2C400 292 500 348 600 373C700 398 800 392 850 389L900 386L900 451L850 451C800 451 700 451 600 451C500 451 400 451 300 451C200 451 100 451 50 451L0 451Z"
-            fill="#B0E0E6"
-          ></path>
-        </svg>
+
       {/* Main Content Area */}
       <main id="content-area">
         <div className="content-wrapper">
@@ -181,7 +165,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
             </DndProvider>
           )}
         </div>
-        
+
         <NavigationButtons
           copyTable={copyTable}
           currentPage={currentPage}
@@ -193,7 +177,6 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
           setTableRef={setTableRef}
           tableRef={tableRef}
         />
-        
       </main>
 
       {/* Footer */}
