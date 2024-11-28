@@ -185,10 +185,8 @@ table td:not(.hourCell):hover {
   max-height: 3rem;
   }
   .break {
-    font-size: 14pt; /* Example: Reduce font size for printing */
+    font-size: 13pt; /* Example: Reduce font size for printing */
   }
-  
-  
 }
 
 
