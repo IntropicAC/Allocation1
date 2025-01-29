@@ -122,6 +122,13 @@
   border-radius: 5rem;
 }
 
+.security {
+  display: inline-flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.6rem;  
+}
+
 .breakOption{
   padding: 0.5rem;
 }
@@ -257,6 +264,21 @@ input[type="checkbox"]:checked:after {
   outline: none; /* remove default focus outline */
   box-shadow: 0 0 0.3rem #f44336; /* adds a shadow when focused, matching your input focus style */
 }
+
+.securityContainer {
+  display: inline-flex;       
+  align-items: center;        
+  gap: 0rem;                
+}
+
+.securityNumber {
+  font-size: 1.6rem;
+  padding: 0.7rem;
+  border: 0.1rem solid black;
+  border-radius: 0.8rem;
+  transition: all 0.2s ease;
+}
+
 
 /*------------Fun addition-------------------*/
 @keyframes animateRainbow {

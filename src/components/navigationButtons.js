@@ -67,6 +67,55 @@ function NavigationButtons({
       }
     });
   }
+  function setSecurityEligibleHours(staff, startHour = 9, endHour = 20) {
+    // endHour is inclusive, so totalHours = endHour - startHour + 1
+    const totalHours = endHour - startHour + 1;
+  
+    staff.forEach((member) => {
+      if (member.security === true) {
+        // If not provided, set to some default or zero
+        const allowedObs = member.maxObservations || 0;
+  
+        // Early exit if no observations allowed
+        if (allowedObs === 0) {
+          member.eligibleHours = [];
+          return;
+        }
+  
+        // Step to “spread” the hours across the time window
+        const step = totalHours / allowedObs;
+  
+        // Build an array of hours spaced out
+        let hours = [];
+        for (let i = 0; i < allowedObs; i++) {
+          let hourVal = Math.round(startHour + i * step);
+          // clamp to the range if needed
+          if (hourVal > endHour) {
+            hourVal = endHour;
+          }
+          hours.push(hourVal);
+        }
+  
+        // Remove duplicates (if rounding collisions) and sort
+        const uniqueHours = [...new Set(hours)].sort((a, b) => a - b);
+        member.eligibleHours = uniqueHours;
+      } else {
+        // Non-security staff do not need eligibleHours
+        member.eligibleHours = null;
+      }
+    });
+  }
+  function getSecurityDistributionPenalty(staffMember, hour) {
+    // If not security, or if staffMember.eligibleHours is empty (or null),
+    // there's no restriction => return 0
+    if (!staffMember.security || !staffMember.eligibleHours) {
+      return 0;
+    }
+  
+    // For a security staff, only return 0 if the hour is in eligibleHours
+    return staffMember.eligibleHours.includes(hour) ? 0 : -1000;
+  }
+    
 
   function calculateAvailabilityForEachObservation(observations, staff, hour) {
     let availabilityCounts = {};
@@ -294,6 +343,17 @@ function NavigationButtons({
 
     return interleavedObservations;
   }
+  function getLastObservationHour(staffMember, hour) {
+    // scan backwards from currentHour-1 down to 7
+    for (let h = hour - 1; h >= 7; h--) {
+      if (staffMember.observations[h] && staffMember.observations[h] !== '-') {
+        return h;
+      }
+    }
+    return -1; // not found
+  }
+
+
 
   function calculateStaffScore(
     staffMember,
@@ -385,6 +445,14 @@ function NavigationButtons({
         staffMember.observations[hour - 4] === "-"
       ) {
         score += 5;
+      }
+
+      if (observation.name !== "Generals" &&
+        staffMember.observations[hour - 1] === observation.name &&
+        staffMember.observations[hour - 2] === observation.name 
+      ) {
+
+        score -= 2000
       }
 
       for (let k = 1; k <= 4; k++) {
@@ -504,73 +572,36 @@ function NavigationButtons({
       
       }*/
     }
-
+    
     if (staffMember.security === true) {
-      if ((maxObs = 8)) {
-        if (staffMember.observations[hour - 1] !== "-") {
-          score -= 200;
-        }
-        if (staffMember.observations[hour - 2] !== "-") {
-          score -= 35;
-        }
 
-        if (staffMember.observations[hour - 1] === "-") {
-          score += 35;
-        }
+      const allowedObs = staffMember.securityObs || 0; 
+        const idealGap =  12 / allowedObs;
 
-        if (observation.name !== "Generals") {
-          let hasReceivedObservationRecently =
-            staffMember.observations[hour - 2] === observation.name;
-
-          // Apply the condition with a 70% probability
-          if (hasReceivedObservationRecently) {
-            score -= 30; // Subtract from the score
-          }
-        }
-      }
-
-      if (maxObs <= 7) {
-        if (staffMember.observations[hour - 1] !== "-") {
-          score -= 200;
-        }
-        if (staffMember.observations[hour - 2] !== "-") {
-          score -= 35;
-        }
-
-        if (staffMember.observations[hour - 1] === "-") {
-          score += 35;
-        }
-
-        if (observation.name !== "Generals") {
-          let hasReceivedObservationRecently =
-            staffMember.observations[hour - 2] === observation.name;
-
-          // Apply the condition with a 70% probability
-          if (hasReceivedObservationRecently) {
-            score -= 30; // Subtract from the score
-          }
-        }
-
-        if (staffMember.numObservations >= 4) {
-          score -= 2000;
-        }
+    
+    const lastHour = getLastObservationHour(staffMember, hour);
+    if (lastHour !== -1) {
+      const hoursSinceLast = hour - lastHour;
+      if (hoursSinceLast < idealGap) {
+        score -= 1000; 
       }
     }
+      
 
-    if ((maxObs = 8)) {
+        if (observation.name !== "Generals" &&
+          staffMember.observations[hour - 1] === observation.name &&
+          staffMember.observations[hour - 2] === observation.name && 
+          staffMember.observations[hour - 3] === observation.name &&
+          staffMember.observations[hour - 4] === observation.name && 
+          staffMember.observations[hour - 5] === observation.name
+        ) {
+
+          score -=30
+        }
+      
+    }
+
       if (staffMember.nurse === true) {
-        if (maxObs < 8) {
-          score -= 10000;
-        }
-        if (hour <= 12) {
-          score -= 40;
-        }
-        if (staffMember.observations[hour - 1] !== "-") {
-          score -= 200;
-        }
-        if (staffMember.observations[hour - 2] !== "-") {
-          score -= 35;
-        }
 
         if (
           staffMember.observations[hour - 1] === "-" &&
@@ -590,10 +621,9 @@ function NavigationButtons({
           }
         }
       }
-    }
-    /*console.log(
-      `Hour: ${hour}, Observation: ${observation.name}, Staff Member: ${staffMember.name}, Score: ${score}`
-    );*/
+    
+    console.log(`Hour: ${hour}, Observation: ${observation.name}, Staff Member: ${staffMember.name}, Score: ${score}`);
+    
     return score;
   }
 
@@ -668,6 +698,7 @@ function NavigationButtons({
     let isSecurityHour =
       (hour === 12 || hour === 17 || hour === 19) &&
       staffMember.security === true;
+    let securityObsMax = staffMember.security === true && staffMember.numObservations >= staffMember.securityObs;
     let isNurse =
       (hour === 8 || hour === 19) && staffMember.nurse === true && maxObs <= 9;
     let canNotRecieve = staffMember.observations[hour] === "X";
@@ -679,6 +710,7 @@ function NavigationButtons({
       !isOnBreak &&
       !isSecurityHour &&
       !maxObsSecurity &&
+      !securityObsMax &&
       !NurseMax &&
       !isNurse &&
       !canNotRecieve
@@ -731,7 +763,7 @@ function NavigationButtons({
       if (firstObservationEachHour[hour] === undefined) {
         firstObservationEachHour[hour] = observation.name;
       }
-      //console.log(`Hour ${hour}: '${observation.name}' assigned to ${staffMember.name}`);
+      console.log(`Hour ${hour}: '${observation.name}' assigned to ${staffMember.name}`);
       assigned = true;
       break; // Break after assigning to one staff member
     }
@@ -772,7 +804,7 @@ function runSimulation(observations, staff) {
     let minConsecutiveObservations = Number.MAX_SAFE_INTEGER;
     let bestStaffAllocation = null;
 
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 1; i++) {
         let staffClone = JSON.parse(JSON.stringify(staff)); // Deep clone of staff
         allocateObservations(observations, staffClone); // Assuming this modifies staffClone appropriately
         let currentTotal = countConsecutiveObservations(staffClone); // This now sums all valid sequences
@@ -784,7 +816,7 @@ function runSimulation(observations, staff) {
         }
     }
 
-    //console.log("Best staff allocation based on criteria:");
+    //console.log(`Best total consecutive observations: ${minConsecutiveObservations}`);
     
     return bestStaffAllocation;
 }
@@ -814,7 +846,7 @@ function runSimulation(observations, staff) {
 
     resetStaff(staff);
 
-    let firstObservationEachHour = {}; // Object to store the first observation for each hour
+    let firstObservationEachHour = {}; 
     for (let hour = 9; hour <= 19; hour++) {
       const availabilityRecord = calculateAvailabilityForEachObservation(
         observations,
@@ -859,7 +891,7 @@ function runSimulation(observations, staff) {
       );
       //console.log(availabilityRecord);
 
-      // Criteria evaluation and potential reiteration logic remains unchanged
+      
       if (shouldSwap) {
         //console.error("Criteria met, clearing and reiterating for hour:", hour);
         clearAndPrepareHourForReiteration(staff, hour, observationsToProcess);

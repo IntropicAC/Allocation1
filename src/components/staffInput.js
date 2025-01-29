@@ -96,17 +96,21 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
 
 
 
-  const handleSecurityChange = (e, staffId) => {
-    const updatedStaff = staff.map(staffMember => {
-        // Set 'security' to true only for the selected staff member, and false for others
+
+  const handleSecurityChange = (e, staffId, obsValue = 0) => {
+    const updatedStaff = staff.map((staffMember) => {
+      if (staffMember.id === staffId) {
         return {
-            ...staffMember,
-            security: staffMember.id === staffId ? e.target.checked : false
+          ...staffMember,
+          security: e.target.checked,
+          securityObs: e.target.checked ? obsValue : null, // Reset observations when unchecked
         };
+      } else {
+        return { ...staffMember, security: false, securityObs: null };
+      }
     });
     setStaff(updatedStaff);
-};
-
+  };
 
 
 const handleBreakChange = (e, staffId) => {
@@ -140,7 +144,7 @@ const handleBreakChange = (e, staffId) => {
 
 
 const assignObservation = (observationName, staffId) => {
-  const newStaffList = [...staff]; // Clone the staff array for immutability
+  const newStaffList = [...staff]; 
   const staffIndex = newStaffList.findIndex(s => s.id === staffId);
 
   if (staffIndex === -1) {
@@ -281,17 +285,40 @@ useEffect(()=>{
               {breakTimeOptions}
             </select>
           </label>
+          
+          <div className={styles.securityContainer}>
+  <label className={styles.security}>
+    Security
+    <input
+      type="checkbox"
+      checked={staffMember.security}
+      onChange={(e) => handleSecurityChange(e, staffMember.id)}
+    />
+  </label>
+  
+  {/* Only show the select if security is checked */}
+  {staffMember.security && (
+    <select
+      title="Max number of observations security can recieve"
+      className={styles.securityNumber}
+      value={staffMember.securityObs || 0}
+      onChange={(e) =>
+        handleSecurityChange(
+          { target: { checked: true } },
+          staffMember.id,
+          Number(e.target.value)
+        )
+      }
+    >
+      {[...Array(12).keys()].map((num) => (
+        <option key={num} value={num}>
+          {num}
+        </option>
+      ))}
+    </select>
+  )}
+</div>
 
-
-
-            <label className={styles.security}>
-            Security
-              <input
-                type="checkbox"
-                checked={staffMember.security}
-                onChange={(e) => handleSecurityChange(e, staffMember.id)}
-              />
-            </label>
 
 
             {/* Dropdown to assign an observation to a staff member */}
