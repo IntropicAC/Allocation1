@@ -263,8 +263,7 @@ useEffect(()=>{
       </form>
 
       <form className={styles.staffContainer}>
-        {[...staff].sort((a, b) => a.name.localeCompare(b.name))
-                 .map((staffMember, index) => (
+        {staff.map((staffMember, index) => (
           <section key={staffMember.id} className={styles.staffMember}>
             <h2 className={styles.indexAndName}>
         <span className={styles.indexNumber}>{index + 1}</span>

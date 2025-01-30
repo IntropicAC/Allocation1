@@ -447,6 +447,84 @@ function NavigationButtons({
         score += 5;
       }
 
+      //---------distributing observtions evenly-----------
+
+      if (
+        staffMember.observations[hour - 1] !== observation.name &&
+        staffMember.observations[hour - 2] !== observation.name && 
+        staffMember.observations[hour - 3] !== observation.name &&
+        staffMember.observations[hour - 4] !== observation.name &&
+        staffMember.observations[hour - 5] !== observation.name 
+      ) {
+
+        score += 10
+      }
+      if (
+        staffMember.observations[hour - 1] !== observation.name &&
+        staffMember.observations[hour - 2] !== observation.name && 
+        staffMember.observations[hour - 3] !== observation.name &&
+        staffMember.observations[hour - 4] !== observation.name 
+      ) {
+
+        score += 10
+      }
+      if (
+        staffMember.observations[hour - 1] !== observation.name &&
+        staffMember.observations[hour - 2] !== observation.name && 
+        staffMember.observations[hour - 3] !== observation.name 
+      ) {
+
+        score += 15
+      }
+      if (
+        staffMember.observations[hour - 1] !== observation.name &&
+        staffMember.observations[hour - 2] !== observation.name 
+      ) {
+
+        score += 20
+      }
+
+      //--------------- minus even distribution------------------
+      if (
+        staffMember.observations[hour - 1] === observation.name ||
+        staffMember.observations[hour - 2] === observation.name ||
+        staffMember.observations[hour - 3] === observation.name ||
+        staffMember.observations[hour - 4] === observation.name ||
+        staffMember.observations[hour - 5] === observation.name 
+      ) {
+
+        score -=10
+      }
+      if (
+        staffMember.observations[hour - 1] === observation.name ||
+        staffMember.observations[hour - 2] === observation.name ||
+        staffMember.observations[hour - 3] === observation.name ||
+        staffMember.observations[hour - 4] === observation.name 
+      ) {
+
+        score -=10
+      }
+
+      if (
+        staffMember.observations[hour - 1] === observation.name ||
+        staffMember.observations[hour - 2] === observation.name ||
+        staffMember.observations[hour - 3] === observation.name
+      ) {
+
+        score -=15
+      }
+
+      if (
+        staffMember.observations[hour - 1] === observation.name ||
+        staffMember.observations[hour - 2] === observation.name 
+      ) {
+
+        score -=20
+      }
+
+
+      //-----------------------------------------------------
+
       if (observation.name !== "Generals" &&
         staffMember.observations[hour - 1] === observation.name &&
         staffMember.observations[hour - 2] === observation.name 
@@ -454,8 +532,16 @@ function NavigationButtons({
 
         score -= 2000
       }
+      if (
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-" &&
+        observation.name !== "Generals"
+      ){
 
-      for (let k = 1; k <= 4; k++) {
+        }
+      
+
+      for (let k = 1; k <= 5; k++) {
         // Look back 4 hours
 
         if (hour - k < 8) {
@@ -471,15 +557,6 @@ function NavigationButtons({
         }
       }
 
-      /*if (staffMember.break === 19) {
-    // Check if 'Generals' has not been received in any previous hours
-    let hasReceivedNoGenerals = Object.values(staffMember.observations).every(obs => obs !== 'Generals');
-  
-    if (hasReceivedNoGenerals && observation.name === "Generals") {
-        // Increase the score if the current observation is 'Generals'
-        score += 10; // Adjust this value as needed
-    }
-  }*/
       if (observation.name === "Generals") {
         if (staffMember.break === hour + 1) {
           score += 15;
@@ -489,18 +566,6 @@ function NavigationButtons({
         score += 5;
       }
 
-      if (observation.name !== "Generals") {
-        let hasReceivedObservationRecently =
-          staffMember.observations[hour - 2] === observation.name;
-
-        // Generate a random number between 0 and 1
-        let randomNumber = Math.random();
-
-        // Apply the condition with a 70% probability
-        if (hasReceivedObservationRecently) {
-          score -= 30; // Subtract from the score
-        }
-      }
 
       if (
         hour + 1 === staffMember.break &&
@@ -511,13 +576,6 @@ function NavigationButtons({
         if (observation.name === "Generals") {
           score += 20; // Increase the score significantly to prioritize this staff member for 'Gen'
         }
-      }
-
-      if (observation.name === staffMember.observations[hour - 1]) {
-        score -= 1000;
-      }
-      if (observation.name !== staffMember.observations[hour - 2]) {
-        score += 5;
       }
 
       let noOneElseCanReceive = staff.every(
@@ -586,18 +644,60 @@ function NavigationButtons({
         score -= 1000; 
       }
     }
-      
-
-        if (observation.name !== "Generals" &&
-          staffMember.observations[hour - 1] === observation.name &&
-          staffMember.observations[hour - 2] === observation.name && 
-          staffMember.observations[hour - 3] === observation.name &&
-          staffMember.observations[hour - 4] === observation.name && 
-          staffMember.observations[hour - 5] === observation.name
+    if(maxObs >=8){
+      score +=40
+    }
+    
+  
+        if (
+          staffMember.observations[hour - 1] === observation.name ||
+          staffMember.observations[hour - 2] === observation.name ||
+          staffMember.observations[hour - 3] === observation.name ||
+          staffMember.observations[hour - 4] === observation.name 
         ) {
 
           score -=30
         }
+
+        if (
+          hour >= 10 &&
+          staffMember.observations[hour - 1] === "-" &&
+          staffMember.observations[hour - 2] === "-" 
+        ) {
+          score += 30;
+        }
+        if (
+          hour >= 10 &&
+          staffMember.observations[hour - 1] === "-" &&
+          staffMember.observations[hour - 2] === "-" &&
+          staffMember.observations[hour - 3] === "-"
+        ) {
+          score += 30;
+        }
+        if (
+          hour >= 10 &&
+          staffMember.observations[hour - 1] === "-" &&
+          staffMember.observations[hour - 2] === "-" &&
+          staffMember.observations[hour - 3] === "-" &&
+          staffMember.observations[hour - 4] === "-"
+        ) {
+          score += 20;
+        }
+
+        let generalsPresent = false;
+
+          for (let k = 1; k <= 7; k++) {
+            if (hour >= 12 && staffMember.observations[hour - k] === "Generals") {
+              generalsPresent = true;
+              break; // Exit early if we find "Generals" in the past 5 hours
+            }
+          }
+
+          // If "Generals" was NOT present in the past 5 hours and observation is not "Generals"
+          if (!generalsPresent && observation.name !== "Generals") {
+            score -= 20;
+          }
+
       
     }
 
@@ -620,9 +720,11 @@ function NavigationButtons({
             score -= 30; // Subtract from the score
           }
         }
+
+        
       }
     
-    console.log(`Hour: ${hour}, Observation: ${observation.name}, Staff Member: ${staffMember.name}, Score: ${score}`);
+    //console.log(`Hour: ${hour}, Observation: ${observation.name}, Staff Member: ${staffMember.name}, Score: ${score}`);
     
     return score;
   }
@@ -763,7 +865,7 @@ function NavigationButtons({
       if (firstObservationEachHour[hour] === undefined) {
         firstObservationEachHour[hour] = observation.name;
       }
-      console.log(`Hour ${hour}: '${observation.name}' assigned to ${staffMember.name}`);
+      //console.log(`Hour ${hour}: '${observation.name}' assigned to ${staffMember.name}`);
       assigned = true;
       break; // Break after assigning to one staff member
     }
@@ -783,9 +885,9 @@ function NavigationButtons({
 
         for (let hour = 12; hour <= 19; hour++) {
             if (staffMember.observations[hour] && staffMember.observations[hour - 1] && staffMember.observations[hour - 2] &&
-                staffMember.observations[hour] !== "-" && staffMember.observations[hour] !== "Generals" &&
-                staffMember.observations[hour - 1] !== "-" && staffMember.observations[hour - 1] !== "Generals" &&
-                staffMember.observations[hour - 2] !== "-" && staffMember.observations[hour - 2] !== "Generals") {
+                staffMember.observations[hour] !== "-" && 
+                staffMember.observations[hour - 1] !== "-" && 
+                staffMember.observations[hour - 2] !== "-" ) {
                 currentConsecutive++;
             } else {
                 totalConsecutive += currentConsecutive;
@@ -804,19 +906,19 @@ function runSimulation(observations, staff) {
     let minConsecutiveObservations = Number.MAX_SAFE_INTEGER;
     let bestStaffAllocation = null;
 
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 300; i++) {
         let staffClone = JSON.parse(JSON.stringify(staff)); // Deep clone of staff
         allocateObservations(observations, staffClone); // Assuming this modifies staffClone appropriately
         let currentTotal = countConsecutiveObservations(staffClone); // This now sums all valid sequences
 
-        //console.log(`Iteration ${i + 1}: Total Consecutive Observations = ${currentTotal}`);
+        console.log(`Iteration ${i + 1}: Total Consecutive Observations = ${currentTotal}`);
         if (currentTotal < minConsecutiveObservations) {
             minConsecutiveObservations = currentTotal;
             bestStaffAllocation = JSON.parse(JSON.stringify(staffClone)); // Store a deep clone of the current best staff allocation
         }
     }
 
-    //console.log(`Best total consecutive observations: ${minConsecutiveObservations}`);
+    console.log(`Best total consecutive observations: ${minConsecutiveObservations}`);
     
     return bestStaffAllocation;
 }
