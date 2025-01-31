@@ -641,7 +641,7 @@ function NavigationButtons({
         }
       }
     }*/
-      if(maxObs >=9){
+      if(maxObs >=8){
       if (observation.name === "Generals" && hour > 9) {
         const prevObs = staffMember.observations[hour - 1];
     
