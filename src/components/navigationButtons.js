@@ -595,7 +595,7 @@ function NavigationButtons({
  
       if (
         maxObs <= 8 &&
-        hour >= 11 &&
+        hour >= 10 &&
         staffMember.observations[hour - 1] !== "-" &&
         staffMember.observations[hour - 2] !== "-" &&
         staffMember.observations[hour - 1] !== "Generals" &&
@@ -641,17 +641,17 @@ function NavigationButtons({
         }
       }
     }*/
-      if(maxObs >=8){
+      if(maxObs >=8){//when havig 4 x 2 observations this is less effective is best for 2 x 3.
       if (observation.name === "Generals" && hour > 9) {
         const prevObs = staffMember.observations[hour - 1];
     
         // If the staff had the same observation as the majority last hour => bonus
         if (prevObs && prevObs === majorityObsPrevHour) {
-          addPoints(3333333, "bonus for matching the majority observation last hour");
+          addPoints(3333, "bonus for matching the majority observation last hour");
         } 
         // If staff had a minority observation last hour => penalty
         else {
-          addPoints(-3333333, "penalty for minority observation last hour");
+          addPoints(-3333, "penalty for minority observation last hour");
         }
       }
     }
