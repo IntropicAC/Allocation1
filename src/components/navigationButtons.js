@@ -601,7 +601,7 @@ function NavigationButtons({
         staffMember.observations[hour - 1] !== "Generals" &&
         staffMember.observations[hour - 2] !== "Generals"
       ) {
-        addPoints(-30, "large penalty for 2 consecutive busy hours when maxObs <= 8");
+        addPoints(-200, "large penalty for 2 consecutive busy hours when maxObs <= 8");
       }
 
  
