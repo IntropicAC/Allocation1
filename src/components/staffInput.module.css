@@ -294,3 +294,24 @@ input[type="checkbox"]:checked:after {
   animation: animateRainbow 5s linear infinite;
 }
 
+.roleContainer {
+  display: inline-flex;       
+  align-items: center;        
+  gap: 0.5rem;                
+}
+
+.roleLabel {
+  font-weight: bold;
+  font-size: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.maxObsNumber {
+  font-size: 1.6rem;
+  padding: 0.7rem;
+  border: 0.1rem solid black;
+  border-radius: 0.8rem;
+  transition: all 0.2s ease;
+}

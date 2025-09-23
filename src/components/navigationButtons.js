@@ -377,296 +377,271 @@ function NavigationButtons({
 
 
   function calculateStaffScore(
-  staffMember,
-  hour,
-  maxObs,
-  observation,
-  logs,
-  majorityObsPrevHour,
-  lookAheadPlan = null // NEW PARAMETER
-) {
-  let score = 0;
-  const reasons = [];
-
-  function addPoints(points, reason) {
-    score += points;
-    reasons.push(`${points >= 0 ? '+' : ''}${points}: ${reason}`);
-  }
-
-  // NEW: Look-ahead planning scores
-  if (lookAheadPlan) {
-    const plan = lookAheadPlan.staffPlans[staffMember.name];
-    const progress = staffMember.numObservations;
-    const hoursPassed = hour - 8;
-    const hoursRemaining = 19 - hour + 1;
-    
-    // Expected progress at this point in the day
-    const expectedProgress = Math.floor((hoursPassed / 12) * plan.targetObservations);
-    
-    // 1. Check if we're on track
-    if (progress < expectedProgress - 1) {
-      addPoints(2000, "Behind schedule - needs to catch up");
-    } else if (progress > expectedProgress + 1) {
-      addPoints(-2000, "Ahead of schedule - should slow down");
+    staffMember,
+    hour,
+    maxObs,
+    observation,
+    logs,
+    majorityObsPrevHour
+  ) {
+    let score = 0;
+    const reasons = []; // <-- We'll push condition reasons here.
+  
+    // Example helper to add to `score` while tracking reason
+    function addPoints(points, reason) {
+      score += points;
+      reasons.push(`${points >= 0 ? '+' : ''}${points}: ${reason}`);
     }
-    
-    // 2. Check if this is an ideal hour for them
-    if (plan.idealHours.includes(hour)) {
-      addPoints(1000, "This is an ideal hour in their plan");
-    }
-    
-    // 3. Check remaining capacity
-    const remainingNeeded = plan.targetObservations - progress;
-    if (remainingNeeded > hoursRemaining * 0.9) {
-      addPoints(3000, "Must assign now - running out of hours");
-    }
-    
-    // 4. Check consecutive observations
-    let consecutive = 0;
-    for (let h = hour - 1; h >= Math.max(8, hour - 3); h--) {
-      if (staffMember.observations[h] && staffMember.observations[h] !== '-') {
-        consecutive++;
-      } else {
-        break;
+  
+    if (staffMember.security === false) {
+      addPoints(maxObs - staffMember.numObservations, "non-security baseline (maxObs - numObservations)")
+ 
+      let noOneHadFreeHour = staff.every(
+        (member) => member.observations[hour - 1] !== "-"
+      );
+ 
+      if (
+        staffMember.observations[hour - 1] === "Generals" &&
+        staffMember.observations[hour - 2] === "-" &&
+        noOneHadFreeHour
+      ) {
+        addPoints(2000, "staffMember had Generals after a free hour while no one else had a free hour");
       }
-    }
-    
-    if (consecutive >= lookAheadPlan.maxConsecutive) {
-      addPoints(-5000, `Would exceed max consecutive limit (${lookAheadPlan.maxConsecutive})`);
-    } else if (consecutive > 0 && lookAheadPlan.systemPressure < 0.7) {
-      addPoints(-1000 * consecutive, `Consecutive penalty in low-pressure system`);
-    }
-    
-    // 5. Gap optimization
-    let gapSinceLastObs = 0;
-    for (let h = hour - 1; h >= 8; h--) {
-      if (staffMember.observations[h] && staffMember.observations[h] !== '-') {
-        gapSinceLastObs = hour - h - 1;
-        break;
+ 
+      // Negatives for back-to-back non-free hours
+      /*if (
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 1] !== "Generals"
+      ) {
+        addPoints(-15, "penalty for not having a free hour or Generals in previous hour");
+      }*/
+      if (
+        hour >= 10 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 1] !== "Generals" &&
+        staffMember.observations[hour - 2] !== "-" &&
+        staffMember.observations[hour - 2] !== "Generals"
+      ) {
+        addPoints(-15, "penalty for 2 consecutive hours without free or Generals");
       }
-    }
-    
-    if (gapSinceLastObs === lookAheadPlan.idealGap) {
-      addPoints(1500, "Perfect gap spacing");
-    } else if (gapSinceLastObs < lookAheadPlan.idealGap && gapSinceLastObs > 0) {
-      addPoints(-500, "Gap too small");
-    }
-  }
+      if (
+        hour >= 11 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-" 
+      ) {
+        addPoints(-50, "penalty for 3 consecutive hours busy");
+      }
+      if (
+        hour >= 11 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-" &&
+        staffMember.observations[hour - 3] !== "-"
+      ) {
+        addPoints(-50, "penalty for 3 consecutive hours busy");
+      }
+      if (
+        hour >= 12 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-" &&
+        staffMember.observations[hour - 3] !== "-" &&
+        staffMember.observations[hour - 4] !== "-"
+      ) {
+        addPoints(-50, "penalty for 4 consecutive hours busy");
+      }
+      if (
+        hour >= 13 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-" &&
+        staffMember.observations[hour - 3] !== "-" &&
+        staffMember.observations[hour - 4] !== "-" &&
+        staffMember.observations[hour - 5] !== "-"
+      ) {
+        addPoints(-50, "penalty for 5 consecutive hours busy");
+      }
+ 
+      // Free hour additions
+      if (staffMember.observations[hour - 1] === "-") {
+        addPoints(22, "bonus for free hour in the previous hour");
+      }
+      if (
+        hour >= 10 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-"
+      ) {
+        addPoints(15, "bonus for 2 consecutive free hours");
+      }
+      if (
+        hour >= 11 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-" &&
+        staffMember.observations[hour - 3] === "-"
+      ) {
+        addPoints(5, "bonus for 3 consecutive free hours");
+      }
+      if (
+        hour >= 12 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-" &&
+        staffMember.observations[hour - 3] === "-" &&
+        staffMember.observations[hour - 4] === "-"
+      ) {
+        addPoints(15, "bonus for 4 consecutive free hours");
+      }
+      if (
+        hour >= 13 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-" &&
+        staffMember.observations[hour - 3] === "-" &&
+        staffMember.observations[hour - 4] === "-"  &&
+        staffMember.observations[hour - 5] === "-"
+      ) {
+        addPoints(20, "bonus for 5 consecutive free hours");
+      }
+ 
+      // Distributing observations evenly (+)
+      if (
+        staffMember.observations[hour - 1] !== observation.name ||
+        staffMember.observations[hour - 2] !== observation.name ||
+        staffMember.observations[hour - 3] !== observation.name ||
+        staffMember.observations[hour - 4] !== observation.name ||
+        staffMember.observations[hour - 5] !== observation.name
+      ) {
+        addPoints(10, "even distribution bonus (5-hour check)");
+      }
+      if (
+        staffMember.observations[hour - 1] !== observation.name ||
+        staffMember.observations[hour - 2] !== observation.name ||
+        staffMember.observations[hour - 3] !== observation.name ||
+        staffMember.observations[hour - 4] !== observation.name
+      ) {
+        addPoints(10, "even distribution bonus (4-hour check)");
+      }
+      if (
+        staffMember.observations[hour - 1] !== observation.name ||
+        staffMember.observations[hour - 2] !== observation.name ||
+        staffMember.observations[hour - 3] !== observation.name
+      ) {
+        addPoints(15, "even distribution bonus (3-hour check)");
+      }
+      if (
+        staffMember.observations[hour - 1] !== observation.name ||
+        staffMember.observations[hour - 2] !== observation.name
+      ) {
+        addPoints(30, "even distribution bonus (2-hour check)");
+      }
+      if (
+        staffMember.observations[hour - 1] !== observation.name
+      ) {
+        addPoints(20, "even distribution bonus (1-hour check)");
+      }
+ 
+      // Distributing observations evenly (-)
+      if (
+        staffMember.observations[hour - 1] === observation.name ||
+        staffMember.observations[hour - 2] === observation.name ||
+        staffMember.observations[hour - 3] === observation.name ||
+        staffMember.observations[hour - 4] === observation.name ||
+        staffMember.observations[hour - 5] === observation.name
+      ) {
+        addPoints(-10, "penalty for repeating same observation in last 5 hours");
+      }
+      if (
+        staffMember.observations[hour - 1] === observation.name ||
+        staffMember.observations[hour - 2] === observation.name ||
+        staffMember.observations[hour - 3] === observation.name ||
+        staffMember.observations[hour - 4] === observation.name
+      ) {
+        addPoints(-10, "penalty for repeating same observation in last 4 hours");
+      }
+      if (
+        staffMember.observations[hour - 1] === observation.name ||
+        staffMember.observations[hour - 2] === observation.name ||
+        staffMember.observations[hour - 3] === observation.name
+      ) {
+        addPoints(-15, "penalty for repeating same observation in last 3 hours");
+      }
+      if (
+        staffMember.observations[hour - 1] === observation.name ||
+        staffMember.observations[hour - 2] === observation.name
+      ) {
+        addPoints(-20, "penalty for repeating same observation in last 2 hours");
+      }
+ 
+      // Has "Generals" in the last 4 hours
+      let hasRecentGenerals = Object.keys(staffMember.observations)
+        .some(h => h >= hour - 4 && h < hour && staffMember.observations[h] === "Generals");
+      let generalsPenalty = hasRecentGenerals && observation.name === "Generals" ? -10 : 0;
+      if (generalsPenalty !== 0) {
+        addPoints(generalsPenalty, "penalty for having Generals again within 4 hours");
+      }
+ 
+      // Example condition
+      let noOneElseCanReceive = staff.every(
+        (member) =>
+          member.observations[hour - 1] !== "-" || // did not have a free hour previously
+          member.observations[hour] !== "-" || // already has an observation this hour
+          (member.observations[hour - 1] === "-" &&
+            observation.name === member.observations[hour - 1]) // had a free hour but can't receive same observation
+      );
+ 
+      if (
+        noOneElseCanReceive &&
+        staffMember.observations[hour - 2] === "-" &&
+        staffMember.observations[hour - 1] === "Generals" &&
+        observation.name !== "Generals"
+      ) {
+        addPoints(1000, "bonus for forced assignment scenario (noOneElseCanReceive)");
+      }
+ 
+      if (
+        maxObs <= 8 &&
+        hour >= 10 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-" &&
+        staffMember.observations[hour - 1] !== "Generals" &&
+        staffMember.observations[hour - 2] !== "Generals"
+      ) {
+        addPoints(-200, "large penalty for 2 consecutive busy hours when maxObs <= 8");
+      }
 
-  // KEEP ALL YOUR EXISTING SCORING LOGIC BELOW
-  if (staffMember.security === false) {
-    addPoints(maxObs - staffMember.numObservations, "non-security baseline (maxObs - numObservations)")
-
-    let noOneHadFreeHour = staff.every(
-      (member) => member.observations[hour - 1] !== "-"
-    );
-
-    if (
-      staffMember.observations[hour - 1] === "Generals" &&
-      staffMember.observations[hour - 2] === "-" &&
-      noOneHadFreeHour
-    ) {
-      addPoints(2000, "staffMember had Generals after a free hour while no one else had a free hour");
-    }
-
-    // Negatives for back-to-back non-free hours
-    if (
-      hour >= 10 &&
-      staffMember.observations[hour - 1] !== "-" &&
-      staffMember.observations[hour - 1] !== "Generals" &&
-      staffMember.observations[hour - 2] !== "-" &&
-      staffMember.observations[hour - 2] !== "Generals"
-    ) {
-      addPoints(-15, "penalty for 2 consecutive hours without free or Generals");
-    }
-    if (
-      hour >= 11 &&
-      staffMember.observations[hour - 1] !== "-" &&
-      staffMember.observations[hour - 2] !== "-" 
-    ) {
-      addPoints(-50, "penalty for 3 consecutive hours busy");
-    }
-    if (
-      hour >= 11 &&
-      staffMember.observations[hour - 1] !== "-" &&
-      staffMember.observations[hour - 2] !== "-" &&
-      staffMember.observations[hour - 3] !== "-"
-    ) {
-      addPoints(-50, "penalty for 3 consecutive hours busy");
-    }
-    if (
-      hour >= 12 &&
-      staffMember.observations[hour - 1] !== "-" &&
-      staffMember.observations[hour - 2] !== "-" &&
-      staffMember.observations[hour - 3] !== "-" &&
-      staffMember.observations[hour - 4] !== "-"
-    ) {
-      addPoints(-50, "penalty for 4 consecutive hours busy");
-    }
-    if (
-      hour >= 13 &&
-      staffMember.observations[hour - 1] !== "-" &&
-      staffMember.observations[hour - 2] !== "-" &&
-      staffMember.observations[hour - 3] !== "-" &&
-      staffMember.observations[hour - 4] !== "-" &&
-      staffMember.observations[hour - 5] !== "-"
-    ) {
-      addPoints(-50, "penalty for 5 consecutive hours busy");
-    }
-
-    // Free hour additions
-    if (staffMember.observations[hour - 1] === "-") {
-      addPoints(22, "bonus for free hour in the previous hour");
-    }
-    if (
-      hour >= 10 &&
-      staffMember.observations[hour - 1] === "-" &&
-      staffMember.observations[hour - 2] === "-"
-    ) {
-      addPoints(15, "bonus for 2 consecutive free hours");
-    }
-    if (
-      hour >= 11 &&
-      staffMember.observations[hour - 1] === "-" &&
-      staffMember.observations[hour - 2] === "-" &&
-      staffMember.observations[hour - 3] === "-"
-    ) {
-      addPoints(5, "bonus for 3 consecutive free hours");
-    }
-    if (
-      hour >= 12 &&
-      staffMember.observations[hour - 1] === "-" &&
-      staffMember.observations[hour - 2] === "-" &&
-      staffMember.observations[hour - 3] === "-" &&
-      staffMember.observations[hour - 4] === "-"
-    ) {
-      addPoints(15, "bonus for 4 consecutive free hours");
-    }
-    if (
-      hour >= 13 &&
-      staffMember.observations[hour - 1] === "-" &&
-      staffMember.observations[hour - 2] === "-" &&
-      staffMember.observations[hour - 3] === "-" &&
-      staffMember.observations[hour - 4] === "-"  &&
-      staffMember.observations[hour - 5] === "-"
-    ) {
-      addPoints(20, "bonus for 5 consecutive free hours");
-    }
-
-    // Distributing observations evenly (+)
-    if (
-      staffMember.observations[hour - 1] !== observation.name ||
-      staffMember.observations[hour - 2] !== observation.name ||
-      staffMember.observations[hour - 3] !== observation.name ||
-      staffMember.observations[hour - 4] !== observation.name ||
-      staffMember.observations[hour - 5] !== observation.name
-    ) {
-      addPoints(10, "even distribution bonus (5-hour check)");
-    }
-    if (
-      staffMember.observations[hour - 1] !== observation.name ||
-      staffMember.observations[hour - 2] !== observation.name ||
-      staffMember.observations[hour - 3] !== observation.name ||
-      staffMember.observations[hour - 4] !== observation.name
-    ) {
-      addPoints(10, "even distribution bonus (4-hour check)");
-    }
-    if (
-      staffMember.observations[hour - 1] !== observation.name ||
-      staffMember.observations[hour - 2] !== observation.name ||
-      staffMember.observations[hour - 3] !== observation.name
-    ) {
-      addPoints(15, "even distribution bonus (3-hour check)");
-    }
-    if (
-      staffMember.observations[hour - 1] !== observation.name ||
-      staffMember.observations[hour - 2] !== observation.name
-    ) {
-      addPoints(30, "even distribution bonus (2-hour check)");
-    }
-    if (
-      staffMember.observations[hour - 1] !== observation.name
-    ) {
-      addPoints(20, "even distribution bonus (1-hour check)");
-    }
-
-    // Distributing observations evenly (-)
-    if (
-      staffMember.observations[hour - 1] === observation.name ||
-      staffMember.observations[hour - 2] === observation.name ||
-      staffMember.observations[hour - 3] === observation.name ||
-      staffMember.observations[hour - 4] === observation.name ||
-      staffMember.observations[hour - 5] === observation.name
-    ) {
-      addPoints(-10, "penalty for repeating same observation in last 5 hours");
-    }
-    if (
-      staffMember.observations[hour - 1] === observation.name ||
-      staffMember.observations[hour - 2] === observation.name ||
-      staffMember.observations[hour - 3] === observation.name ||
-      staffMember.observations[hour - 4] === observation.name
-    ) {
-      addPoints(-10, "penalty for repeating same observation in last 4 hours");
-    }
-    if (
-      staffMember.observations[hour - 1] === observation.name ||
-      staffMember.observations[hour - 2] === observation.name ||
-      staffMember.observations[hour - 3] === observation.name
-    ) {
-      addPoints(-15, "penalty for repeating same observation in last 3 hours");
-    }
-    if (
-      staffMember.observations[hour - 1] === observation.name ||
-      staffMember.observations[hour - 2] === observation.name
-    ) {
-      addPoints(-20, "penalty for repeating same observation in last 2 hours");
-    }
-
-    // Has "Generals" in the last 4 hours
-    let hasRecentGenerals = Object.keys(staffMember.observations)
-      .some(h => h >= hour - 4 && h < hour && staffMember.observations[h] === "Generals");
-    let generalsPenalty = hasRecentGenerals && observation.name === "Generals" ? -10 : 0;
-    if (generalsPenalty !== 0) {
-      addPoints(generalsPenalty, "penalty for having Generals again within 4 hours");
-    }
-
-    // Example condition
-    let noOneElseCanReceive = staff.every(
-      (member) =>
-        member.observations[hour - 1] !== "-" || // did not have a free hour previously
-        member.observations[hour] !== "-" || // already has an observation this hour
-        (member.observations[hour - 1] === "-" &&
-          observation.name === member.observations[hour - 1]) // had a free hour but can't receive same observation
-    );
-
-    if (
-      noOneElseCanReceive &&
-      staffMember.observations[hour - 2] === "-" &&
-      staffMember.observations[hour - 1] === "Generals" &&
-      observation.name !== "Generals"
-    ) {
-      addPoints(1000, "bonus for forced assignment scenario (noOneElseCanReceive)");
-    }
-
-    if (
-      maxObs <= 8 &&
-      hour >= 10 &&
-      staffMember.observations[hour - 1] !== "-" &&
-      staffMember.observations[hour - 2] !== "-" &&
-      staffMember.observations[hour - 1] !== "Generals" &&
-      staffMember.observations[hour - 2] !== "Generals"
-    ) {
-      addPoints(-200, "large penalty for 2 consecutive busy hours when maxObs <= 8");
-    }
-
-    if(maxObs >=9 &&
-      hour === 9 &&
-      staffMember.observations[hour - 1] === "Generals"
-    ){
-      addPoints(20, "small bonus for Generals in previous hour when maxObs <= 8");
-    }
-
-    if(maxObs >=8){
+ 
+      if(maxObs >=9 &&
+        hour === 9 &&
+        staffMember.observations[hour - 1] === "Generals"
+      ){
+        addPoints(20, "small bonus for Generals in previous hour when maxObs <= 8");
+      }
+ 
+      // If break is 8 or 19, big bonus if not assigned Generals yet and observation is Generals
+     /* if ((staffMember.break === 8 || staffMember.break === 19) && maxObs <=8) {
+        if(
+          !Object.values(staffMember.observations).includes("Generals") &&
+          observation.name === "Generals"
+        ){
+          addPoints(3000, "big bonus for staff with break=8/19 who hasn't had Generals yet");
+        }
+      }
+ 
+      // Additional checks
+      if (
+        maxObs >= 9 &&
+        hour >= 10 &&
+        staffMember.observations[hour - 1] !== "-" &&
+        staffMember.observations[hour - 2] !== "-"
+      ) {
+        addPoints(-20, "penalty for 2 consecutive busy hours when maxObs >= 9");
+      }
+      if(maxObs >=9){
+        if(
+          hour <= 12 &&
+          staffMember.observations[hour - 1] !== "-" &&
+          staffMember.observations[hour - 2] !== "Generals"
+        ){
+          addPoints(20, "bonus condition under maxObs>=9, early hour, no Generals in the last 2 hours");
+        }
+      }
+    }*/
+      if(maxObs >=8){//when havig 4 x 2 observations this is less effective is best for 2 x 3.
       if (observation.name === "Generals" && hour > 9) {
         const prevObs = staffMember.observations[hour - 1];
     
@@ -680,112 +655,174 @@ function NavigationButtons({
         }
       }
     }
-  }
+ }
 
-  // Security staff
-  if (staffMember.security === true) {
-    const allowedObs = staffMember.securityObs || 0;
-    const idealGap = 12 / allowedObs;
+  
+    // Security staff
+    if (staffMember.security === true) {
+      const allowedObs = staffMember.securityObs || 0;
+      const idealGap = 12 / allowedObs;
 
-    const lastHour = getLastObservationHour(staffMember, hour);
-    if (lastHour !== -1 && allowedObs !== 0) {
-      const hoursSinceLast = hour - lastHour;
+      const lastHour = getLastObservationHour(staffMember, hour);
+      if (lastHour !== -1 && allowedObs !== 0) {
+        const hoursSinceLast = hour - lastHour;
 
-      // If hoursSinceLast is below idealGap => penalty
-      if (hoursSinceLast < idealGap) {
-        addPoints(-40000, "penalty for assigning security too soon (ideal gap not met)");
-      } 
-      // If they met or exceeded the ideal gap => bonus
-      else {
-        addPoints(40000, "bonus for meeting or exceeding the ideal gap before next security assignment");
+        // If hoursSinceLast is below idealGap => penalty
+        if (hoursSinceLast < idealGap) {
+          addPoints(-40000, "penalty for assigning security too soon (ideal gap not met)");
+        } 
+        // If they met or exceeded the ideal gap => bonus
+        else {
+          addPoints(40000, "bonus for meeting or exceeding the ideal gap before next security assignment");
+        }
+      }
+
+      score += 200
+      if(maxObs >=8){
+        addPoints(40, "baseline bonus for security if maxObs >= 8");
+      }
+      if(maxObs >=9){
+        addPoints(40, "additional bonus for security if maxObs >= 9");
+      }
+  
+      // Penalty for repeating same observation in last few hours
+      if (
+        staffMember.observations[hour - 1] === observation.name ||
+        staffMember.observations[hour - 2] === observation.name ||
+        staffMember.observations[hour - 3] === observation.name ||
+        staffMember.observations[hour - 4] === observation.name 
+      ) {
+        addPoints(-30, "penalty for repeating same observation in last 4 hours for security");
+      }
+  
+      // Bonus for consecutive free hours
+      if (
+        hour >= 10 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-" 
+      ) {
+        addPoints(30, "security bonus for 2 consecutive free hours");
+      }
+      if (
+        hour >= 10 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-" &&
+        staffMember.observations[hour - 3] === "-"
+      ) {
+        addPoints(30, "security bonus for 3 consecutive free hours");
+      }
+      if (
+        hour >= 10 &&
+        staffMember.observations[hour - 1] === "-" &&
+        staffMember.observations[hour - 2] === "-" &&
+        staffMember.observations[hour - 3] === "-" &&
+        staffMember.observations[hour - 4] === "-"
+      ) {
+        addPoints(20, "security bonus for 4 consecutive free hours");
+      }
+  
+      // If Generals not in last 5 hours and current obs not Generals => small penalty
+      let generalsPresent = false;
+      for (let k = 1; k <= 7; k++) {
+        if (hour >= 12 && staffMember.observations[hour - k] === "Generals") {
+          generalsPresent = true;
+          break; 
+        }
+      }
+      if (!generalsPresent && observation.name !== "Generals") {
+        addPoints(-20, "penalty for security if Generals not seen in last 5 hours but we aren't assigning Generals now");
       }
     }
-
-    score += 200
-    if(maxObs >=8){
-      addPoints(40, "baseline bonus for security if maxObs >= 8");
-    }
-    if(maxObs >=9){
-      addPoints(40, "additional bonus for security if maxObs >= 9");
-    }
-
-    // Penalty for repeating same observation in last few hours
-    if (
-      staffMember.observations[hour - 1] === observation.name ||
-      staffMember.observations[hour - 2] === observation.name ||
-      staffMember.observations[hour - 3] === observation.name ||
-      staffMember.observations[hour - 4] === observation.name 
-    ) {
-      addPoints(-30, "penalty for repeating same observation in last 4 hours for security");
-    }
-
-    // Bonus for consecutive free hours
-    if (
-      hour >= 10 &&
-      staffMember.observations[hour - 1] === "-" &&
-      staffMember.observations[hour - 2] === "-" 
-    ) {
-      addPoints(30, "security bonus for 2 consecutive free hours");
-    }
-    if (
-      hour >= 10 &&
-      staffMember.observations[hour - 1] === "-" &&
-      staffMember.observations[hour - 2] === "-" &&
-      staffMember.observations[hour - 3] === "-"
-    ) {
-      addPoints(30, "security bonus for 3 consecutive free hours");
-    }
-    if (
-      hour >= 10 &&
-      staffMember.observations[hour - 1] === "-" &&
-      staffMember.observations[hour - 2] === "-" &&
-      staffMember.observations[hour - 3] === "-" &&
-      staffMember.observations[hour - 4] === "-"
-    ) {
-      addPoints(20, "security bonus for 4 consecutive free hours");
-    }
-
-    // If Generals not in last 5 hours and current obs not Generals => small penalty
-    let generalsPresent = false;
-    for (let k = 1; k <= 7; k++) {
-      if (hour >= 12 && staffMember.observations[hour - k] === "Generals") {
-        generalsPresent = true;
-        break; 
+    // Nurse condition
+    if (staffMember.nurse === true) {
+      if (
+        staffMember.observations[hour - 1] === "-" &&
+        observation.name === "Generals" &&
+        hour >= 12
+      ) {
+        addPoints(1000, "nurse bonus for Generals in the next hour after a free hour (past hour >=12)");
+      }
+  
+      if (observation.name !== "Generals") {
+        let hasReceivedObservationRecently =
+          staffMember.observations[hour - 2] === observation.name;
+        if (hasReceivedObservationRecently) {
+          addPoints(-30, "nurse penalty for receiving the same observation recently (1 hour gap)");
+        }
       }
     }
-    if (!generalsPresent && observation.name !== "Generals") {
-      addPoints(-20, "penalty for security if Generals not seen in last 5 hours but we aren't assigning Generals now");
-    }
+  
+    // Finally, log the hour, observation, staffMember, final score, and the reasons:
+    logs.push(
+      `Hour: ${hour}, Observation: ${observation.name}, ` +
+      `Staff Member: ${staffMember.name}, Final Score: ${score}, Reasons: ${reasons.join(" | ")}`
+    );
+  
+    return score;
   }
   
-  // Nurse condition
-  if (staffMember.nurse === true) {
-    if (
-      staffMember.observations[hour - 1] === "-" &&
-      observation.name === "Generals" &&
-      hour >= 12
-    ) {
-      addPoints(1000, "nurse bonus for Generals in the next hour after a free hour (past hour >=12)");
-    }
 
-    if (observation.name !== "Generals") {
-      let hasReceivedObservationRecently =
-        staffMember.observations[hour - 2] === observation.name;
-      if (hasReceivedObservationRecently) {
-        addPoints(-30, "nurse penalty for receiving the same observation recently (1 hour gap)");
-      }
-    }
+  function randomSortEqualScores(a, b) {
+    return Math.random() - 0.5;
   }
 
-  // Finally, log the hour, observation, staffMember, final score, and the reasons:
-  logs.push(
-    `Hour: ${hour}, Observation: ${observation.name}, ` +
-    `Staff Member: ${staffMember.name}, Final Score: ${score}, Reasons: ${reasons.join(" | ")}`
-  );
+  function calculateAvailabilityForEachObservation(observations, staff, hour) {
+    let availabilityCounts = {};
 
-  return score;
-}
+    observations.forEach((observation) => {
+      availabilityCounts[observation.name] = staff.filter((staffMember) =>
+        checkAssignmentConditions(
+          staffMember,
+          hour,
+          observation,
+          calculateMaxObservations(observations, staff)
+        )
+      ).length;
+    });
 
+    return availabilityCounts;
+  }
+
+  function sortStaffByScore(
+    staff,
+    hour,
+    maxObs,
+    observation,
+    maxObservations,
+    logs,
+    majorityObsPrevHour
+  ) {
+    // First, filter out staff members who do not meet the assignment conditions
+    let eligibleStaff = staff.filter((staffMember) =>
+      checkAssignmentConditions(staffMember, hour, observation, maxObservations)
+    );
+
+    // Then, calculate scores for the eligible staff and sort them
+    let staffWithScores = eligibleStaff.map((staffMember) => {
+      const score = calculateStaffScore(
+        staffMember,
+        hour,
+        maxObs,
+        observation,
+        logs,
+        majorityObsPrevHour
+
+      );
+      return {
+        ...staffMember,
+        score,
+      };
+    });
+
+    staffWithScores.sort((a, b) => {
+      if (b.score === a.score) {
+        return randomSortEqualScores(a, b);
+      }
+      return b.score - a.score;
+    });
+
+    return staffWithScores;
+  }
 
   function checkAssignmentConditions(staffMember, hour, observation, maxObs) {
     let hadObservationLastHour =
@@ -882,93 +919,183 @@ function NavigationButtons({
 
 
   function countConsecutiveObservations(staff) {
-    let totalConsecutive = 0;  // This will store the sum of all valid sequences
+    let totalScore = 0;  // This will store the weighted penalty score
+    let totalConsecutiveCount = 0;  // This will store the count of consecutive observations
 
     staff.forEach(staffMember => {
-        let currentConsecutive = 0;
+        let currentConsecutiveLength = 0;
+        let consecutiveStartIndex = -1;
+        
+        // Get all hours that have observations (not "-" and not undefined/null)
+        const hours = Object.keys(staffMember.observations)
+            .map(h => parseInt(h))
+            .filter(h => staffMember.observations[h] && staffMember.observations[h] !== "-")
+            .sort((a, b) => a - b);
 
-        for (let hour = 8; hour <= 19; hour++) {
-            if (staffMember.observations[hour] && staffMember.observations[hour - 1] && staffMember.observations[hour - 2] &&
-                staffMember.observations[hour] !== "-" && 
-                staffMember.observations[hour - 1] !== "-" && 
-                staffMember.observations[hour - 2] !== "-") {
-                currentConsecutive++;
+        for (let i = 0; i < hours.length; i++) {
+            const currentHour = hours[i];
+            const nextHour = hours[i + 1];
+            
+            if (nextHour && nextHour === currentHour + 1) {
+                // Consecutive hours found
+                if (currentConsecutiveLength === 0) {
+                    currentConsecutiveLength = 2; // Start counting from 2 consecutive
+                    consecutiveStartIndex = i; // Track where sequence starts
+                } else {
+                    currentConsecutiveLength++;
+                }
             } else {
-                totalConsecutive += currentConsecutive;
-                currentConsecutive = 0;
+                // End of consecutive sequence
+                if (currentConsecutiveLength > 0) {
+                    totalConsecutiveCount += currentConsecutiveLength;
+                    
+                    // Check if this consecutive sequence includes any generals
+                    let hasGeneral = false;
+                    for (let j = consecutiveStartIndex; j < consecutiveStartIndex + currentConsecutiveLength; j++) {
+                        const hour = hours[j];
+                        const observation = staffMember.observations[hour];
+                        if (observation && observation.toLowerCase().includes('general')) {
+                            hasGeneral = true;
+                            break;
+                        }
+                    }
+                    
+                    // Apply custom penalty hierarchy
+                    let penalty = calculatePenalty(currentConsecutiveLength, hasGeneral);
+                    totalScore += penalty;
+                    
+                    currentConsecutiveLength = 0;
+                    consecutiveStartIndex = -1;
+                }
             }
         }
-        // Add the last sequence if it didn't end with a break
-        totalConsecutive += currentConsecutive;
+        
+        // Handle last sequence if it was consecutive
+        if (currentConsecutiveLength > 0) {
+            totalConsecutiveCount += currentConsecutiveLength;
+            
+            // Check if this consecutive sequence includes any generals
+            let hasGeneral = false;
+            for (let j = consecutiveStartIndex; j < consecutiveStartIndex + currentConsecutiveLength; j++) {
+                const hour = hours[j];
+                const observation = staffMember.observations[hour];
+                if (observation && observation.toLowerCase().includes('general')) {
+                    hasGeneral = true;
+                    break;
+                }
+            }
+            
+            // Apply custom penalty hierarchy
+            let penalty = calculatePenalty(currentConsecutiveLength, hasGeneral);
+            totalScore += penalty;
+        }
     });
 
-    //console.log(`Total Consecutive Observations Across All Staff: ${totalConsecutive}`);
-    return totalConsecutive;
+    return { score: totalScore, count: totalConsecutiveCount };
+}
+
+// Custom penalty function implementing the specific hierarchy
+function calculatePenalty(consecutiveLength, hasGeneral) {
+    /*
+    Penalty Hierarchy (lower is better):
+    1. 2 consecutive (any type): 4.0
+    2. 3 consecutive with generals: 7.0  
+    3. 3 consecutive regular: 9.0
+    4. 4 consecutive with generals: 13.0
+    5. 4 consecutive regular: 16.0
+    6. 5+ consecutive with generals: 20.0+
+    7. 5+ consecutive regular: 25.0+
+    */
+    
+    if (consecutiveLength === 2) {
+        return 4.0; // Always 4.0 regardless of generals
+    } else if (consecutiveLength === 3) {
+        return hasGeneral ? 7.0 : 9.0;
+    } else if (consecutiveLength === 4) {
+        return hasGeneral ? 13.0 : 16.0;
+    } else if (consecutiveLength >= 5) {
+        // For 5+, use exponential growth but maintain the hierarchy
+        const basePenalty = Math.pow(consecutiveLength, 2);
+        return hasGeneral ? basePenalty * 0.8 : basePenalty;
+    }
+    
+    return 0; // Should not reach here
 }
 
 function runSimulation(observations, staff) {
-  let minConsecutiveObservations = Number.MAX_SAFE_INTEGER;
-  let bestStaffAllocation = null;
-  let bestLogs = [];
-  let bestUnassignedCount = Number.MAX_SAFE_INTEGER;
-  
-  // Create a base template once
-  const staffTemplate = staff.map(member => ({
-    ...member,
-    observations: {},
-    obsCounts: {},
-    lastReceived: {},
-    numObservations: member.observationId && member.observationId !== "-" ? 1 : 0,
-    initialized: false
-  }));
-  
-  console.time("optimized code");
-  
-  for (let i = 0; i < 500; i++) {
-    let iterationLogs = [];
-    let unassignedCountRef = { value: 0 };
+    let bestScore = Number.MAX_SAFE_INTEGER;
+    let bestStaffAllocation = null;
+    let bestLogs = [];
+    let bestUnassignedCount = Number.MAX_SAFE_INTEGER;
+    let bestConsecutiveCount = Number.MAX_SAFE_INTEGER;
     
-    // Use template and reset instead of JSON parse/stringify
-    let staffClone = staffTemplate.map(member => ({
-      ...member,
-      observations: { ...member.observations },
-      obsCounts: {},
-      lastReceived: {},
-      numObservations: member.observationId && member.observationId !== "-" ? 1 : 0
+    // Create a base template once for better performance
+    const staffTemplate = staff.map(member => ({
+        ...member,
+        observations: {},
+        obsCounts: {},
+        lastReceived: {},
+        numObservations: member.observationId && member.observationId !== "-" ? 1 : 0,
+        initialized: false
     }));
     
-    allocateObservations(observations, staffClone, iterationLogs, unassignedCountRef);
+    console.time("optimized code");
     
-    let currentTotal = countConsecutiveObservations(staffClone);
-    let unassignedCount = unassignedCountRef.value;
-    
-    // Add the console log for each iteration
-    console.log(
-      `Iteration ${i + 1}: Unassigned = ${unassignedCount}, ` +
-      `Total Consecutive Observations = ${currentTotal}`
-    );
-    
-    if (unassignedCount < bestUnassignedCount ||
-        (unassignedCount === bestUnassignedCount && currentTotal < minConsecutiveObservations)) {
-      bestUnassignedCount = unassignedCount;
-      minConsecutiveObservations = currentTotal;
-      bestStaffAllocation = staffClone; // No need to clone again
-      bestLogs = iterationLogs;
+    for (let i = 0; i < 5000; i++) {
+        let iterationLogs = [];
+        let unassignedCountRef = { value: 0 };
+        
+        // Use template and shallow copy for better performance
+        let staffClone = staffTemplate.map(member => ({
+            ...member,
+            observations: {},
+            obsCounts: {},
+            lastReceived: {},
+            numObservations: member.observationId && member.observationId !== "-" ? 1 : 0
+        }));
+        
+        allocateObservations(observations, staffClone, iterationLogs, unassignedCountRef);
+        
+        let consecutiveResult = countConsecutiveObservations(staffClone);
+        let unassignedCount = unassignedCountRef.value;
+        
+        // Calculate composite score: prioritize unassigned count, then consecutive penalty
+        let compositeScore = (unassignedCount * 1000) + consecutiveResult.score;
+        
+        console.log(
+            `Iteration ${i + 1}: Unassigned = ${unassignedCount}, ` +
+            `Consecutive Count = ${consecutiveResult.count}, ` +
+            `Consecutive Penalty Score = ${consecutiveResult.score.toFixed(1)}, ` +
+            `Composite Score = ${compositeScore.toFixed(1)}`
+        );
+        
+        // Primary criterion: minimize unassigned observations
+        // Secondary criterion: minimize consecutive observation penalty
+        if (unassignedCount < bestUnassignedCount ||
+            (unassignedCount === bestUnassignedCount && consecutiveResult.score < bestScore)) {
+            bestUnassignedCount = unassignedCount;
+            bestScore = consecutiveResult.score;
+            bestConsecutiveCount = consecutiveResult.count;
+            bestStaffAllocation = staffClone;
+            bestLogs = iterationLogs;
+        }
     }
-  }
-  
-  // Log the best iteration results
-  console.log("Logs for the best iteration:");
-  bestLogs.forEach((log) => console.log(log));
-  
-  console.log(
-    `Best iteration had Unassigned = ${bestUnassignedCount}, ` +
-    `Consecutive Observations = ${minConsecutiveObservations}`
-  );
-  
-  console.timeEnd("optimized code");
-  return bestStaffAllocation;
+    
+    console.log("\n" + "=".repeat(50));
+    console.log("BEST ITERATION RESULTS:");
+    console.log("=".repeat(50));
+    console.log(`Unassigned Observations: ${bestUnassignedCount}`);
+    console.log(`Total Consecutive Observations: ${bestConsecutiveCount}`);
+    console.log(`Consecutive Penalty Score: ${bestScore.toFixed(1)}`);
+    console.log("=".repeat(50));
+    
+    console.log("\nLogs for the best iteration:");
+    bestLogs.forEach((log) => console.log(log));
+    
+    console.timeEnd("optimized code");
+    return bestStaffAllocation;
 }
+
 
 
 
@@ -993,165 +1120,105 @@ function runSimulation(observations, staff) {
   }
 
   function allocateObservations(observations, staff, logs, unassignedCountRef) {
-  const maxObs = calculateMaxObservations(observations, staff);
-  logs.push("MAX OBS --------", maxObs);
-  
-  // CREATE THE LOOK-AHEAD PLAN
-  const lookAheadPlan = createLookAheadPlan(observations, staff);
-  logs.push("LOOK-AHEAD PLAN --------", JSON.stringify(lookAheadPlan, null, 2));
-  
-  resetStaff(staff);
+    const maxObs = calculateMaxObservations(observations, staff);
+    logs.push("MAX OBS --------", maxObs)
+    resetStaff(staff);
 
-  let firstObservationEachHour = {};
-  
-  for (let hour = 9; hour <= 19; hour++) {
-    const majorityObsPrevHour = getMajorityObservation(staff, hour - 1);
-    const availabilityRecord = calculateAvailabilityForEachObservation(
-      observations,
-      staff,
-      hour
-    );
-    
-    let observationsToProcess = separateAndInterleaveObservations(
-      observations,
-      availabilityRecord,
-      firstObservationEachHour,
-      hour,
-      staff,
-      false, // shouldSwap
-      false  // stillShouldSwap
-    );
-
-    observationsToProcess.forEach((observation, index) => {
-      const staffWithScores = sortStaffByScore(
+    let firstObservationEachHour = {}; 
+    for (let hour = 9; hour <= 19; hour++) {
+      const majorityObsPrevHour = getMajorityObservation(staff, hour - 1);
+      const availabilityRecord = calculateAvailabilityForEachObservation(
+        observations,
         staff,
-        hour,
-        maxObs,
-        observation,
-        maxObs,
-        logs,
-        majorityObsPrevHour,
-        lookAheadPlan // PASS THE PLAN
+        hour
       );
-      
-      assignObservationsToStaff(
-        staff,
-        staffWithScores,
-        hour,
-        observation,
-        maxObs,
+      let observationsToProcess = separateAndInterleaveObservations(
+        observations,
+        availabilityRecord,
         firstObservationEachHour,
-        logs,
-        unassignedCountRef,
-        lookAheadPlan // PASS THE PLAN
-      );
-      
-      if (index === 0) {
-        firstObservationEachHour[hour] = observation.name;
-      }
-    });
-  }
-
-  return staff;
-}
-
-
-
-
-function sortStaffByScore(
-  staff,
-  hour,
-  maxObs,
-  observation,
-  maxObservations,
-  logs,
-  majorityObsPrevHour,
-  lookAheadPlan
-) {
-  // First, filter out staff members who do not meet the assignment conditions
-  let eligibleStaff = staff.filter((staffMember) =>
-    checkAssignmentConditions(staffMember, hour, observation, maxObservations)
-  );
-
-  // Then, calculate scores for the eligible staff and sort them
-  let staffWithScores = eligibleStaff.map((staffMember) => {
-    const score = calculateStaffScore(
-      staffMember,
-      hour,
-      maxObs,
-      observation,
-      logs,
-      majorityObsPrevHour,
-      lookAheadPlan
-    );
-    return {
-      ...staffMember,
-      score,
-    };
-  });
-
-  staffWithScores.sort((a, b) => {
-    if (b.score === a.score) {
-      return randomSortEqualScores(a, b);
-    }
-    return b.score - a.score;
-  });
-
-  return staffWithScores;
-}
-
-function assignObservationsToStaff(
-  staff,
-  staffWithScores,
-  hour,
-  observation,
-  maxObservations,
-  firstObservationEachHour,
-  logs,
-  unassignedCountRef,
-  lookAheadPlan // ADD THIS PARAMETER
-) {
-  let assigned = false;
-
-  for (let i = 0; i < staffWithScores.length; i++) {
-    let staffMember = staff.find(
-      (member) => member.name === staffWithScores[i].name
-    );
-    // Check if the staff member already has an observation for this hour
-    if (
-      !checkAssignmentConditions(
-        staffMember,
         hour,
-        observation,
-        maxObservations
-      )
-    ) {
-      continue; // Skip to the next staff member if conditions are not met
+        staff
+      );
+
+      // Initial assignment of observations to staff
+      observationsToProcess.forEach((observation, index) => {
+        const staffWithScores = sortStaffByScore(
+          staff,
+          hour,
+          maxObs,
+          observation,
+          maxObs,
+          logs,
+          majorityObsPrevHour
+        );
+        assignObservationsToStaff(
+          staff,
+          staffWithScores,
+          hour,
+          observation,
+          maxObs,
+          firstObservationEachHour,
+          logs,
+          unassignedCountRef
+        );
+        if (index === 0) {
+          // Check if this is the first observation being assigned
+          // Save the name of the first observation assigned for this hour
+          firstObservationEachHour[hour] = observation.name;
+        }
+      });
+      
+      /*const shouldSwap = evaluateCriteriaForReiteration(
+        staff,
+        hour,
+        observations
+      );
+      //console.log(availabilityRecord);
+
+      
+      if (shouldSwap) {
+        //console.error("Criteria met, clearing and reiterating for hour:", hour);
+        clearAndPrepareHourForReiteration(staff, hour, observationsToProcess);
+        observationsToProcess = separateAndInterleaveObservations(
+          observations,
+          availabilityRecord,
+          firstObservationEachHour,
+          hour,
+          staff,
+          shouldSwap
+        );
+        observationsToProcess.forEach((observation) => {
+          const staffWithScores = sortStaffByScore(
+            staff,
+            hour,
+            maxObs,
+            observation,
+            maxObs,
+            logs
+          );
+          assignObservationsToStaff(
+            staff,
+            staffWithScores,
+            hour,
+            observation,
+            maxObs,
+            firstObservationEachHour,
+            logs,
+            unassignedCountRef
+          );
+        });
+      }*/
     }
 
-    assignObservation(staffMember, hour, observation);
-    
-    // ADD THIS: Update the look-ahead plan tracking
-    if (lookAheadPlan && lookAheadPlan.staffPlans[staffMember.name]) {
-      lookAheadPlan.staffPlans[staffMember.name].currentCount++;
-    }
-
-    if (firstObservationEachHour[hour] === undefined) {
-      firstObservationEachHour[hour] = observation.name;
-    }
-    logs.push(`Hour ${hour}: '${observation.name}' assigned to ${staffMember.name}`);
-    assigned = true;
-    break; // Break after assigning to one staff member
+    return staff;
   }
-  if (!assigned) {
-    logs.push(`Hour ${hour}: Unable to assign '${observation.name}' to any staff member`);
-    unassignedCountRef.value++;
-  }
-}
 
-function randomSortEqualScores(a, b) {
-  return Math.random() - 0.5;
-}
+
+
+
+
+
+  
 
   function createLookAheadPlan(observations, staff, startHour = 8, endHour = 19) {
   const totalHours = endHour - startHour + 1;
