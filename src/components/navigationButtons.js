@@ -193,7 +193,53 @@ function NavigationButtons({
     return interleavedObservations;
   }
 
-  function createInterleavedObservationsList(
+  
+function separateAndInterleaveObservations(
+    observations,
+    availabilityRecord,
+    firstObservationEachHour,
+    hour,
+    staff,
+    shouldSwap,
+    stillShouldSwap
+  ) {
+    const genObservation = observations.find((obs) => obs.name === "Generals");
+    const otherObservations = observations.filter(
+      (obs) => obs.name !== "Generals"
+    );
+
+    shuffleArray(otherObservations);
+    let interleavedObservations;
+    if (shouldSwap) {
+      interleavedObservations = newOrderIfSwapRequired(
+        otherObservations,
+        availabilityRecord,
+        firstObservationEachHour,
+        hour,
+        staff
+      );
+    } else if (stillShouldSwap) {
+      interleavedObservations = otherObservations;
+    } else {
+      interleavedObservations = createInterleavedObservationsList(
+        otherObservations,
+        availabilityRecord,
+        firstObservationEachHour,
+        hour,
+        staff
+      );
+    }
+
+    interleavedObservations.sort((a, b) => b.staff - a.staff);
+
+    if (genObservation) {
+      interleavedObservations.push(genObservation);
+    }
+
+    return interleavedObservations;
+  }
+
+function createInterleavedObservationsList(
     observations,
     availabilityCounts,
     firstObservationEachHour,
@@ -299,50 +345,7 @@ function NavigationButtons({
     });
   }
 
-  function separateAndInterleaveObservations(
-    observations,
-    availabilityRecord,
-    firstObservationEachHour,
-    hour,
-    staff,
-    shouldSwap,
-    stillShouldSwap
-  ) {
-    const genObservation = observations.find((obs) => obs.name === "Generals");
-    const otherObservations = observations.filter(
-      (obs) => obs.name !== "Generals"
-    );
 
-    shuffleArray(otherObservations);
-    let interleavedObservations;
-    if (shouldSwap) {
-      interleavedObservations = newOrderIfSwapRequired(
-        otherObservations,
-        availabilityRecord,
-        firstObservationEachHour,
-        hour,
-        staff
-      );
-    } else if (stillShouldSwap) {
-      interleavedObservations = otherObservations;
-    } else {
-      interleavedObservations = createInterleavedObservationsList(
-        otherObservations,
-        availabilityRecord,
-        firstObservationEachHour,
-        hour,
-        staff
-      );
-    }
-
-    interleavedObservations.sort((a, b) => b.staff - a.staff);
-
-    if (genObservation) {
-      interleavedObservations.push(genObservation);
-    }
-
-    return interleavedObservations;
-  }
   function getLastObservationHour(staffMember, hour) {
     // scan backwards from currentHour-1 down to 7
     for (let h = hour - 1; h >= 7; h--) {
@@ -396,7 +399,7 @@ function NavigationButtons({
     if (staffMember.security === false) {
       addPoints(maxObs - staffMember.numObservations, "non-security baseline (maxObs - numObservations)")
  
-      let noOneHadFreeHour = staff.every(
+      /*let noOneHadFreeHour = staff.every(
         (member) => member.observations[hour - 1] !== "-"
       );
  
@@ -406,7 +409,7 @@ function NavigationButtons({
         noOneHadFreeHour
       ) {
         addPoints(2000, "staffMember had Generals after a free hour while no one else had a free hour");
-      }
+      }*/
  
       // Negatives for back-to-back non-free hours
       /*if (
@@ -521,18 +524,18 @@ function NavigationButtons({
         staffMember.observations[hour - 2] !== observation.name ||
         staffMember.observations[hour - 3] !== observation.name
       ) {
-        addPoints(15, "even distribution bonus (3-hour check)");
+        addPoints(10, "even distribution bonus (3-hour check)");
       }
       if (
         staffMember.observations[hour - 1] !== observation.name ||
         staffMember.observations[hour - 2] !== observation.name
       ) {
-        addPoints(30, "even distribution bonus (2-hour check)");
+        addPoints(10, "even distribution bonus (2-hour check)");
       }
       if (
         staffMember.observations[hour - 1] !== observation.name
       ) {
-        addPoints(20, "even distribution bonus (1-hour check)");
+        addPoints(10, "even distribution bonus (1-hour check)");
       }
  
       // Distributing observations evenly (-)
@@ -558,24 +561,26 @@ function NavigationButtons({
         staffMember.observations[hour - 2] === observation.name ||
         staffMember.observations[hour - 3] === observation.name
       ) {
-        addPoints(-15, "penalty for repeating same observation in last 3 hours");
+        addPoints(-10, "penalty for repeating same observation in last 3 hours");
       }
       if (
         staffMember.observations[hour - 1] === observation.name ||
         staffMember.observations[hour - 2] === observation.name
       ) {
-        addPoints(-20, "penalty for repeating same observation in last 2 hours");
+        addPoints(-10, "penalty for repeating same observation in last 2 hours");
       }
  
-      // Has "Generals" in the last 4 hours
+      /*// Has "Generals" in the last 4 hours
       let hasRecentGenerals = Object.keys(staffMember.observations)
         .some(h => h >= hour - 4 && h < hour && staffMember.observations[h] === "Generals");
       let generalsPenalty = hasRecentGenerals && observation.name === "Generals" ? -10 : 0;
       if (generalsPenalty !== 0) {
         addPoints(generalsPenalty, "penalty for having Generals again within 4 hours");
-      }
+      }*/
+
+
  
-      // Example condition
+      /*// Example condition
       let noOneElseCanReceive = staff.every(
         (member) =>
           member.observations[hour - 1] !== "-" || // did not have a free hour previously
@@ -591,7 +596,11 @@ function NavigationButtons({
         observation.name !== "Generals"
       ) {
         addPoints(1000, "bonus for forced assignment scenario (noOneElseCanReceive)");
-      }
+      }*/
+
+        /*if (observation.name === "Generals" && staffMember.observations[hour - 1] === "-"){
+          addPoints(-200, "Generals shouldnt be assigned to staff who just had a free hour");
+        }*/
  
       if (
         maxObs <= 8 &&
@@ -641,7 +650,7 @@ function NavigationButtons({
         }
       }
     }*/
-      if(maxObs >=8){//when havig 4 x 2 observations this is less effective is best for 2 x 3.
+     /* if(maxObs >=8){//when havig 4 x 2 observations this is less effective is best for 2 x 3.
       if (observation.name === "Generals" && hour > 9) {
         const prevObs = staffMember.observations[hour - 1];
     
@@ -654,7 +663,7 @@ function NavigationButtons({
           addPoints(-3333, "penalty for minority observation last hour");
         }
       }
-    }
+    }*/
  }
 
   
@@ -1041,7 +1050,7 @@ function runSimulation(observations, staff) {
     
     console.time("optimized code");
     
-    for (let i = 0; i < 5000; i++) {
+    for (let i = 0; i < 900; i++) {
         let iterationLogs = [];
         let unassignedCountRef = { value: 0 };
         
@@ -1167,47 +1176,7 @@ function runSimulation(observations, staff) {
           firstObservationEachHour[hour] = observation.name;
         }
       });
-      
-      /*const shouldSwap = evaluateCriteriaForReiteration(
-        staff,
-        hour,
-        observations
-      );
-      //console.log(availabilityRecord);
 
-      
-      if (shouldSwap) {
-        //console.error("Criteria met, clearing and reiterating for hour:", hour);
-        clearAndPrepareHourForReiteration(staff, hour, observationsToProcess);
-        observationsToProcess = separateAndInterleaveObservations(
-          observations,
-          availabilityRecord,
-          firstObservationEachHour,
-          hour,
-          staff,
-          shouldSwap
-        );
-        observationsToProcess.forEach((observation) => {
-          const staffWithScores = sortStaffByScore(
-            staff,
-            hour,
-            maxObs,
-            observation,
-            maxObs,
-            logs
-          );
-          assignObservationsToStaff(
-            staff,
-            staffWithScores,
-            hour,
-            observation,
-            maxObs,
-            firstObservationEachHour,
-            logs,
-            unassignedCountRef
-          );
-        });
-      }*/
     }
 
     return staff;
