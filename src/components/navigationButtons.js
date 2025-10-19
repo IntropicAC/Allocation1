@@ -419,21 +419,7 @@ function calculateStaffScore(
     reasons.push(`${points >= 0 ? '+' : ''}${points}: ${reason}`);
   }
 
-   if (hour === 9 && logs) {
-    logs.push(`DEBUG: observations = ${JSON.stringify(observations)}`);
-    logs.push(`DEBUG: observationNames = [${observationNames.join(', ')}]`);
-  }
-
-  if (!isSecurity) {
-    // Baseline score
-    addPoints(maxObs - staffMember.numObservations + 1, "non-security baseline (maxObs - numObservations)");
-    
-    // Break bonus check
-    
-    
-    
-    // Pre-calculate consecutive observation patterns for efficiency
-    const prev1 = obs[hour - 1];
+  const prev1 = obs[hour - 1];
     const prev2 = obs[hour - 2];
     const prev3 = obs[hour - 3];
     const prev4 = obs[hour - 4];
@@ -442,6 +428,12 @@ function calculateStaffScore(
     const prev7 = obs[hour - 7];
     const prev8 = obs[hour - 8];
     const prev9 = obs[hour - 9];
+
+  if (!isSecurity) {
+    // Baseline score
+    addPoints(maxObs - staffMember.numObservations + 1, "non-security baseline (maxObs - numObservations)");
+    
+    // Break bonus check
 
     if (maxObs >= 8 && staffMember.break === hour + 1) {
       const hadGeneralsInPast2Hours = (hour >= 9 && prev1 === "Generals") || (hour >= 10 && prev2 === "Generals");
@@ -590,7 +582,7 @@ function calculateStaffScore(
       
       if (lastHour !== -1) {
         const hoursSinceLast = hour - lastHour;
-        const points = hoursSinceLast < idealGap ? -40000 : 40000;
+        const points = hoursSinceLast < idealGap ? -100 : 100;
         const reason = hoursSinceLast < idealGap ? 
           "penalty for assigning security too soon (ideal gap not met)" :
           "bonus for meeting or exceeding the ideal gap before next security assignment";
@@ -642,6 +634,73 @@ function calculateStaffScore(
         addPoints(-20, "penalty for security if Generals not seen in last 7 hours but we aren't assigning Generals now");
       }
     }
+
+    // Even distribution checks - only apply penalties for repeating, no bonuses
+    
+    if (hour >= 10 && prev2 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 2 hours ago");
+    }
+    
+    if (hour >= 11 && prev3 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 3 hours ago");
+    }
+    
+    if (hour >= 12 && prev4 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 4 hours ago");
+    }
+    
+    if (hour >= 13 && prev5 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 5 hours ago");
+    }
+
+    if (hour >= 14 && prev6 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 6 hours ago");
+    }
+    
+    if (hour >= 15 && prev7 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 7 hours ago");
+    }
+    
+    if (hour >= 16 && prev8 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 8 hours ago");
+    }
+
+    if (hour >= 17 && prev9 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 9 hours ago");
+    }
+
+    // even distribution positives
+
+    if (hour >= 10 && prev2 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 2 hours ago");
+    }
+    
+    if (hour >= 11 && prev3 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 3 hours ago");
+    }
+    
+    if (hour >= 12 && prev4 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 4 hours ago");
+    }
+    
+    if (hour >= 13 && prev5 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 5 hours ago");
+    }
+
+    if (hour >= 14 && prev6 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 6 hours ago");
+    }
+
+    if (hour >= 15 && prev7 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 7 hours ago");
+    }
+    if (hour >= 16 && prev8 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 8 hours ago");
+    }
+
+    if (hour >= 17 && prev9 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 9 hours ago");
+    }
   }
 
   if (isNurse) {
@@ -653,7 +712,7 @@ function calculateStaffScore(
     
       if (lastHour !== -1) {
         const hoursSinceLast = hour - lastHour;
-        const points = hoursSinceLast < idealGap ? -40000 : 40000;
+        const points = hoursSinceLast < idealGap ? -100 : 100;
         const reason = hoursSinceLast < idealGap ? 
           "penalty for assigning nurse too soon (ideal gap not met)" :
           "bonus for meeting or exceeding the ideal gap before next nurse assignment";
@@ -663,6 +722,73 @@ function calculateStaffScore(
 
     if(obsName !== "Generals"){
       addPoints(-30, "penalty to boot chance nurse/security recieves Generals")
+    }
+
+    // Even distribution checks - only apply penalties for repeating, no bonuses
+    
+    if (hour >= 10 && prev2 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 2 hours ago");
+    }
+    
+    if (hour >= 11 && prev3 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 3 hours ago");
+    }
+    
+    if (hour >= 12 && prev4 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 4 hours ago");
+    }
+    
+    if (hour >= 13 && prev5 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 5 hours ago");
+    }
+
+    if (hour >= 14 && prev6 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 6 hours ago");
+    }
+    
+    if (hour >= 15 && prev7 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 7 hours ago");
+    }
+    
+    if (hour >= 16 && prev8 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 8 hours ago");
+    }
+
+    if (hour >= 17 && prev9 === obsName) {
+      addPoints(-60, "penalty for repeating same observation 9 hours ago");
+    }
+
+    // even distribution positives
+
+    if (hour >= 10 && prev2 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 2 hours ago");
+    }
+    
+    if (hour >= 11 && prev3 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 3 hours ago");
+    }
+    
+    if (hour >= 12 && prev4 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 4 hours ago");
+    }
+    
+    if (hour >= 13 && prev5 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 5 hours ago");
+    }
+
+    if (hour >= 14 && prev6 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 6 hours ago");
+    }
+
+    if (hour >= 15 && prev7 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 7 hours ago");
+    }
+    if (hour >= 16 && prev8 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 8 hours ago");
+    }
+
+    if (hour >= 17 && prev9 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 9 hours ago");
     }
 
     // Individual hour checks for nurse (same as security logic)
