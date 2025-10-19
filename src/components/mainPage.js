@@ -11,6 +11,7 @@ import ReactToPrint from "react-to-print";
 
 function MainPage({ observations, setObservations, staff, setStaff }) {
   const [currentPage, setCurrentPage] = useState("patient");
+  const [selectedStartHour, setSelectedStartHour] = useState(null);
 
   const handleNext = () => {
     if (currentPage === "patient") {
@@ -161,6 +162,8 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
                 setObservations={setObservations}
                 staff={staff}
                 setStaff={setStaff}
+                selectedStartHour={selectedStartHour}
+                setSelectedStartHour={setSelectedStartHour}
               />
             </DndProvider>
           )}
@@ -176,12 +179,13 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
           observations={observations}
           setTableRef={setTableRef}
           tableRef={tableRef}
+          selectedStartHour={selectedStartHour}
         />
       </main>
 
       {/* Footer */}
       <footer>
-        <p>&copy; Alex 2023</p>
+        <p>&copy; Alex 2025</p>
       </footer>
     </div>
   );

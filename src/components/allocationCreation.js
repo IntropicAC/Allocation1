@@ -1,3 +1,4 @@
+//allocationCreation.js
 import React, {useRef, useEffect, useState} from 'react';
 import styles from './allocationCreation.module.css';
 import { useDrag, useDrop } from 'react-dnd';
@@ -9,16 +10,29 @@ function capitalizeFirstLetter(string) {
 }
 
 
-function AllocationCreation({ staff, setStaff, setTableRef, observations, setObservations }) {
+function AllocationCreation({ staff, setStaff, setTableRef, observations, setObservations, selectedStartHour, setSelectedStartHour }) {
+
+  
 
   staff.sort((a, b) => {
-    if (a.security === true && b.security !== true) {
-      return -1; // Place a before b
-    } else if (b.security === true && a.security !== true) {
-      return 1; // Place b before a
-    }
-    return a.name.localeCompare(b.name); // Alphabetical order for others
-  });
+  // Define priority order: Nurse (1), Security (2), HCA (3)
+  const getPriority = (staffMember) => {
+    if (staffMember.nurse === true) return 1;
+    if (staffMember.security === true) return 2;
+    return 3; // HCA or other roles
+  };
+
+  const priorityA = getPriority(a);
+  const priorityB = getPriority(b);
+
+  // If priorities are different, sort by priority
+  if (priorityA !== priorityB) {
+    return priorityA - priorityB;
+  }
+
+  // If same priority, sort alphabetically by name
+  return a.name.localeCompare(b.name);
+});
 
   useEffect(()=> {
     console.log(staff)
@@ -30,28 +44,31 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
     setTableRef(localTableRef.current);
   }, []);
 
+  const [editingCell, setEditingCell] = useState(null); // Track which cell is being edited
+  const [editValue, setEditValue] = useState('');
 
-  const DragDropCell = ({ staffMember, hour, observation, moveObservation, updateObservation }) => {
-  // Existing state variables
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(observation);
 
-  // State variable to track click-and-hold timeout
-  const [clickAndHoldTimeout, setClickAndHoldTimeout] = useState(null);
+ const DragDropCell = ({ staffMember, hour, observation, moveObservation, updateObservation }) => {
+  const isEditing = editingCell === `${staffMember.name}-${hour}`;
+  const [isDragStarted, setIsDragStarted] = useState(false);
 
-  // Existing drag setup
   const [{ isDragging }, dragRef, dragSource] = useDrag(() => ({
     type: 'observation',
-    item: { sourceStaffName: staffMember.name, sourceHour: hour },
-    canDrag: monitor => {
-      // Prevent dragging if the cell is in editing mode
+    item: () => {
+      setIsDragStarted(true);
+      return { sourceStaffName: staffMember.name, sourceHour: hour };
+    },
+    canDrag: () => {
       return !isEditing;
     },
-    collect: monitor => ({ isDragging: monitor.isDragging() }),
-  }));
-  
+    collect: monitor => ({ 
+      isDragging: monitor.isDragging() 
+    }),
+    end: () => {
+      setIsDragStarted(false);
+    }
+  }), [staffMember.name, hour, isEditing]);
 
-  // Existing drop setup
   const [{ isOver }, dropRef] = useDrop({
     accept: ['observation', 'externalObservation', 'specialObservation'],
     drop: (item, monitor) => {
@@ -64,99 +81,60 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
     collect: monitor => ({ isOver: monitor.isOver() }),
   });
 
-  // Combine refs for drag and drop in one cell
   const ref = useRef(null);
   dragRef(dropRef(ref));
 
-  // Function to toggle edit mode
-  const toggleEdit = () => {
-    if (hour === staffMember.break) {
+  const handleCellClick = (e) => {
+    if (isEditing || hour === staffMember.break) {
       return;
     }
-    console.log("Editing Mode before toggle:", isEditing);
-    setIsEditing(!isEditing);
-    // When enabling editing, check if the current observation is "-"
-    if (!isEditing && observation === "-") {
-      setEditValue("");  // Set the editing value to be empty
-    } else {
-      setEditValue(observation);  // Otherwise, use the current observation value
+    
+    e.stopPropagation();
+    
+    // If another cell is being edited, save it first
+    if (editingCell && editingCell !== `${staffMember.name}-${hour}`) {
+      const [currentStaffName, currentHour] = editingCell.split('-');
+      updateObservation(currentStaffName, parseInt(currentHour), editValue);
     }
-
+    
+    // Get the actual text value for editing
+    const actualObservation = staffMember.observations[hour] || '-';
+    
+    // Start editing this cell
+    setEditingCell(`${staffMember.name}-${hour}`);
+    setEditValue(actualObservation === "-" ? "" : actualObservation);
   };
 
-  // Function to handle input change
+  const finishEditing = () => {
+    updateObservation(staffMember.name, hour, editValue);
+    setEditingCell(null);
+    setEditValue('');
+  };
+
   const handleInputChange = (e) => {
     setEditValue(e.target.value);
   };
 
-  // Function to handle when editing is finished
-  const handleInputBlur = () => {
-    updateObservation(staffMember.name, hour, editValue);
-    setIsEditing(false);
-  };
-
-  // Function to handle mouse down event
-  const handleCellMouseDown = (e) => {
-    if (isEditing) {
-      // If in editing mode, simply return to allow normal input interactions
-      return;
-    }
-  
-    // If not in editing mode, handle the drag normally
-    const timeout = setTimeout(() => {
-      if (dragSource.current) {
-        dragSource.current.startDrag();
-      }
-    }, 300); // Delay to distinguish between click and drag
-  
-    // Save the timer reference to clear it on mouse up
-    setClickAndHoldTimeout(timeout);
-  };
-  
-  
-  
   useEffect(() => {
     return () => {
-      // Clean up the dragSource reference when the component is unmounted
       dragSource.current = null;
     };
   }, []);
 
-  // Function to handle mouse up event
-  const handleCellMouseUp = () => {
-    // Clear the click-and-hold timer
-    clearTimeout(clickAndHoldTimeout);
-
-    // If the timer hasn't expired yet, consider it a regular click
-    if (clickAndHoldTimeout && !isEditing) {
-    toggleEdit();
-    }
-
-    // Reset the timer reference
-    setClickAndHoldTimeout(null);
-  };
-
-  // Apply styles based on dragging and hovering states
   const cellStyle = isDragging ? styles.draggingCell : isOver ? styles.hoveringCell : '';
 
-  // Editing state
   if (isEditing) {
     return (
-      <td
-        ref={ref}
-        style={{ padding: 0, margin: 0, overflow: 'hidden' }}
-        onMouseDown={handleCellMouseDown}
-        onMouseUp={handleCellMouseUp}
-      >
+      <td ref={ref} style={{ padding: 0, margin: 0, overflow: 'hidden' }}>
         <input
           maxLength={12}
           type="text"
           value={editValue}
           onChange={handleInputChange}
-          onBlur={handleInputBlur}
+          onBlur={finishEditing}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              handleInputBlur();
+              finishEditing();
             }
           }}
           className={styles.editableInput}
@@ -167,14 +145,8 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
     );
   }
 
-  // Non-editing state
   return (
-    <td
-      ref={ref}
-      className={cellStyle}
-      onMouseDown={handleCellMouseDown}
-      onMouseUp={handleCellMouseUp}
-    >
+    <td ref={ref} className={cellStyle} onClick={handleCellClick}>
       {observation}
     </td>
   );
@@ -354,8 +326,6 @@ const countValidObservations = (staffObservations, observations) => {
       ))}
     </div>
   
-
-
     <div className={styles.tableContainer}>
     <table ref={localTableRef} className={styles.allocationTable}>
       <thead>
@@ -371,19 +341,31 @@ const countValidObservations = (staffObservations, observations) => {
       <tbody>
       {Array.from({ length: 12 }, (_, i) => 8 + i).map(hour => (
   <tr key={hour}>
-    <td className={styles.hourCell}>{hour}</td>
+    <td 
+  className={`${styles.hourCell} ${
+    selectedStartHour === hour 
+      ? styles.selectedHour 
+      : selectedStartHour && hour >= selectedStartHour 
+        ? styles.affectedHour 
+        : ''
+  }`}
+  onClick={() => setSelectedStartHour(selectedStartHour === hour ? null : hour)}
+  style={{ cursor: 'pointer' }}
+>
+  {hour}
+</td>
     {staff.map(staffMember => {
       let observation = staffMember.observations[hour] === 'Generals' ? 'Gen' : staffMember.observations[hour] || '-';
       // Use DragDropCell for each observation
       return (
         <DragDropCell
-          key={staffMember.name + hour}
-          staffMember={staffMember}
-          hour={hour}
-          observation={staffMember.break === hour ? <strong className={styles.break}>Break</strong> : observation}
-          moveObservation={moveObservation}
-          updateObservation={updateObservation} // Pass this function to update observations
-        />
+  key={staffMember.name + hour}
+  staffMember={staffMember}
+  hour={hour}
+  observation={staffMember.break === hour ? <strong className={styles.break}>Break</strong> : observation}
+  moveObservation={moveObservation}
+  updateObservation={updateObservation}
+/>
       );
     })}
   </tr>

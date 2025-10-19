@@ -1,3 +1,5 @@
+//navigationButtons.js
+
 import React, { useState, useEffect } from "react";
 import styles from "./navigationButtons.module.css";
 import { useReactToPrint } from "react-to-print";
@@ -13,6 +15,7 @@ function NavigationButtons({
   copyTable,
   setStaff,
   tableRef,
+  selectedStartHour
 }) {
   function evaluateCriteriaForReiteration(staff, hour, observations) {
     // Correctly find the highest staff number using spread syntax with Math.max()
@@ -348,15 +351,17 @@ function createInterleavedObservationsList(
   });
 }
 
-  function getLastObservationHour(staffMember, hour) {
-    // scan backwards from currentHour-1 down to 7
-    for (let h = hour - 1; h >= 7; h--) {
-      if (staffMember.observations[h] && staffMember.observations[h] !== '-') {
-        return h;
-      }
+  function getLastObservationHour(staffMember, hour, observations) {
+  const observationNames = observations.map(o => o.name);
+  
+  for (let h = hour - 1; h >= 7; h--) {
+    const obs = staffMember.observations[h];
+    if (obs && observationNames.includes(obs)) { // Only count actual observations
+      return h;
     }
-    return -1; // not found
   }
+  return -1;
+}
 
   function getMajorityObservation(staffList, hour) {
     const frequency = {};
@@ -381,313 +386,336 @@ function createInterleavedObservationsList(
   
 
 
-  function calculateStaffScore(
-    staffMember,
-    hour,
-    maxObs,
-    observation,
-    logs,
-    majorityObsPrevHour
-  ) {
-    let score = 0;
-    const reasons = []; // <-- We'll push condition reasons here.
+function calculateStaffScore(
+  staffMember,
+  hour,
+  maxObs,
+  observation,
+  logs,
+  majorityObsPrevHour,
+  observations
   
-    // Example helper to add to `score` while tracking reason
-    function addPoints(points, reason) {
-      score += points;
-      reasons.push(`${points >= 0 ? '+' : ''}${points}: ${reason}`);
-    }
+) {
+  let score = 0;
+  const reasons = [];
   
-    if (staffMember.security === false) {
-      addPoints(maxObs - staffMember.numObservations, "non-security baseline (maxObs - numObservations)")
- 
-    
-      if (
-        hour >= 10 &&
-        staffMember.observations[hour - 1] !== "-" &&
-        staffMember.observations[hour - 1] !== "Generals" &&
-        staffMember.observations[hour - 2] !== "-" &&
-        staffMember.observations[hour - 2] !== "Generals"
-      ) {
-        addPoints(-15, "penalty for 2 consecutive hours without free or Generals");
-      }
-
-      if (
-        hour >= 11 &&
-        staffMember.observations[hour - 1] !== "-" &&
-        staffMember.observations[hour - 2] !== "-" 
-      ) {
-        addPoints(-50, "penalty for 2 consecutive hours busy");
-      }
-      if (
-        hour >= 11 &&
-        staffMember.observations[hour - 1] !== "-" &&
-        staffMember.observations[hour - 2] !== "-" &&
-        staffMember.observations[hour - 3] !== "-"
-      ) {
-        addPoints(-50, "penalty for 3 consecutive hours busy");
-      }
-      if (
-        hour >= 12 &&
-        staffMember.observations[hour - 1] !== "-" &&
-        staffMember.observations[hour - 2] !== "-" &&
-        staffMember.observations[hour - 3] !== "-" &&
-        staffMember.observations[hour - 4] !== "-"
-      ) {
-        addPoints(-50, "penalty for 4 consecutive hours busy");
-      }
-      if (
-        hour >= 13 &&
-        staffMember.observations[hour - 1] !== "-" &&
-        staffMember.observations[hour - 2] !== "-" &&
-        staffMember.observations[hour - 3] !== "-" &&
-        staffMember.observations[hour - 4] !== "-" &&
-        staffMember.observations[hour - 5] !== "-"
-      ) {
-        addPoints(-50, "penalty for 5 consecutive hours busy");
-      }
- 
-      // Free hour additions
-      if (staffMember.observations[hour - 1] === "-") {
-        addPoints(22, "bonus for free hour in the previous hour");
-      }
-      if (
-        hour >= 10 &&
-        staffMember.observations[hour - 1] === "-" &&
-        staffMember.observations[hour - 2] === "-"
-      ) {
-        addPoints(15, "bonus for 2 consecutive free hours");
-      }
-      if (
-        hour >= 11 &&
-        staffMember.observations[hour - 1] === "-" &&
-        staffMember.observations[hour - 2] === "-" &&
-        staffMember.observations[hour - 3] === "-"
-      ) {
-        addPoints(5, "bonus for 3 consecutive free hours");
-      }
-      if (
-        hour >= 12 &&
-        staffMember.observations[hour - 1] === "-" &&
-        staffMember.observations[hour - 2] === "-" &&
-        staffMember.observations[hour - 3] === "-" &&
-        staffMember.observations[hour - 4] === "-"
-      ) {
-        addPoints(15, "bonus for 4 consecutive free hours");
-      }
-      if (
-        hour >= 13 &&
-        staffMember.observations[hour - 1] === "-" &&
-        staffMember.observations[hour - 2] === "-" &&
-        staffMember.observations[hour - 3] === "-" &&
-        staffMember.observations[hour - 4] === "-"  &&
-        staffMember.observations[hour - 5] === "-"
-      ) {
-        addPoints(20, "bonus for 5 consecutive free hours");
-      }
-      if (
-        hour >= 14 &&
-        staffMember.observations[hour - 1] === "-" &&
-        staffMember.observations[hour - 2] === "-" &&
-        staffMember.observations[hour - 3] === "-" &&
-        staffMember.observations[hour - 4] === "-" &&
-        staffMember.observations[hour - 5] === "-" && 
-        staffMember.observations[hour - 6] === "-" 
-      ) {
-        addPoints(20, "bonus for 6 consecutive free hours");
-      }
- 
-      // Distributing observations evenly (+)
-      if (
-        staffMember.observations[hour - 1] !== observation.name ||
-        staffMember.observations[hour - 2] !== observation.name ||
-        staffMember.observations[hour - 3] !== observation.name ||
-        staffMember.observations[hour - 4] !== observation.name ||
-        staffMember.observations[hour - 5] !== observation.name
-      ) {
-        addPoints(5, "even distribution bonus (5-hour check)");
-      }
-      if (
-        staffMember.observations[hour - 1] !== observation.name ||
-        staffMember.observations[hour - 2] !== observation.name ||
-        staffMember.observations[hour - 3] !== observation.name ||
-        staffMember.observations[hour - 4] !== observation.name
-      ) {
-        addPoints(5, "even distribution bonus (4-hour check)");
-      }
-      if (
-        staffMember.observations[hour - 1] !== observation.name ||
-        staffMember.observations[hour - 2] !== observation.name ||
-        staffMember.observations[hour - 3] !== observation.name
-      ) {
-        addPoints(5, "even distribution bonus (3-hour check)");
-      }
-      if (
-        staffMember.observations[hour - 1] !== observation.name ||
-        staffMember.observations[hour - 2] !== observation.name
-      ) {
-        addPoints(5, "even distribution bonus (2-hour check)");
-      }
-      if (
-        staffMember.observations[hour - 1] !== observation.name
-      ) {
-        addPoints(5, "even distribution bonus (1-hour check)");
-      }
- 
-      // Distributing observations evenly (-)
-      if (
-        staffMember.observations[hour - 1] === observation.name ||
-        staffMember.observations[hour - 2] === observation.name ||
-        staffMember.observations[hour - 3] === observation.name ||
-        staffMember.observations[hour - 4] === observation.name ||
-        staffMember.observations[hour - 5] === observation.name
-      ) {
-        addPoints(-5, "penalty for repeating same observation in last 5 hours");
-      }
-      if (
-        staffMember.observations[hour - 1] === observation.name ||
-        staffMember.observations[hour - 2] === observation.name ||
-        staffMember.observations[hour - 3] === observation.name ||
-        staffMember.observations[hour - 4] === observation.name
-      ) {
-        addPoints(-5, "penalty for repeating same observation in last 4 hours");
-      }
-      if (
-        staffMember.observations[hour - 1] === observation.name ||
-        staffMember.observations[hour - 2] === observation.name ||
-        staffMember.observations[hour - 3] === observation.name
-      ) {
-        addPoints(-5, "penalty for repeating same observation in last 3 hours");
-      }
-      if (
-        staffMember.observations[hour - 1] === observation.name ||
-        staffMember.observations[hour - 2] === observation.name
-      ) {
-        addPoints(-5, "penalty for repeating same observation in last 2 hours");
-      }
- 
-      if (
-        maxObs <= 8 &&
-        hour >= 10 &&
-        staffMember.observations[hour - 1] !== "-" &&
-        staffMember.observations[hour - 2] !== "-" &&
-        staffMember.observations[hour - 1] !== "Generals" &&
-        staffMember.observations[hour - 2] !== "Generals"
-      ) {
-        addPoints(-200, "large penalty for 2 consecutive busy hours when maxObs <= 8");
-      }
-
- 
-      if(maxObs >=9 &&
-        hour === 9 &&
-        staffMember.observations[hour - 1] === "Generals"
-      ){
-        addPoints(20, "small bonus for Generals in previous hour when maxObs <= 8");
-      }
- }
-
+  // Cache frequently accessed values
+  const obs = staffMember.observations;
+  const obsName = observation.name;
+  const isSecurity = staffMember.security === true;
+  const isNurse = staffMember.nurse === true;
   
-    // Security staff
-    if (staffMember.security === true) {
-      const allowedObs = staffMember.securityObs || 0;
-      const idealGap = 8 / allowedObs;
-
-      const lastHour = getLastObservationHour(staffMember, hour);
-      if (lastHour !== -1 && allowedObs !== 0) {
-        const hoursSinceLast = hour - lastHour;
-
-        // If hoursSinceLast is below idealGap => penalty
-        if (hoursSinceLast < idealGap) {
-          addPoints(-40000, "penalty for assigning security too soon (ideal gap not met)");
-        } 
-        // If they met or exceeded the ideal gap => bonus
-        else {
-          addPoints(40000, "bonus for meeting or exceeding the ideal gap before next security assignment");
-        }
-      }
-
-      score += 200
-      if(maxObs >=8){
-        addPoints(40, "baseline bonus for security if maxObs >= 8");
-      }
-      if(maxObs >=9){
-        addPoints(40, "additional bonus for security if maxObs >= 9");
-      }
+  // Get list of actual observation names for comparison
+  const observationNames = observations.map(o => o.name);
   
-      // Penalty for repeating same observation in last few hours
-      if (
-        staffMember.observations[hour - 1] === observation.name ||
-        staffMember.observations[hour - 2] === observation.name ||
-        staffMember.observations[hour - 3] === observation.name ||
-        staffMember.observations[hour - 4] === observation.name 
-      ) {
-        addPoints(-30, "penalty for repeating same observation in last 4 hours for security");
-      }
-  
-      // Bonus for consecutive free hours
-      if (
-        hour >= 10 &&
-        staffMember.observations[hour - 1] === "-" &&
-        staffMember.observations[hour - 2] === "-" 
-      ) {
-        addPoints(30, "security bonus for 2 consecutive free hours");
-      }
-      if (
-        hour >= 10 &&
-        staffMember.observations[hour - 1] === "-" &&
-        staffMember.observations[hour - 2] === "-" &&
-        staffMember.observations[hour - 3] === "-"
-      ) {
-        addPoints(30, "security bonus for 3 consecutive free hours");
-      }
-      if (
-        hour >= 10 &&
-        staffMember.observations[hour - 1] === "-" &&
-        staffMember.observations[hour - 2] === "-" &&
-        staffMember.observations[hour - 3] === "-" &&
-        staffMember.observations[hour - 4] === "-"
-      ) {
-        addPoints(20, "security bonus for 4 consecutive free hours");
-      }
-  
-      // If Generals not in last 5 hours and current obs not Generals => small penalty
-      let generalsPresent = false;
-      for (let k = 1; k <= 7; k++) {
-        if (hour >= 12 && staffMember.observations[hour - k] === "Generals") {
-          generalsPresent = true;
-          break; 
-        }
-      }
-      if (!generalsPresent && observation.name !== "Generals") {
-        addPoints(-20, "penalty for security if Generals not seen in last 5 hours but we aren't assigning Generals now");
-      }
-    }
-    // Nurse condition
-    if (staffMember.nurse === true) {
-      
-      /*const allowedNurseObs = staffMember.nurseObs || 0;
-      const idealNurseGap =  10 / allowedNurseObs;
-      const lastHour = getLastObservationHour(staffMember, hour);
-  
-  if (lastHour !== -1 && allowedNurseObs !== 0) {
-    const hoursSinceLast = hour - lastHour;
-
-    if (hoursSinceLast < idealNurseGap) {
-      addPoints(-40000, "penalty for assigning nurse too soon (ideal gap not met)");
-    } else {
-      addPoints(40000, "bonus for meeting or exceeding the ideal gap before next nurse assignment");
-    }
-  }*/
-    }
-  
-    // Finally, log the hour, observation, staffMember, final score, and the reasons:
-    logs.push(
-      `Hour: ${hour}, Observation: ${observation.name}, ` +
-      `Staff Member: ${staffMember.name}, Final Score: ${score}, Reasons: ${reasons.join(" | ")}`
-    );
-  
-    return score;
+  // Helper function to check if a value is an actual observation (not a constraint)
+  function isActualObservation(value) {
+    return value && observationNames.includes(value);
   }
+  
+  // Helper function - kept as is since it's already efficient
+  function addPoints(points, reason) {
+    score += points;
+    reasons.push(`${points >= 0 ? '+' : ''}${points}: ${reason}`);
+  }
+
+   if (hour === 9 && logs) {
+    logs.push(`DEBUG: observations = ${JSON.stringify(observations)}`);
+    logs.push(`DEBUG: observationNames = [${observationNames.join(', ')}]`);
+  }
+
+  if (!isSecurity) {
+    // Baseline score
+    addPoints(maxObs - staffMember.numObservations + 1, "non-security baseline (maxObs - numObservations)");
+    
+    // Break bonus check
+    
+    
+    
+    // Pre-calculate consecutive observation patterns for efficiency
+    const prev1 = obs[hour - 1];
+    const prev2 = obs[hour - 2];
+    const prev3 = obs[hour - 3];
+    const prev4 = obs[hour - 4];
+    const prev5 = obs[hour - 5];
+    const prev6 = obs[hour - 6];
+    const prev7 = obs[hour - 7];
+    const prev8 = obs[hour - 8];
+    const prev9 = obs[hour - 9];
+
+    if (maxObs >= 8 && staffMember.break === hour + 1) {
+      const hadGeneralsInPast2Hours = (hour >= 9 && prev1 === "Generals") || (hour >= 10 && prev2 === "Generals");
+      const hadObservationsInPast2Hours = (hour >= 9 && isActualObservation(prev1)) || (hour >= 10 && isActualObservation(prev2));
+      
+      if (hadGeneralsInPast2Hours && !hadObservationsInPast2Hours) {
+        addPoints(5, "bonus for break in next hour when maxObs >= 8, had Generals in past 2 hours, no observations in past 2 hours");
+      }
+    }
+    
+    // FIXED: Consecutive busy hour penalties - only count actual observations as "busy"
+    if (hour >= 11 && isActualObservation(prev1) && isActualObservation(prev2)) {
+      addPoints(-50, "penalty for 2 consecutive hours with observations");
+    }
+    
+    if (hour >= 12 && isActualObservation(prev1) && isActualObservation(prev2) && isActualObservation(prev3)) {
+      addPoints(-50, "penalty for 3 consecutive hours with observations");
+    }
+    
+    if (hour >= 13 && isActualObservation(prev1) && isActualObservation(prev2) && isActualObservation(prev3) && isActualObservation(prev4)) {
+      addPoints(-50, "penalty for 4 consecutive hours with observations");
+    }
+    
+    if (hour >= 14 && isActualObservation(prev1) && isActualObservation(prev2) && isActualObservation(prev3) && isActualObservation(prev4) && isActualObservation(prev5)) {
+      addPoints(-50, "penalty for 5 consecutive hours with observations");
+    }
+    
+    // Special penalty for consecutive non-free/non-Generals (only actual observations)
+    if (hour >= 10 && isActualObservation(prev1) && prev1 !== "Generals" && 
+        isActualObservation(prev2) && prev2 !== "Generals") {
+      addPoints(-15, "penalty for 2 consecutive hours with non-Generals observations");
+    }
+
+    // FIXED: Free hour bonuses - ALL hours must be free
+    if (prev1 === "-") {
+      addPoints(22, "bonus for free hour in the previous hour");
+    }
+    
+    if (hour >= 10 && prev1 === "-" && prev2 === "-") {
+      addPoints(15, "bonus for 2 consecutive free hours");
+    }
+    
+    if (hour >= 11 && prev1 === "-" && prev2 === "-" && prev3 === "-") {
+      addPoints(5, "bonus for 3 consecutive free hours");
+    }
+    
+    if (hour >= 12 && prev1 === "-" && prev2 === "-" && prev3 === "-" && prev4 === "-") {
+      addPoints(15, "bonus for 4 consecutive free hours");
+    }
+    
+    if (hour >= 13 && prev1 === "-" && prev2 === "-" && prev3 === "-" && prev4 === "-" && prev5 === "-") {
+      addPoints(20, "bonus for 5 consecutive free hours");
+    }
+    
+    if (hour >= 14 && prev1 === "-" && prev2 === "-" && prev3 === "-" && prev4 === "-" && prev5 === "-" && prev6 === "-") {
+      addPoints(20, "bonus for 6 consecutive free hours");
+    }
+
+    // Even distribution checks - only apply penalties for repeating, no bonuses
+    
+    if (hour >= 10 && prev2 === obsName) {
+      addPoints(-20, "penalty for repeating same observation 2 hours ago");
+    }
+    
+    if (hour >= 11 && prev3 === obsName) {
+      addPoints(-20, "penalty for repeating same observation 3 hours ago");
+    }
+    
+    if (hour >= 12 && prev4 === obsName) {
+      addPoints(-20, "penalty for repeating same observation 4 hours ago");
+    }
+    
+    if (hour >= 13 && prev5 === obsName) {
+      addPoints(-20, "penalty for repeating same observation 5 hours ago");
+    }
+
+    if (hour >= 14 && prev6 === obsName) {
+      addPoints(-20, "penalty for repeating same observation 6 hours ago");
+    }
+    
+    if (hour >= 15 && prev7 === obsName) {
+      addPoints(-20, "penalty for repeating same observation 7 hours ago");
+    }
+    
+    if (hour >= 16 && prev8 === obsName) {
+      addPoints(-20, "penalty for repeating same observation 8 hours ago");
+    }
+
+    if (hour >= 17 && prev9 === obsName) {
+      addPoints(-20, "penalty for repeating same observation 9 hours ago");
+    }
+
+    // even distribution positives
+
+    if (hour >= 10 && prev2 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 2 hours ago");
+    }
+    
+    if (hour >= 11 && prev3 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 3 hours ago");
+    }
+    
+    if (hour >= 12 && prev4 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 4 hours ago");
+    }
+    
+    if (hour >= 13 && prev5 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 5 hours ago");
+    }
+
+    if (hour >= 14 && prev6 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 6 hours ago");
+    }
+
+    if (hour >= 15 && prev7 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 7 hours ago");
+    }
+    if (hour >= 16 && prev8 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 8 hours ago");
+    }
+
+    if (hour >= 17 && prev9 !== obsName) {
+      addPoints(20, "penalty for repeating same observation 9 hours ago");
+    }
+    
+
+
+    // Special case penalties - only consider actual observations as "busy"
+    if (maxObs <= 8 && hour >= 10 && isActualObservation(prev1) && isActualObservation(prev2) && 
+        prev1 !== "Generals" && prev2 !== "Generals") {
+      addPoints(-20, "large penalty for 2 consecutive observation hours when maxObs <= 8");
+    }
+
+    if (maxObs >= 9 && hour === 9 && prev1 === "Generals") {
+      addPoints(20, "small bonus for Generals in previous hour when maxObs >= 9");
+    }
+  }
+
+  // Security staff logic - optimized
+  if (isSecurity) {
+    const allowedObs = staffMember.securityObs || 0;
+    
+    if (allowedObs > 0) {
+      const idealGap = 8 / allowedObs;
+      const lastHour = getLastObservationHour(staffMember, hour, observations);
+      
+      if (lastHour !== -1) {
+        const hoursSinceLast = hour - lastHour;
+        const points = hoursSinceLast < idealGap ? -40000 : 40000;
+        const reason = hoursSinceLast < idealGap ? 
+          "penalty for assigning security too soon (ideal gap not met)" :
+          "bonus for meeting or exceeding the ideal gap before next security assignment";
+        addPoints(points, reason);
+      }
+    }
+
+    if(obsName !== "Generals"){
+      addPoints(-30, "penalty to boot chance nurse/security recieves Generals")
+    }
+
+    // Individual hour checks for security
+    if (hour >= 9 && obs[hour-1] === obsName) {
+      addPoints(-30, "penalty for repeating same observation in previous hour for security");
+    }
+    if (hour >= 10 && obs[hour-2] === obsName) {
+      addPoints(-30, "penalty for repeating same observation 2 hours ago for security");
+    }
+    if (hour >= 11 && obs[hour-3] === obsName) {
+      addPoints(-30, "penalty for repeating same observation 3 hours ago for security");
+    }
+    if (hour >= 12 && obs[hour-4] === obsName) {
+      addPoints(-30, "penalty for repeating same observation 4 hours ago for security");
+    }
+
+    // FIXED: Consecutive free hours for security - ALL must be free
+    if (hour >= 10 && obs[hour-1] === "-" && obs[hour-2] === "-") {
+      addPoints(30, "security bonus for 2 consecutive free hours");
+    }
+    
+    if (hour >= 11 && obs[hour-1] === "-" && obs[hour-2] === "-" && obs[hour-3] === "-") {
+      addPoints(30, "security bonus for 3 consecutive free hours");
+    }
+    
+    if (hour >= 12 && obs[hour-1] === "-" && obs[hour-2] === "-" && obs[hour-3] === "-" && obs[hour-4] === "-") {
+      addPoints(20, "security bonus for 4 consecutive free hours");
+    }
+
+    // Generals check for security - optimized
+    if (hour >= 12 && obsName !== "Generals") {
+      let generalsFound = false;
+      for (let k = 1; k <= 7 && hour - k >= 7; k++) {
+        if (obs[hour - k] === "Generals") {
+          generalsFound = true;
+          break;
+        }
+      }
+      if (!generalsFound) {
+        addPoints(-20, "penalty for security if Generals not seen in last 7 hours but we aren't assigning Generals now");
+      }
+    }
+  }
+
+  if (isNurse) {
+    const allowedObs = staffMember.nurseObs || 0;
+    
+    if (allowedObs > 0) {
+      const idealGap = 8 / allowedObs;
+      const lastHour = getLastObservationHour(staffMember, hour, observations);
+    
+      if (lastHour !== -1) {
+        const hoursSinceLast = hour - lastHour;
+        const points = hoursSinceLast < idealGap ? -40000 : 40000;
+        const reason = hoursSinceLast < idealGap ? 
+          "penalty for assigning nurse too soon (ideal gap not met)" :
+          "bonus for meeting or exceeding the ideal gap before next nurse assignment";
+        addPoints(points, reason);
+      }
+    }
+
+    if(obsName !== "Generals"){
+      addPoints(-30, "penalty to boot chance nurse/security recieves Generals")
+    }
+
+    // Individual hour checks for nurse (same as security logic)
+    if (hour >= 9 && obs[hour-1] === obsName) {
+      addPoints(-30, "penalty for repeating same observation in previous hour for nurse");
+    }
+    if (hour >= 10 && obs[hour-2] === obsName) {
+      addPoints(-30, "penalty for repeating same observation 2 hours ago for nurse");
+    }
+    if (hour >= 11 && obs[hour-3] === obsName) {
+      addPoints(-30, "penalty for repeating same observation 3 hours ago for nurse");
+    }
+    if (hour >= 12 && obs[hour-4] === obsName) {
+      addPoints(-30, "penalty for repeating same observation 4 hours ago for nurse");
+    }
+
+    // FIXED: Consecutive free hours for nurse - ALL must be free
+    if (hour >= 10 && obs[hour-1] === "-" && obs[hour-2] === "-") {
+      addPoints(30, "nurse bonus for 2 consecutive free hours");
+    }
+    
+    if (hour >= 11 && obs[hour-1] === "-" && obs[hour-2] === "-" && obs[hour-3] === "-") {
+      addPoints(30, "nurse bonus for 3 consecutive free hours");
+    }
+    
+    if (hour >= 12 && obs[hour-1] === "-" && obs[hour-2] === "-" && obs[hour-3] === "-" && obs[hour-4] === "-") {
+      addPoints(20, "nurse bonus for 4 consecutive free hours");
+    }
+
+    // Generals check for nurse
+    if (hour >= 12 && obsName !== "Generals") {
+      let generalsFound = false;
+      for (let k = 1; k <= 7 && hour - k >= 7; k++) {
+        if (obs[hour - k] === "Generals") {
+          generalsFound = true;
+          break;
+        }
+      }
+      if (!generalsFound) {
+        addPoints(-20, "penalty for nurse if Generals not seen in last 7 hours but we aren't assigning Generals now");
+      }
+    }
+  }
+
+  // Logging - only in debug mode to improve performance
+  if (logs) {
+    logs.push(
+      `Hour: ${hour}, Observation: ${obsName}, Staff Member: ${staffMember.name}, Final Score: ${score}, Reasons: ${reasons.join(" | ")}`
+    );
+  }
+
+  return score;
+}
   
 
   function randomSortEqualScores(a, b) {
@@ -718,7 +746,8 @@ function createInterleavedObservationsList(
     observation,
     maxObservations,
     logs,
-    majorityObsPrevHour
+    majorityObsPrevHour,
+    observations
   ) {
     // First, filter out staff members who do not meet the assignment conditions
     let eligibleStaff = staff.filter((staffMember) =>
@@ -733,8 +762,8 @@ function createInterleavedObservationsList(
         maxObs,
         observation,
         logs,
-        majorityObsPrevHour
-
+        majorityObsPrevHour,
+        observations
       );
       return {
         ...staffMember,
@@ -753,8 +782,15 @@ function createInterleavedObservationsList(
   }
 
   function checkAssignmentConditions(staffMember, hour, observation, maxObs) {
+  // Primary check: staff member must be free (showing "-") for this hour
+  let isAvailable = staffMember.observations[hour] === "-";
+  
+  // If not available, return false immediately
+  if (!isAvailable) {
+    return false;
+  }
+  
   let hadObservationLastHour = staffMember.observations[hour - 1] === observation.name;
-  let hasObservationAlready = staffMember.observations[hour] !== "-";
   
   // Handle security staff limits
   let maxObsSecurity = false;
@@ -763,7 +799,7 @@ function createInterleavedObservationsList(
     if (securityLimit !== null && securityLimit !== undefined) {
       maxObsSecurity = staffMember.numObservations >= securityLimit;
     } else {
-      maxObsSecurity = staffMember.numObservations >= 5; // default fallback
+      maxObsSecurity = staffMember.numObservations >= 20; // default fallback
     }
   }
   
@@ -774,34 +810,27 @@ function createInterleavedObservationsList(
     if (nurseLimit !== null && nurseLimit !== undefined) {
       NurseMax = staffMember.numObservations >= nurseLimit;
     } else {
-      NurseMax = staffMember.numObservations >= 4; // default fallback
+      NurseMax = staffMember.numObservations >= 20; // default fallback
     }
   }
   
   let isOnBreak = staffMember.break === hour;
-  let isSecurityHour = staffMember.security === true && (hour === 9 || hour === 12 || hour === 17 || hour === 19);
-  let isNurse = (hour === 8 ||hour === 9 ||hour === 19) && staffMember.nurse === true && maxObs <= 9;
-  let canNotRecieve = staffMember.observations[hour] === "X";
+  let isSecurityHour = staffMember.security === true && (hour === 8 || hour === 12 || hour === 17 || hour === 19) && maxObs <= 9;
+  let isNurse = staffMember.nurse === true && (hour === 8 || hour === 9 || hour === 19) && maxObs <= 9;
 
   return (
-    !hasObservationAlready &&
-    !hadObservationLastHour &&
-    !isOnBreak &&
-    !isSecurityHour &&
-    !maxObsSecurity &&
-    !NurseMax &&
-    !isNurse &&
-    !canNotRecieve
+    !hadObservationLastHour &&  // Didn't have same observation last hour
+    !isOnBreak &&              // Not on break
+    !isSecurityHour &&         // Not security restricted hour
+    !maxObsSecurity &&         // Hasn't exceeded security observation limit
+    !NurseMax &&               // Hasn't exceeded nurse observation limit
+    !isNurse                   // Not nurse restricted hour
   );
 }
 
   function assignObservation(staffMember, hour, observation) {
     staffMember.observations[hour] = observation.name;
     staffMember.numObservations++;
-
-    if (staffMember.security === true) {
-      staffMember.lastSecurityObservationHour = hour;
-    }
 
     if (!staffMember.obsCounts[observation.name]) {
       staffMember.obsCounts[observation.name] = 1;
@@ -950,9 +979,9 @@ function calculatePenalty(consecutiveLength, hasGeneral) {
     if (consecutiveLength === 2) {
         return 4.0; // Always 4.0 regardless of generals
     } else if (consecutiveLength === 3) {
-        return hasGeneral ? 7.0 : 9.0;
+        return hasGeneral ? 3.0 : 11;
     } else if (consecutiveLength === 4) {
-        return hasGeneral ? 13.0 : 16.0;
+        return hasGeneral ? 20.0 : 28.0;
     } else if (consecutiveLength >= 5) {
         // For 5+, use exponential growth but maintain the hierarchy
         const basePenalty = Math.pow(consecutiveLength, 2);
@@ -962,22 +991,28 @@ function calculatePenalty(consecutiveLength, hasGeneral) {
     return 0; // Should not reach here
 }
 
-function runSimulation(observations, staff) {
+function runSimulation(observations, staff, startHour = 9) {
     let bestScore = Number.MAX_SAFE_INTEGER;
     let bestStaffAllocation = null;
     let bestLogs = [];
     let bestUnassignedCount = Number.MAX_SAFE_INTEGER;
     let bestConsecutiveCount = Number.MAX_SAFE_INTEGER;
     
-    // Create a base template once for better performance
-    const staffTemplate = staff.map(member => ({
-        ...member,
-        observations: {},
-        obsCounts: {},
-        lastReceived: {},
-        numObservations: member.observationId && member.observationId !== "-" ? 1 : 0,
-        initialized: true
-    }));
+    // Create a base template that preserves original observations
+    const staffTemplate = staff.map(member => {
+        // Deep copy the original observations to preserve breaks, security hours, etc.
+        const originalObservations = member.observations ? { ...member.observations } : {};
+        
+        return {
+            ...member,
+            originalObservations, // Store the original state
+            observations: { ...originalObservations }, // Create a copy for this template
+            obsCounts: {},
+            lastReceived: {},
+            numObservations: member.observationId && member.observationId !== "-" ? 1 : 0,
+            initialized: true
+        };
+    });
     
     console.time("optimized code");
     
@@ -985,16 +1020,16 @@ function runSimulation(observations, staff) {
         let iterationLogs = [];
         let unassignedCountRef = { value: 0 };
         
-        // Use template and shallow copy for better performance
+        // Create staff clone that preserves original observations
         let staffClone = staffTemplate.map(member => ({
             ...member,
-            observations: {},
+            observations: { ...member.originalObservations }, // Restore original state each iteration
             obsCounts: {},
             lastReceived: {},
             numObservations: member.observationId && member.observationId !== "-" ? 1 : 0
         }));
         
-        allocateObservations(observations, staffClone, iterationLogs, unassignedCountRef);
+        allocateObservations(observations, staffClone, iterationLogs, unassignedCountRef, startHour);
         
         let consecutiveResult = countConsecutiveObservations(staffClone);
         let unassignedCount = unassignedCountRef.value;
@@ -1039,33 +1074,67 @@ function runSimulation(observations, staff) {
 
 
 
-  function resetStaff(staff) {
-    staff.forEach((staffMember) => {
-      staffMember.observations = {};
-      staffMember.lastObservation = staffMember.observationId;
-      staffMember.obsCounts = {};
-      staffMember.lastReceived = {};
-      for (let hour = 7; hour <= 19; hour++) {
+function resetStaff(staff, observations, startHour = 9) {
+  // Get list of actual observation names that should be cleared
+  const observationNames = observations.map(obs => obs.name);
+  
+  staff.forEach((staffMember) => {
+    // Reset tracking variables
+    staffMember.lastObservation = staffMember.observationId;
+    staffMember.obsCounts = {};
+    staffMember.lastReceived = {};
+    
+    // Reset observations while preserving only user-set constraints
+    for (let hour = startHour; hour <= 19; hour++) {
+      const currentObs = staffMember.observations[hour];
+      
+      // If current value is an observation name, clear it
+      if (currentObs && observationNames.includes(currentObs)) {
+        // Clear system-assigned observations
         staffMember.observations[hour] =
           hour === 8 &&
           staffMember.observationId &&
           staffMember.observationId !== "-"
             ? staffMember.observationId
             : "-";
-        if (hour === 7) staffMember.observations[hour] = "-";
+      } else {
+        // Keep everything else (constraints like "Break", "X", etc.)
+        // Only set default if undefined
+        if (!staffMember.observations[hour]) {
+          staffMember.observations[hour] =
+            hour === 8 &&
+            staffMember.observationId &&
+            staffMember.observationId !== "-"
+              ? staffMember.observationId
+              : "-";
+        }
       }
-      staffMember.numObservations =
-        staffMember.observationId && staffMember.observationId !== "-" ? 1 : 0;
-    });
-  }
+      
+      // Always set hour 7 to free
+      if (hour === 7) {
+        staffMember.observations[hour] = "-";
+      }
+    }
+    
+    // Recalculate numObservations based on actual assignments (not constraints)
+    staffMember.numObservations = 0;
+    for (let hour = 7; hour <= 19; hour++) {
+      const obs = staffMember.observations[hour];
+      // Count only actual observation assignments
+      if (obs && observationNames.includes(obs)) {
+        staffMember.numObservations++;
+      }
+    }
+  });
+}
 
-  function allocateObservations(observations, staff, logs, unassignedCountRef) {
+  function allocateObservations(observations, staff, logs, unassignedCountRef, startHour) {
     const maxObs = calculateMaxObservations(observations, staff);
     logs.push("MAX OBS --------", maxObs)
-    resetStaff(staff);
+    resetStaff(staff, observations, startHour);
 
     let firstObservationEachHour = {}; 
-    for (let hour = 9; hour <= 19; hour++) {
+    for (let hour = startHour; hour <= 19; hour++) {
       const majorityObsPrevHour = getMajorityObservation(staff, hour - 1);
       const availabilityRecord = calculateAvailabilityForEachObservation(
         observations,
@@ -1089,7 +1158,8 @@ function runSimulation(observations, staff) {
           observation,
           maxObs,
           logs,
-          majorityObsPrevHour
+          majorityObsPrevHour,
+          observations
         );
         assignObservationsToStaff(
           staff,
@@ -1158,21 +1228,10 @@ function runSimulation(observations, staff) {
   return plan;
 }
 
-
-
-
-
-
-
-
-
-
-
   const handleAllocate = () => {
-    let allocationCopy = runSimulation(observations, staff);
-
-    setStaff(allocationCopy);
-  };
+  let allocationCopy = runSimulation(observations, staff, selectedStartHour || 9);
+  setStaff(allocationCopy);
+};
 
   const handleNext = () => {
   if (currentPage === "patient" && observations.length < 1) {
@@ -1306,12 +1365,12 @@ function runSimulation(observations, staff) {
             {isCopied && <span className={styles.checkmark}>✓</span>}
           </button>
           <button
-            onClick={handleAutoGenerate}
-            className={styles.backButton}
-            title="Auto-assign Observations"
-          >
-            AutoAssign
-          </button>
+  onClick={handleAutoGenerate}
+  className={styles.backButton}
+  title="Auto-assign Observations"
+>
+  {selectedStartHour ? `Auto-Assign ${selectedStartHour} - 19` : 'Auto-Assign'}
+</button>
           <button
             onClick={handleReset}
             className={styles.backButton}

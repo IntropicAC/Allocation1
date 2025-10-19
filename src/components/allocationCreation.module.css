@@ -83,7 +83,7 @@
   height: 3rem;
   white-space: normal; /* Allows text to wrap */
   overflow-wrap: break-word; /* Allows the words to break and wrap */
-  word-break: break-all; /* Ensures that long words will break at any character */
+  word-break: break-word; /* Ensures that long words will break at any character */
 }
 
 table td:not(.hourCell):hover {
@@ -189,4 +189,36 @@ table td:not(.hourCell):hover {
   }
 }
 
+.selectedHour {
+  background-color: black;
+  color: white;
+  font-weight: bold;
+}
 
+.affectedHour {
+  background-color: #d4d4d4;
+  font-weight: bold;
+}
+
+.hourCell {
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.hourCell:hover {
+  background-color: #f0f0f0;
+}
+
+/* Remove or comment out the selectionInfo styles since we're not using it anymore */
+/*
+.selectionInfo {
+  background-color: #e7f3ff;
+  border: 1px solid #007bff;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
+  color: #0056b3;
+}
+*/
