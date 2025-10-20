@@ -17,108 +17,7 @@ function NavigationButtons({
   tableRef,
   selectedStartHour
 }) {
-  function evaluateCriteriaForReiteration(staff, hour, observations) {
-    // Correctly find the highest staff number using spread syntax with Math.max()
-    const highestStaffNumber = Math.max(
-      ...observations.map((obs) => obs.staff)
-    );
-
-    // Count how many observations have this highest staff number
-    const countOfHighestStaffObservations = observations.filter(
-      (obs) => obs.staff === highestStaffNumber
-    ).length;
-
-    // Only proceed with further checks if there are two or more observations with the highest staff number
-    if (countOfHighestStaffObservations >= 2) {
-      return staff.some((staffMember) => {
-        // First set: Check if the observations for the previous 3 hours are not "-"
-        const notEmpty =
-          hour >= 10 &&
-          staffMember.observations[hour] !== "-" &&
-          staffMember.observations[hour - 1] !== "-" &&
-          staffMember.observations[hour - 2] !== "-" &&
-          staffMember.observations[hour - 3] !== "-";
-
-        // Second set: Check if the observations for the current hour and the previous 3 hours are not "-" AND not "Generals"
-        const notEmptyOrGenerals =
-          hour >= 10 &&
-          staffMember.observations[hour] !== "-" &&
-          staffMember.observations[hour] !== "Generals" &&
-          staffMember.observations[hour - 1] !== "-" &&
-          staffMember.observations[hour - 1] !== "Generals" &&
-          staffMember.observations[hour - 2] !== "-" &&
-          staffMember.observations[hour - 2] !== "Generals";
-
-        // Return true if either set of conditions is met
-        return notEmpty || notEmptyOrGenerals;
-      });
-    } else {
-      // If the condition for highest staff number is not met, no need to check further
-      return false;
-    }
-  }
-
-  function clearAndPrepareHourForReiteration(
-    staff,
-    hour,
-    interleavedObservations
-  ) {
-    staff.forEach((staffMember) => {
-      // Clear the observation for the current hour
-      if (staffMember.observations && staffMember.observations[hour]) {
-        staffMember.observations[hour] = "-";
-      }
-    });
-  }
-  function setSecurityEligibleHours(staff, startHour = 9, endHour = 20) {
-    // endHour is inclusive, so totalHours = endHour - startHour + 1
-    const totalHours = endHour - startHour + 1;
   
-    staff.forEach((member) => {
-      if (member.security === true) {
-        // If not provided, set to some default or zero
-        const allowedObs = member.maxObservations || 0;
-  
-        // Early exit if no observations allowed
-        if (allowedObs === 0) {
-          member.eligibleHours = [];
-          return;
-        }
-  
-        // Step to “spread” the hours across the time window
-        const step = totalHours / allowedObs;
-  
-        // Build an array of hours spaced out
-        let hours = [];
-        for (let i = 0; i < allowedObs; i++) {
-          let hourVal = Math.round(startHour + i * step);
-          // clamp to the range if needed
-          if (hourVal > endHour) {
-            hourVal = endHour;
-          }
-          hours.push(hourVal);
-        }
-  
-        // Remove duplicates (if rounding collisions) and sort
-        const uniqueHours = [...new Set(hours)].sort((a, b) => a - b);
-        member.eligibleHours = uniqueHours;
-      } else {
-        // Non-security staff do not need eligibleHours
-        member.eligibleHours = null;
-      }
-    });
-  }
-  function getSecurityDistributionPenalty(staffMember, hour) {
-    // If not security, or if staffMember.eligibleHours is empty (or null),
-    // there's no restriction => return 0
-    if (!staffMember.security || !staffMember.eligibleHours) {
-      return 0;
-    }
-  
-    // For a security staff, only return 0 if the hour is in eligibleHours
-    return staffMember.eligibleHours.includes(hour) ? 0 : -1000;
-  }
-    
 
   function calculateAvailabilityForEachObservation(observations, staff, hour) {
     let availabilityCounts = {};
@@ -582,7 +481,7 @@ function calculateStaffScore(
       
       if (lastHour !== -1) {
         const hoursSinceLast = hour - lastHour;
-        const points = hoursSinceLast < idealGap ? -100 : 100;
+        const points = hoursSinceLast < idealGap ? -40 : 40;
         const reason = hoursSinceLast < idealGap ? 
           "penalty for assigning security too soon (ideal gap not met)" :
           "bonus for meeting or exceeding the ideal gap before next security assignment";
@@ -608,18 +507,6 @@ function calculateStaffScore(
       addPoints(-30, "penalty for repeating same observation 4 hours ago for security");
     }
 
-    // FIXED: Consecutive free hours for security - ALL must be free
-    if (hour >= 10 && obs[hour-1] === "-" && obs[hour-2] === "-") {
-      addPoints(30, "security bonus for 2 consecutive free hours");
-    }
-    
-    if (hour >= 11 && obs[hour-1] === "-" && obs[hour-2] === "-" && obs[hour-3] === "-") {
-      addPoints(30, "security bonus for 3 consecutive free hours");
-    }
-    
-    if (hour >= 12 && obs[hour-1] === "-" && obs[hour-2] === "-" && obs[hour-3] === "-" && obs[hour-4] === "-") {
-      addPoints(20, "security bonus for 4 consecutive free hours");
-    }
 
     // Generals check for security - optimized
     if (hour >= 12 && obsName !== "Generals") {
@@ -712,7 +599,7 @@ function calculateStaffScore(
     
       if (lastHour !== -1) {
         const hoursSinceLast = hour - lastHour;
-        const points = hoursSinceLast < idealGap ? -100 : 100;
+        const points = hoursSinceLast < idealGap ? -40 : 40;
         const reason = hoursSinceLast < idealGap ? 
           "penalty for assigning nurse too soon (ideal gap not met)" :
           "bonus for meeting or exceeding the ideal gap before next nurse assignment";
@@ -792,9 +679,6 @@ function calculateStaffScore(
     }
 
     // Individual hour checks for nurse (same as security logic)
-    if (hour >= 9 && obs[hour-1] === obsName) {
-      addPoints(-30, "penalty for repeating same observation in previous hour for nurse");
-    }
     if (hour >= 10 && obs[hour-2] === obsName) {
       addPoints(-30, "penalty for repeating same observation 2 hours ago for nurse");
     }
@@ -805,18 +689,7 @@ function calculateStaffScore(
       addPoints(-30, "penalty for repeating same observation 4 hours ago for nurse");
     }
 
-    // FIXED: Consecutive free hours for nurse - ALL must be free
-    if (hour >= 10 && obs[hour-1] === "-" && obs[hour-2] === "-") {
-      addPoints(30, "nurse bonus for 2 consecutive free hours");
-    }
     
-    if (hour >= 11 && obs[hour-1] === "-" && obs[hour-2] === "-" && obs[hour-3] === "-") {
-      addPoints(30, "nurse bonus for 3 consecutive free hours");
-    }
-    
-    if (hour >= 12 && obs[hour-1] === "-" && obs[hour-2] === "-" && obs[hour-3] === "-" && obs[hour-4] === "-") {
-      addPoints(20, "nurse bonus for 4 consecutive free hours");
-    }
 
     // Generals check for nurse
     if (hour >= 12 && obsName !== "Generals") {
@@ -907,7 +780,7 @@ function calculateStaffScore(
     return staffWithScores;
   }
 
-  function checkAssignmentConditions(staffMember, hour, observation, maxObs) {
+  function checkAssignmentConditions(staffMember, hour, observation, maxObs, staff = null) {
   // Primary check: staff member must be free (showing "-") for this hour
   let isAvailable = staffMember.observations[hour] === "-";
   
@@ -940,6 +813,41 @@ function calculateStaffScore(
     }
   }
   
+  // Check if assigning this nurse would leave no nurses free
+  let wouldLeaveNoNurseFree = false;
+  if (staffMember.nurse === true && staff) {
+    const allNurses = staff.filter(s => s.nurse === true);
+    const totalNurses = allNurses.length;
+    
+    console.log(`\n=== NURSE CHECK: Hour ${hour}, Checking ${staffMember.name} ===`);
+    console.log(`Total nurses in system: ${totalNurses}`);
+    console.log(`All nurses:`, allNurses.map(n => n.name));
+    
+    // Only enforce if there are 2+ nurses
+    if (totalNurses >= 2) {
+      // Count how many OTHER nurses are already busy at this hour
+      const otherBusyNurses = allNurses.filter(s => 
+        s.name !== staffMember.name && s.observations[hour] !== "-"
+      );
+      
+      console.log(`Other busy nurses at hour ${hour}:`, otherBusyNurses.map(n => ({
+        name: n.name,
+        observation: n.observations[hour]
+      })));
+      console.log(`Other busy nurse count: ${otherBusyNurses.length}`);
+      
+      // If assigning this nurse would make all nurses busy, prevent it
+      // (otherBusyNurses + 1 would equal totalNurses)
+      wouldLeaveNoNurseFree = (otherBusyNurses.length + 1) >= totalNurses;
+      
+      console.log(`Would assigning ${staffMember.name} leave no nurses free? ${wouldLeaveNoNurseFree}`);
+      console.log(`Calculation: (${otherBusyNurses.length} + 1) >= ${totalNurses} = ${wouldLeaveNoNurseFree}`);
+    } else {
+      console.log(`Only ${totalNurses} nurse(s), no restriction applied`);
+    }
+    console.log(`=== END NURSE CHECK ===\n`);
+  }
+  
   let isOnBreak = staffMember.break === hour;
   let isSecurityHour = staffMember.security === true && (hour === 8 || hour === 12 || hour === 17 || hour === 19) && maxObs <= 9;
   let isNurse = staffMember.nurse === true && (hour === 8 || hour === 9 || hour === 19) && maxObs <= 9;
@@ -950,10 +858,10 @@ function calculateStaffScore(
     !isSecurityHour &&         // Not security restricted hour
     !maxObsSecurity &&         // Hasn't exceeded security observation limit
     !NurseMax &&               // Hasn't exceeded nurse observation limit
-    !isNurse                   // Not nurse restricted hour
+    !isNurse &&                // Not nurse restricted hour
+    !wouldLeaveNoNurseFree     // Would not leave all nurses busy
   );
 }
-
   function assignObservation(staffMember, hour, observation) {
     staffMember.observations[hour] = observation.name;
     staffMember.numObservations++;
@@ -1316,7 +1224,7 @@ function resetStaff(staff, observations, startHour = 9) {
 
   
 
-  function createLookAheadPlan(observations, staff, startHour = 8, endHour = 19) {
+  function createLookAheadPlan(observations, staff, startHour = 9, endHour = 19) {
   const totalHours = endHour - startHour + 1;
   const observationSlotsPerHour = observations.reduce((sum, obs) => sum + obs.staff, 0);
   const totalSlots = observationSlotsPerHour * totalHours;

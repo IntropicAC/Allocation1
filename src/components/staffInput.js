@@ -193,6 +193,12 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
         }
       }
       newStaffList[staffIndex].observationId = "-";
+      
+      // ADD THIS: Update observations[8] to match
+      if (newStaffList[staffIndex].observations) {
+        newStaffList[staffIndex].observations[8] = "-";
+      }
+      
       setStaff(newStaffList);
       setObservations([...observations]); // Trigger state update
       return;
@@ -215,6 +221,11 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
       if (targetObservation.StaffNeeded > 0) {
         targetObservation.StaffNeeded -= 1;
         newStaffList[staffIndex].observationId = observationName;
+        
+        // ADD THIS: Update observations[8] to match the new observationId
+        if (newStaffList[staffIndex].observations) {
+          newStaffList[staffIndex].observations[8] = observationName;
+        }
       } else {
         console.error("No staffing needs available for this observation.");
         return;
@@ -250,6 +261,25 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
   },[staff])
 
   const rainbowNames = ["Alex1","Charlotte2","Adna3","Aliah4"]
+
+  const sortedStaff = [...staff].sort((a, b) => {
+    const getPriority = (staffMember) => {
+      if (staffMember.nurse === true) return 1;
+      if (staffMember.security === true) return 2;
+      return 3; // HCA or other roles
+    };
+
+    const priorityA = getPriority(a);
+    const priorityB = getPriority(b);
+
+    // If priorities are different, sort by priority
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    // If same priority, sort alphabetically by name
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <section className={styles.container}>
@@ -301,7 +331,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
       </form>
 
       <form className={styles.staffContainer}>
-        {staff.map((staffMember, index) => (
+        {sortedStaff.map((staffMember, index) => (
           <section key={staffMember.id} className={styles.staffMember}>
             <h2 className={styles.indexAndName}>
               <span className={styles.indexNumber}>{index + 1}</span>
@@ -340,7 +370,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
                 <select
                   title={`Max observations for ${staffMember.security ? 'Security' : 'Nurse'}`}
                   className={styles.maxObsNumber}
-                  value={staffMember.security ? (staffMember.securityObs || 0) : (staffMember.nurseObs || 4)}
+                  value={staffMember.security ? (staffMember.securityObs || 0) : (staffMember.nurseObs || 0)}
                   onChange={(e) => handleMaxObsChange(e, staffMember.id)}
                 >
                   {[...Array(13).keys()].map((num) => (
