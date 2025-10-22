@@ -250,7 +250,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
   for (let i = 8; i <= 19; i++) {
     breakTimeOptions.push(
       <option key={i} value={`${i}:00`} className={styles.breakOption}>
-        {i}:00
+        Break {i}:00
       </option>
     );
   }
@@ -302,7 +302,6 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
           />
         </label>
         <label className={styles.staffText}>
-          Break Time
           <select
             className={styles.select}
             name="break"
@@ -341,7 +340,6 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
             </h2>
 
             <label className={styles.BreakText}>
-              <span className={styles.labelText}>Break</span>
               <select
                 className={`${styles.inputText} ${styles.break}`}
                 value={`${staffMember.break}:00`}
