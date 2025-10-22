@@ -4,7 +4,7 @@ import styles from "./staffInput.module.css";
 function StaffInput({ staff, setStaff, observations, setObservations }) {
   const [newStaff, setNewStaff] = useState({
     name: "",
-    break: 8, // default break time
+    break: "Break", // default - no break assigned
     role: "HCA", // New field for role (HCA, Security, Nurse)
     security: false,
     nurse: false,
@@ -15,10 +15,13 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-   
-    // If the input is for 'break', convert the value to a number
-    const updatedValue = name === "break" ? parseInt(value.split(":")[0]) : value;
- 
+
+    // If the input is for 'break', handle "Break" or convert time to number
+    let updatedValue = value;
+    if (name === "break") {
+      updatedValue = value === "Break" ? "Break" : parseInt(value.split(":")[0]);
+    }
+
     setNewStaff((prevState) => ({
       ...prevState,
       [name]: updatedValue,
@@ -67,7 +70,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
     setStaff([...staff, staffWithIdAndObservations]);
     setNewStaff({
       name: "",
-      break: 8,
+      break: "Break",
       role: "HCA",
       security: false,
       nurse: false,
@@ -145,14 +148,15 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
   };
 
   const handleBreakChange = (e, staffId) => {
-    const updatedBreakTime = parseInt(e.target.value.split(":")[0]);
+    const value = e.target.value;
+    const updatedBreakTime = value === "Break" ? "Break" : parseInt(value.split(":")[0]);
     const updatedStaff = staff.map(staffMember => {
         if (staffMember.id === staffId) {
             const currentObservationId = staffMember.observationId;
             const restrictedObservation = observations.some(obs => obs.name === currentObservationId);
 
-            // If changing to a break at 8 and the observation is restricted, unassign it
-            if (updatedBreakTime === 8 && restrictedObservation) {
+            // If changing to "Break" (no break) and the observation is restricted, unassign it
+            if (updatedBreakTime === "Break" && restrictedObservation) {
                 // Update the observation StaffNeeded as the staff member is unassigned from it
                 setObservations(currentObservations => currentObservations.map(observation => {
                     if (observation.name === currentObservationId) {
@@ -211,9 +215,9 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
       return;
     }
 
-    const shouldAdjustBreak = newStaffList[staffIndex].break === 8;
+    const shouldAdjustBreak = newStaffList[staffIndex].break === "Break";
     if (shouldAdjustBreak) {
-      newStaffList[staffIndex].break = 9; // Adjust break to 9
+      newStaffList[staffIndex].break = 9; // Adjust break to 9 when assigning observation
     }
 
     // Handle reassignment if the new observation is different from the current one
@@ -245,12 +249,16 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
     setObservations([...observations]);
   };
 
-  // Generate break time options from 8:00 to 19:00
-  const breakTimeOptions = [];
+  // Generate break time options: "Break" (no break) followed by 8:00 to 19:00
+  const breakTimeOptions = [
+    <option key="break" value="Break" className={styles.breakOption}>
+      Break
+    </option>
+  ];
   for (let i = 8; i <= 19; i++) {
     breakTimeOptions.push(
       <option key={i} value={`${i}:00`} className={styles.breakOption}>
-        Break {i}:00
+        {i}:00
       </option>
     );
   }
@@ -305,7 +313,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
           <select
             className={styles.select}
             name="break"
-            value={`${newStaff.break}:00`}
+            value={newStaff.break === "Break" ? "Break" : `${newStaff.break}:00`}
             onChange={handleInputChange}
           >
             {breakTimeOptions}
@@ -342,7 +350,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
             <label className={styles.BreakText}>
               <select
                 className={`${styles.inputText} ${styles.break}`}
-                value={`${staffMember.break}:00`}
+                value={staffMember.break === "Break" ? "Break" : `${staffMember.break}:00`}
                 onChange={(e) => handleBreakChange(e, staffMember.id)}
               >
                 {breakTimeOptions}
