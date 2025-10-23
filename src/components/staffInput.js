@@ -320,11 +320,11 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
           </select>
         </label>
         <label className={styles.staffText}>
-          Role
+          Role:
           <select
             className={styles.select}
             name="role"
-            value={newStaff.role}
+            value={newStaff.break}
             onChange={handleInputChange}
           >
             <option value="HCA">HCA</option>
@@ -347,9 +347,9 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
               </span>
             </h2>
 
-            <label className={styles.BreakText}>
+            <label className={styles.break}>
               <select
-                className={`${styles.inputText} ${styles.break}`}
+                className={`${styles.inputText} ${styles.select}`}
                 value={staffMember.break === "Break" ? "Break" : `${staffMember.break}:00`}
                 onChange={(e) => handleBreakChange(e, staffMember.id)}
               >
@@ -359,7 +359,6 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
             
             <div className={styles.roleContainer}>
               <label className={styles.roleLabel}>
-                Role
                 <select
                   className={styles.select}
                   value={staffMember.role || "HCA"}

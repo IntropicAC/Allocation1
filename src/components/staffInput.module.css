@@ -83,11 +83,10 @@
   padding: 0.7rem;
   border: 0.1rem solid black;
   border-radius: 0.8rem;
-  transition: all 0.2s ease;
   margin-left: 1rem;
   font-size: 1.6rem;
   text-transform: capitalize;
-  display: inline-block;
+  cursor: pointer;
 }
 
 .staffName {
@@ -153,13 +152,9 @@
   background-color: grey;
 }
 
-/* Custom select dropdown */
-.select {
-  appearance: none; /* Hide default arrow */
-  background: url('data:image/png;base64, ...') no-repeat; /* Add custom arrow, add your own base64 or image */
-  padding-right: 2.5rem; /* Make room for the custom arrow */
+
+.select { 
   cursor: pointer;
-  
 }
 
 /* Custom checkbox */
