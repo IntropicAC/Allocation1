@@ -1,13 +1,27 @@
 import React, { useState, useEffect} from "react";
 import styles from "./patientInput.module.css";
 
-function PatientInput({ observations, setObservations, setStaff, setUnassignedObs, unassignedObs }) {
+function PatientInput({ observations, setObservations, setStaff, setUnassignedObs, unassignedObs, deletedObservations, setDeletedObservations }) {
   const [otherStaff, setOtherStaff] = useState(""); 
   const [newObservation, setNewObservation] = useState({
     name: "",
     observationType: "1:1",
     staff: 1, // Renamed from staffRequired
   });
+
+  const handleDeleteObservation = (observationToDelete) => {
+  // Add to deleted list before removing
+  setDeletedObservations(prev => {
+    // Only add if not already in the deleted list
+    if (!prev.some(obs => obs.name === observationToDelete.name)) {
+      return [...prev, observationToDelete];
+    }
+    return prev;
+  });
+  
+  // Then remove from main observations array
+  setObservations(observations.filter(obs => obs.name !== observationToDelete.name));
+};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

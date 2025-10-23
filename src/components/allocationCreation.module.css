@@ -31,6 +31,16 @@
   border-radius: 0.8rem 0.8rem 0 0;
   align-items: center;
   justify-content: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;  /* Ensure vertical center alignment */
+  gap: 10px;
+  padding: 10px;
+}
+
+.draggableObsContainer > div {
+  display: flex;
+  align-items: center;  /* Center each child vertically */
 }
 .obsCells {
   justify-content: center;

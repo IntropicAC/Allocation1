@@ -1115,9 +1115,32 @@ function runSimulation(observations, staff, startHour = 9) {
 
 
 
-function resetStaff(staff, observations, startHour = 9) {
-  // Get list of actual observation names that should be cleared
-  const observationNames = observations.map(obs => obs.name);
+function resetStaff(staff, observations, startHour = 9, deletedObservations = []) {
+  // Get list of current observation names
+  const currentObservationNames = observations.map(obs => obs.name);
+  
+  // Build a comprehensive list of all observation values to clear
+  const observationsToClean = new Set();
+  
+  // Add current observations and their shortened forms
+  observations.forEach(obs => {
+    observationsToClean.add(obs.name);
+    // Add shortened form for "Generals"
+    if (obs.name === "Generals") {
+      observationsToClean.add("Gen");
+    }
+    // Add any other shortened forms your app uses
+  });
+  
+  // Add deleted observations and their shortened forms
+  deletedObservations.forEach(obs => {
+    observationsToClean.add(obs.name);
+    // Add shortened form for "Generals"
+    if (obs.name === "Generals") {
+      observationsToClean.add("Gen");
+    }
+    // Add any other shortened forms your app uses
+  });
   
   staff.forEach((staffMember) => {
     // Reset tracking variables
@@ -1125,30 +1148,24 @@ function resetStaff(staff, observations, startHour = 9) {
     staffMember.obsCounts = {};
     staffMember.lastReceived = {};
     
-    // Reset observations while preserving only user-set constraints
+    // Reset observations while preserving user-set values
     for (let hour = startHour; hour <= 19; hour++) {
-      const currentObs = staffMember.observations[hour];
+      const currentValue = staffMember.observations[hour];
       
-      // If current value is an observation name, clear it
-      if (currentObs && observationNames.includes(currentObs)) {
-        // Clear system-assigned observations
+      // Check if this value should be cleared (is a known observation)
+      if (observationsToClean.has(currentValue)) {
+        // This is a known observation (current or deleted) - clear it
         staffMember.observations[hour] =
           hour === 8 &&
           staffMember.observationId &&
           staffMember.observationId !== "-"
             ? staffMember.observationId
             : "-";
-      } else {
-        // Keep everything else (constraints like "Break", "X", etc.)
-        // Only set default if undefined
-        if (!staffMember.observations[hour]) {
-          staffMember.observations[hour] =
-            hour === 8 &&
-            staffMember.observationId &&
-            staffMember.observationId !== "-"
-              ? staffMember.observationId
-              : "-";
-        }
+      }
+      // Otherwise, keep the value (user-entered custom values, Break, X, etc.)
+      else {
+        // Preserve the existing value
+        staffMember.observations[hour] = currentValue || "-";
       }
       
       // Always set hour 7 to free
@@ -1157,12 +1174,12 @@ function resetStaff(staff, observations, startHour = 9) {
       }
     }
     
-    // Recalculate numObservations based on actual assignments (not constraints)
+    // Recalculate numObservations based on actual assignments
     staffMember.numObservations = 0;
     for (let hour = 7; hour <= 19; hour++) {
       const obs = staffMember.observations[hour];
-      // Count only actual observation assignments
-      if (obs && observationNames.includes(obs)) {
+      // Count only valid observation assignments that are still in the current list
+      if (obs && currentObservationNames.includes(obs)) {
         staffMember.numObservations++;
       }
     }

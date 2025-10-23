@@ -12,6 +12,7 @@ import ReactToPrint from "react-to-print";
 function MainPage({ observations, setObservations, staff, setStaff }) {
   const [currentPage, setCurrentPage] = useState("patient");
   const [selectedStartHour, setSelectedStartHour] = useState(null);
+  const [deletedObservations, setDeletedObservations] = useState([]);
 
   const handleNext = () => {
     if (currentPage === "patient") {
@@ -144,6 +145,8 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
               observations={observations}
               setObservations={setObservations}
               setStaff={setStaff}
+              deletedObservations={deletedObservations}
+              setDeletedObservations={setDeletedObservations}
             />
           )}
           {currentPage === "staff" && (

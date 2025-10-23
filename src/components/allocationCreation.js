@@ -3,7 +3,7 @@ import React, {useRef, useEffect, useState} from 'react';
 import styles from './allocationCreation.module.css';
 import { useDrag, useDrop } from 'react-dnd';
 
-import AmPmToggle from './helperComponents/AmPmToggle';
+import ColorToggleButton from './helperComponents/ColorToggleButton';
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
@@ -12,7 +12,32 @@ function capitalizeFirstLetter(string) {
 
 function AllocationCreation({ staff, setStaff, setTableRef, observations, setObservations, selectedStartHour, setSelectedStartHour }) {
 
-  
+  const [colorCodingEnabled, setColorCodingEnabled] = useState(false);
+
+  // Light, visually appealing color palette for observations
+  const observationColors = {
+    0: '#FFE5E5', // Soft pink
+    1: '#E5F3FF', // Soft blue
+    2: '#FFF4E5', // Soft peach
+    3: '#E5FFE5', // Soft green
+    4: '#F5E5FF', // Soft lavender
+    5: '#FFE5F5', // Soft rose
+    6: '#E5FFFF', // Soft cyan
+    7: '#FFF5E5', // Soft cream
+    8: '#FFE5EB', // Soft coral
+    9: '#E5F5E5', // Soft mint
+  };
+
+  const getObservationColor = (observationName) => {
+    if (!colorCodingEnabled || !observationName || observationName === '-') {
+      return 'transparent';
+    }
+    
+    const index = observations.findIndex(obs => obs.name === observationName);
+    if (index === -1) return 'transparent';
+    
+    return observationColors[index % 10];
+  };
 
   staff.sort((a, b) => {
   // Define priority order: Nurse (1), Security (2), HCA (3)
@@ -48,7 +73,7 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
   const [editValue, setEditValue] = useState('');
 
 
- const DragDropCell = ({ staffMember, hour, observation, moveObservation, updateObservation }) => {
+ const DragDropCell = ({ staffMember, hour, observation, originalObservation, moveObservation, updateObservation }) => {
   const isEditing = editingCell === `${staffMember.name}-${hour}`;
   const [isDragStarted, setIsDragStarted] = useState(false);
 
@@ -145,8 +170,12 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
     );
   }
 
+  // For breaks, don't apply color
+  const isBreak = staffMember.break === hour;
+  const colorToUse = isBreak ? 'transparent' : getObservationColor(originalObservation);
+
   return (
-    <td ref={ref} className={cellStyle} onClick={handleCellClick}>
+    <td ref={ref} className={cellStyle} onClick={handleCellClick} style={{ backgroundColor: colorToUse }}>
       {observation}
     </td>
   );
@@ -315,7 +344,17 @@ const countValidObservations = (staffObservations, observations) => {
 
   return (
     <>
+      
       <div className={styles.draggableObsContainer}>
+        <div>
+        <ColorToggleButton 
+        colorCodingEnabled={colorCodingEnabled}
+        setColorCodingEnabled={setColorCodingEnabled}
+        observations={observations}
+        observationColors={observationColors}
+      />
+      </div>
+      
       <div>
         <DraggableXCell value="X" />
       </div>
@@ -334,7 +373,8 @@ const countValidObservations = (staffObservations, observations) => {
           {staff.map(staffMember => {
           const totalObservations = countValidObservations(staffMember.observations, observations);
           const capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
-          return <th key={staffMember.id}>{capitalizedStaffName} - {totalObservations}</th>;
+          const roleTag = staffMember.nurse ? ' (NIC)' : staffMember.security ? ' (SEC)' : '';
+          return <th key={staffMember.id}>{capitalizedStaffName}{roleTag} - {totalObservations}</th>;
         })}
         </tr>
       </thead>
@@ -356,13 +396,14 @@ const countValidObservations = (staffObservations, observations) => {
 </td>
     {staff.map(staffMember => {
       let observation = staffMember.observations[hour] === 'Generals' ? 'Gen' : staffMember.observations[hour] || '-';
-      // Use DragDropCell for each observation
+      let originalObservation = staffMember.observations[hour] || '-'; // Keep the original for color coding
       return (
         <DragDropCell
   key={staffMember.name + hour}
   staffMember={staffMember}
   hour={hour}
   observation={staffMember.break === hour ? <strong className={styles.break}>Break</strong> : observation}
+  originalObservation={originalObservation} 
   moveObservation={moveObservation}
   updateObservation={updateObservation}
 />
@@ -378,4 +419,3 @@ const countValidObservations = (staffObservations, observations) => {
 }
 
 export default AllocationCreation;
-

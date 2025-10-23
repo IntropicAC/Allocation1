@@ -1,0 +1,77 @@
+.colorToggleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggleButton {
+  padding: 0.75rem 1.25rem;  /* Match the obsCells padding */
+  border-radius: 0.7rem;  /* Match the obsCells border-radius */
+  border: 0.1rem solid black;  /* Match the obsCells border */
+  background-color: white;  /* Match the obsCells background */
+  color: #333;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.72rem;  /* Match the obsCells font-size */
+  white-space: nowrap;
+  height: fit-content;
+}
+
+.toggleButton:hover {
+  background-color: rgb(214, 214, 214);  /* Match the obsCells hover */
+}
+
+.toggleButton.active {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.icon {
+  font-size: 1.5rem;  /* Proportional to button text */
+}
+
+/* Color legend as a dropdown/popover when active */
+.colorLegend {
+  position: absolute;
+  top: calc(100% + 0.5rem);  /* Position below button with gap */
+  left: 50%;
+  transform: translateX(-50%);  /* Center horizontally */
+  margin-top: 0;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: white;
+  padding: 8px;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border: 0.1rem solid black;
+  z-index: 1000;
+  max-width: 400px;
+  justify-content: center;
+}
+
+.legendItem {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #888;
+  font-size: 1.2rem;
+  font-weight: 500;
+  transition: transform 0.2s ease;
+}
+
+.legendItem:hover {
+  transform: scale(1.05);
+}
+
+/* Add this wrapper class to make positioning work */
+.buttonContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 1rem;  /* Match the margin of obsCells */
+}
