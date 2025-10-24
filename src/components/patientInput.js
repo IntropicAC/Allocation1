@@ -1,7 +1,7 @@
 import React, { useState, useEffect} from "react";
 import styles from "./patientInput.module.css";
 
-function PatientInput({ observations, setObservations, setStaff, setUnassignedObs, unassignedObs, deletedObservations, setDeletedObservations }) {
+function PatientInput({ observations, setObservations, setStaff, setUnassignedObs, unassignedObs,  }) {
   const [otherStaff, setOtherStaff] = useState(""); 
   const [newObservation, setNewObservation] = useState({
     name: "",
@@ -9,19 +9,6 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
     staff: 1, // Renamed from staffRequired
   });
 
-  const handleDeleteObservation = (observationToDelete) => {
-  // Add to deleted list before removing
-  setDeletedObservations(prev => {
-    // Only add if not already in the deleted list
-    if (!prev.some(obs => obs.name === observationToDelete.name)) {
-      return [...prev, observationToDelete];
-    }
-    return prev;
-  });
-  
-  // Then remove from main observations array
-  setObservations(observations.filter(obs => obs.name !== observationToDelete.name));
-};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -67,15 +54,14 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
     
     if (observations.length >= 10) {
       alert("The maximum number of 10 patients has been reached, please remove a patient to add another.");
-      return; // Exit the function early
+      return;
     }
   
     if (["gen", "gens"].includes(newObservation.name.toLowerCase())) {
       alert(`${newObservation.name} is a reserved name. If you are trying to add Generals, select it within observation type.`);
-      return; // Prevents adding the observation and exits the function
+      return;
     }
 
-  
     let observationToAdd = { ...newObservation, StaffNeeded: newObservation.staff };
 
     if (newObservation.observationType === "other" && otherStaff) {
@@ -85,15 +71,28 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
     setObservations(prevObservations => {
       const maxId = prevObservations.reduce((max, item) => Math.max(max, item.id), -1);
       const newId = maxId + 1;
-      return updateObservationsWithStaffNeeded([...prevObservations, { ...observationToAdd, id: newId }], newId);
-});
+      
+      // Preserve deletedObs from existing observations
+      const existingDeletedObs = prevObservations[0]?.deletedObs || [];
+      
+      const newObservations = updateObservationsWithStaffNeeded(
+        [...prevObservations, { ...observationToAdd, id: newId, deletedObs: existingDeletedObs }], 
+        newId
+      );
+      
+      // Ensure all observations have the same deletedObs array
+      return newObservations.map(obs => ({
+        ...obs,
+        deletedObs: existingDeletedObs
+      }));
+    });
 
     setNewObservation({
       name: "",
       observationType: "1:1",
       staff: 1, 
     });
-    setOtherStaff(""); // Reset the otherStaff as well
+    setOtherStaff("");
   };
 
   const removeObservation = (observationIdToRemove) => {
@@ -103,8 +102,15 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
     if (observationToRemove) {
       setObservations(prevObservations => {
           const updatedObservations = prevObservations.filter(obs => obs.id !== observationIdToRemove);
-
-          return updatedObservations;
+          
+          // Add the deleted observation name to deletedObs array
+          const currentDeletedObs = updatedObservations[0]?.deletedObs || [];
+          
+          // Update all observations with the new deletedObs array
+          return updatedObservations.map(obs => ({
+            ...obs,
+            deletedObs: [...currentDeletedObs, observationToRemove.name]
+          }));
       });
 
         // Update the staff array

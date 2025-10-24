@@ -1,35 +1,106 @@
-// MainPage.jsx
 import React, { useState, useRef, useEffect } from "react";
 import styles from "./mainPage.module.css";
 import StaffInput from "./staffInput";
 import PatientInput from "./patientInput";
 import NavigationButtons from "./navigationButtons";
 import AllocationCreation from "./allocationCreation";
+import WelcomePage from "./WelcomePage";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import ReactToPrint from "react-to-print";
 
-function MainPage({ observations, setObservations, staff, setStaff }) {
-  const [currentPage, setCurrentPage] = useState("patient");
+function MainPage({ observations, setObservations, staff, setStaff, clearAllData }) {
+  // Check if there's cached data
+  const hasCachedData = observations.length > 0 || staff.length > 0;
+  
+  // Start at welcome page if there's cached data, otherwise go straight to patient input
+  const [currentPage, setCurrentPage] = useState(hasCachedData ? "welcome" : "patient");
   const [selectedStartHour, setSelectedStartHour] = useState(null);
-  const [deletedObservations, setDeletedObservations] = useState([]);
+
+  // Initialize staff members when loading from cache
+  useEffect(() => {
+    if (hasCachedData && staff.length > 0) {
+      const needsInitialization = staff.some(member => !member.observations || !member.initialized);
+      
+      if (needsInitialization) {
+        console.log('Initializing staff members from cache...');
+        const initializedStaff = staff.map(member => {
+          // If already has observations object, keep it
+          if (member.observations && typeof member.observations === 'object') {
+            return {
+              ...member,
+              initialized: true
+            };
+          }
+          
+          // Otherwise, initialize observations
+          const observations = {};
+          for (let hour = 7; hour <= 19; hour++) {
+            observations[hour] = 
+              hour === 8 && member.observationId && member.observationId !== "-"
+                ? member.observationId
+                : "-";
+          }
+          
+          return {
+            ...member,
+            observations,
+            obsCounts: member.obsCounts || {},
+            lastReceived: member.lastReceived || {},
+            numObservations: member.observationId && member.observationId !== "-" ? 1 : 0,
+            initialized: true
+          };
+        });
+        
+        setStaff(initializedStaff);
+      }
+    }
+  }, [hasCachedData]);
+
+  const handleNewAllocation = () => {
+    if (window.confirm('This will delete your previous allocation. Are you sure?')) {
+      clearAllData();
+      setCurrentPage("patient");
+    }
+  };
+
+const handleContinue = () => {
+  const hasCompleteData = observations.length > 0 && staff.length > 1;
+
+  if (hasCompleteData) {
+    const needsInitialization = staff.some(m => !m.observations || !m.initialized);
+    if (needsInitialization) {
+      // (Optionally) use functional setState to avoid stale closures
+      setStaff(prev => initializeStaffFromCache(prev));
+    }
+    setCurrentPage("allocation");
+  } else if (observations.length > 0 && staff.length <= 1) {
+    setCurrentPage("staff");
+  } else {
+    setCurrentPage("patient");
+  }
+};
 
   const handleNext = () => {
     if (currentPage === "patient") {
       setCurrentPage("staff");
     } else if (currentPage === "staff") {
-      // When on the 'staff' page, move to 'allocation'
       setCurrentPage("allocation");
     }
   };
 
-  // Update the handleBack function
   const handleBack = () => {
-    if (currentPage === "staff") {
-      setCurrentPage("patient");
-    } else if (currentPage === "allocation") {
-      // When on the 'allocation' page, go back to 'staff'
+    if (currentPage === "allocation") {
+      // Always go back to staff from allocation
       setCurrentPage("staff");
+    } else if (currentPage === "staff") {
+      // Always go back to patient from staff
+      setCurrentPage("patient");
+    } else if (currentPage === "patient") {
+      // Only go back to welcome if there's cached data
+      if (hasCachedData) {
+        setCurrentPage("welcome");
+      }
+      // Otherwise, do nothing (can't go back from patient if no cache)
     }
   };
 
@@ -39,37 +110,53 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
     tableRef.current = ref;
   };
 
+  function initializeStaffFromCache(staff) {
+   return staff.map(member => {
+     if (member.observations && typeof member.observations === 'object') {
+       return { ...member, initialized: true };
+     }
+     const observations = {};
+     for (let hour = 7; hour <= 19; hour++) {
+       observations[hour] =
+         hour === 8 && member.observationId && member.observationId !== "-"
+           ? member.observationId
+           : "-";
+     }
+     return {
+       ...member,
+       observations,
+       obsCounts: member.obsCounts || {},
+       lastReceived: member.lastReceived || {},
+       numObservations: member.observationId && member.observationId !== "-" ? 1 : 0,
+       initialized: true     };
+   });
+ }
+
   const copyTable = async () => {
     const table = tableRef.current;
     if (table) {
-      // Clone the table to avoid altering the original
       const clonedTable = table.cloneNode(true);
-
-      // Ensure borders are collapsed into a single border
-      clonedTable.style.borderCollapse = "collapse"; // Add this line
+      clonedTable.style.borderCollapse = "collapse";
       clonedTable.style.minHeight = "100%";
       clonedTable.style.minHeight = "100vh";
       clonedTable.style.fontFamily = "Calibri, sans-serif";
+      
       const cells = clonedTable.querySelectorAll("td, th");
       cells.forEach((cell) => {
-        // Reset padding and margin, set borders, and center align the text
         cell.style.padding = "0";
         cell.style.margin = "0";
-        cell.style.border = "1px solid black"; // Set cell borders
-        cell.style.textAlign = "center"; // Center align horizontally
-        cell.style.verticalAlign = "middle"; // Center align vertically
-        cell.style.whiteSpace = "nowrap"; // Prevent text wrapping
+        cell.style.border = "1px solid black";
+        cell.style.textAlign = "center";
+        cell.style.verticalAlign = "middle";
+        cell.style.whiteSpace = "nowrap";
       });
 
-      // Optional: If you also want to ensure the table itself has a border
       clonedTable.style.border = "1px solid black";
 
-      // Serialize the cloned table to an HTML string
       const serializer = new XMLSerializer();
       let tableHtml = serializer.serializeToString(clonedTable);
 
       try {
-        // Use the Clipboard API to copy the modified table HTML
         await navigator.clipboard.write([
           new ClipboardItem({
             "text/html": new Blob([tableHtml], { type: "text/html" }),
@@ -82,73 +169,34 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
     }
   };
 
-  /*const printTable = () => {
-    if (tableRef.current) {
-      const printWindow = window.open('', '_blank', 'height=600,width=800');
-      printWindow.document.write('<html><head><title>Print Table</title>');
-      printWindow.document.write('<style>');
-      // Ensure the table uses all available space and respects page margins
-      printWindow.document.write(`
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
-        table {
-          width: 100%; 
-          border-collapse: collapse;
-          table-layout: fixed; /* Ensures columns have equal width */ /*
-          margin: 20mm; /* Adjust the margin as needed */ /*
-        }/*
-        th, td {
-          border: 1px solid black; 
-          padding: 8px; 
-          text-align: left; 
-          word-wrap: break-word; /* Ensures text wraps within the cell */ /*
-          vertical-align: top; /* Aligns content to the top */ /*
-        }/*
-      `);
-      printWindow.document.write('</style></head><body>');
-      printWindow.document.write(tableRef.current.outerHTML); // Insert the table HTML
-      printWindow.document.write('</body></html>');
-      printWindow.document.close(); // Close the document to finish writing
-      printWindow.focus(); // Focus on the new window—important for some browsers
-      printWindow.print(); // Trigger the browser's print dialog
-      printWindow.onafterprint = printWindow.close; // Close the window after printing
-    }
-  };
-  
-  */
-
   return (
     <div className="hero">
-      {/* Navigation */}
       <nav>
         <ul>
-          <li>
-            <a href="#">Home</a>
-          </li>
-          <li>
-            <a href="#">About</a>
-          </li>
-          <li>
-            <a href="#">Contact</a>
-          </li>
-          {/* Add more navigation links as necessary */}
+          <li><a href="#">Home</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
         </ul>
       </nav>
 
-      {/* Main Content Area */}
       <main id="content-area">
         <div className="content-wrapper">
-          {/*<button className="modern-button" id="modernButton">
-          <span>Create Allocation</span>
-        </button>*/}
+          {currentPage === "welcome" && (
+            <WelcomePage
+              onNewAllocation={handleNewAllocation}
+              onContinue={handleContinue}
+              hasCachedData={hasCachedData}
+            />
+          )}
+          
           {currentPage === "patient" && (
             <PatientInput
               observations={observations}
               setObservations={setObservations}
               setStaff={setStaff}
-              deletedObservations={deletedObservations}
-              setDeletedObservations={setDeletedObservations}
             />
           )}
+          
           {currentPage === "staff" && (
             <StaffInput
               staff={staff}
@@ -157,6 +205,7 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
               setObservations={setObservations}
             />
           )}
+          
           {currentPage === "allocation" && (
             <DndProvider backend={HTML5Backend}>
               <AllocationCreation
@@ -172,21 +221,23 @@ function MainPage({ observations, setObservations, staff, setStaff }) {
           )}
         </div>
 
-        <NavigationButtons
-          copyTable={copyTable}
-          currentPage={currentPage}
-          onNext={handleNext}
-          onBack={handleBack}
-          staff={staff}
-          setStaff={setStaff}
-          observations={observations}
-          setTableRef={setTableRef}
-          tableRef={tableRef}
-          selectedStartHour={selectedStartHour}
-        />
+        {currentPage !== "welcome" && (
+          <NavigationButtons
+            copyTable={copyTable}
+            currentPage={currentPage}
+            onNext={handleNext}
+            onBack={handleBack}
+            staff={staff}
+            setStaff={setStaff}
+            observations={observations}
+            setTableRef={setTableRef}
+            tableRef={tableRef}
+            selectedStartHour={selectedStartHour}
+            hasCachedData={hasCachedData}
+          />
+        )}
       </main>
 
-      {/* Footer */}
       <footer>
         <p>&copy; Alex 2025</p>
       </footer>

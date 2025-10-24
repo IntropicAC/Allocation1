@@ -29,15 +29,19 @@ function AllocationCreation({ staff, setStaff, setTableRef, observations, setObs
   };
 
   const getObservationColor = (observationName) => {
-    if (!colorCodingEnabled || !observationName || observationName === '-') {
-      return 'transparent';
-    }
-    
-    const index = observations.findIndex(obs => obs.name === observationName);
-    if (index === -1) return 'transparent';
-    
-    return observationColors[index % 10];
-  };
+  if (!colorCodingEnabled || !observationName || observationName === '-') {
+    return 'transparent';
+  }
+  
+  // Extract the first word from the cell value (before any space or hyphen)
+  const firstWord = observationName.split(/[\s-]/)[0];
+  
+  // Check if the first word matches any observation name exactly
+  const index = observations.findIndex(obs => obs.name === firstWord);
+  if (index === -1) return 'transparent';
+  
+  return observationColors[index % 10];
+};
 
   staff.sort((a, b) => {
   // Define priority order: Nurse (1), Security (2), HCA (3)
@@ -373,7 +377,7 @@ const countValidObservations = (staffObservations, observations) => {
           {staff.map(staffMember => {
           const totalObservations = countValidObservations(staffMember.observations, observations);
           const capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
-          const roleTag = staffMember.nurse ? ' (NIC)' : staffMember.security ? ' (SEC)' : '';
+          const roleTag = staffMember.nurse ? ' (Nurse)' : staffMember.security ? ' (Sec)' : '';
           return <th key={staffMember.id}>{capitalizedStaffName}{roleTag} - {totalObservations}</th>;
         })}
         </tr>

@@ -15,7 +15,8 @@ function NavigationButtons({
   copyTable,
   setStaff,
   tableRef,
-  selectedStartHour
+  selectedStartHour,
+  hasCachedData
 }) {
   
 
@@ -1115,32 +1116,30 @@ function runSimulation(observations, staff, startHour = 9) {
 
 
 
-function resetStaff(staff, observations, startHour = 9, deletedObservations = []) {
+function resetStaff(staff, observations, startHour = 9) {
   // Get list of current observation names
   const currentObservationNames = observations.map(obs => obs.name);
+  
+  // Get deletedObs array (all observations share the same deletedObs)
+  const deletedObservations = observations[0]?.deletedObs || [];
   
   // Build a comprehensive list of all observation values to clear
   const observationsToClean = new Set();
   
-  // Add current observations and their shortened forms
-  observations.forEach(obs => {
-    observationsToClean.add(obs.name);
-    // Add shortened form for "Generals"
-    if (obs.name === "Generals") {
-      observationsToClean.add("Gen");
-    }
-    // Add any other shortened forms your app uses
+  // Add current observations
+  currentObservationNames.forEach(name => {
+    observationsToClean.add(name);
   });
   
-  // Add deleted observations and their shortened forms
-  deletedObservations.forEach(obs => {
-    observationsToClean.add(obs.name);
-    // Add shortened form for "Generals"
-    if (obs.name === "Generals") {
-      observationsToClean.add("Gen");
-    }
-    // Add any other shortened forms your app uses
+  // Add deleted observations
+  deletedObservations.forEach(name => {
+    observationsToClean.add(name);
   });
+  
+  // Add shortened form for "Generals"
+  if (currentObservationNames.includes("Generals") || deletedObservations.includes("Generals")) {
+    observationsToClean.add("Gen");
+  }
   
   staff.forEach((staffMember) => {
     // Reset tracking variables
@@ -1185,6 +1184,46 @@ function resetStaff(staff, observations, startHour = 9, deletedObservations = []
     }
   });
 }
+
+// Run ONCE before the simulation. Mutates `staff` and `observations` in place.
+function applyDeletedObsOnce(staff, observations, startHour = 7) {
+  // Collect deleted labels
+  const toDelete = new Set(
+    observations.flatMap(o => Array.isArray(o.deletedObs) ? o.deletedObs : [])
+  );
+
+  if (toDelete.size === 0) return false; // nothing to do
+
+  // For counting valid obs later
+  const validNames = new Set(observations.map(o => o.name));
+
+  // 1) Remove any timetable values that match deletedObs
+  staff.forEach(member => {
+    const obsMap = member.observations || {};
+    for (let h = startHour; h <= 19; h++) {
+      const val = obsMap[h];
+      if (toDelete.has(val)) {
+        obsMap[h] =
+          h === 8 && member.observationId && member.observationId !== "-"
+            ? member.observationId
+            : "-";
+      }
+    }
+    // Recount actual assignments (only current/valid obs names)
+    member.numObservations = Object.keys(obsMap).reduce(
+      (acc, h) => acc + (validNames.has(obsMap[h]) ? 1 : 0),
+      0
+    );
+  });
+
+  // 2) Clear deletedObs so future iterations ignore them
+  observations.forEach(o => {
+    if (Array.isArray(o.deletedObs) && o.deletedObs.length) o.deletedObs = [];
+  });
+
+  return true;
+}
+
 
   function allocateObservations(observations, staff, logs, unassignedCountRef, startHour) {
     const maxObs = calculateMaxObservations(observations, staff);
@@ -1287,9 +1326,15 @@ function resetStaff(staff, observations, startHour = 9, deletedObservations = []
 }
 
   const handleAllocate = () => {
-  let allocationCopy = runSimulation(observations, staff, selectedStartHour || 9);
+  const start = selectedStartHour || 9;
+
+  // one-time scrub + clear deletedObs
+  applyDeletedObsOnce(staff, observations, 8); // 7..19 to be thorough
+
+  const allocationCopy = runSimulation(observations, staff, start);
   setStaff(allocationCopy);
 };
+
 
   const handleNext = () => {
   if (currentPage === "patient" && observations.length < 1) {
@@ -1398,7 +1443,7 @@ function resetStaff(staff, observations, startHour = 9, deletedObservations = []
   return (
     <div className={styles.navigationContainer}>
       {/* Always show the Back button on the left for "staff" or "allocation" pages */}
-      {(currentPage === "staff" || currentPage === "allocation") && (
+      {(currentPage === "staff" || currentPage === "allocation" || (currentPage === "patient" && hasCachedData)) && (
         <button onClick={onBack} className={styles.backButton}>
           Back
         </button>
