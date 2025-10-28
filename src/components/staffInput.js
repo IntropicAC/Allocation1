@@ -324,7 +324,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
           <select
             className={styles.select}
             name="role"
-            value={newStaff.break}
+            value={newStaff.role}
             onChange={handleInputChange}
           >
             <option value="HCA">HCA</option>

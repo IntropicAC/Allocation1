@@ -19,7 +19,7 @@ function NavigationButtons({
   hasCachedData
 }) {
   
-
+const [isLoadingSolver, setIsLoadingSolver] = useState(false);
   function calculateAvailabilityForEachObservation(observations, staff, hour) {
     let availabilityCounts = {};
 
@@ -1325,14 +1325,48 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
   return plan;
 }
 
-  const handleAllocate = () => {
+  const handleAllocate = async () => {
   const start = selectedStartHour || 9;
+  const maxObs = calculateMaxObservations(observations, staff);
+  
+  applyDeletedObsOnce(staff, observations, 8);
 
-  // one-time scrub + clear deletedObs
-  applyDeletedObsOnce(staff, observations, 8); // 7..19 to be thorough
+  if (maxObs >= 8) {
+    setIsLoadingSolver(true); // Show loading
+    
+    try {
+      const response = await fetch('/api/solve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff, observations })
+      });
 
-  const allocationCopy = runSimulation(observations, staff, start);
-  setStaff(allocationCopy);
+      const result = await response.json();
+      
+      if (result.success) {
+        const updatedStaff = staff.map(member => ({
+          ...member,
+          observations: result.schedules[member.id],
+          initialized: true
+        }));
+        
+        setStaff(updatedStaff);
+      } else {
+        throw new Error(result.error);
+      }
+      
+    } catch (error) {
+      console.error('Solver failed, using local algorithm:', error);
+      const allocationCopy = runSimulation(observations, staff, start);
+      setStaff(allocationCopy);
+    } finally {
+      setIsLoadingSolver(false); // Hide loading
+    }
+    
+  } else {
+    const allocationCopy = runSimulation(observations, staff, start);
+    setStaff(allocationCopy);
+  }
 };
 
 
@@ -1471,8 +1505,9 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
   onClick={handleAutoGenerate}
   className={styles.backButton}
   title="Auto-assign Observations"
+  disabled={isLoadingSolver}
 >
-  {selectedStartHour ? `Auto-Assign ${selectedStartHour} - 19` : 'Auto-Assign'}
+  {isLoadingSolver ? 'Solving...' : (selectedStartHour ? `Auto-Assign ${selectedStartHour} - 19` : 'Auto-Assign')}
 </button>
           <button
             onClick={handleReset}
