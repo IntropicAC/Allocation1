@@ -1327,48 +1327,131 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
 
   const handleAllocate = async () => {
   const start = selectedStartHour || 9;
-  const maxObs = calculateMaxObservations(observations, staff);
   
+  // Calculate maxObs to determine which algorithm to use
+  const maxObs = calculateMaxObservations(observations, staff);
+  console.log('═══════════════════════════════════════');
+  console.log('ALLOCATION STARTED');
+  console.log('═══════════════════════════════════════');
+  console.log(`Max Observations: ${maxObs}`);
+  console.log(`Staff Count: ${staff.length}`);
+  console.log(`Observation Types: ${observations.length}`);
+  console.log(`Start Hour: ${start}`);
+
+  // one-time scrub + clear deletedObs
   applyDeletedObsOnce(staff, observations, 8);
 
+  // Use Railway solver for complex schedules (maxObs >= 8)
   if (maxObs >= 8) {
-    setIsLoadingSolver(true); // Show loading
+    console.log('───────────────────────────────────────');
+    console.log('⚡ USING RAILWAY SOLVER (maxObs >= 8)');
+    console.log('───────────────────────────────────────');
     
     try {
+      // Prepare data for Railway
+      const requestData = {
+        staff: staff,
+        observations: observations
+      };
+      
+      console.log('📤 Sending to Railway API...');
+      console.log('Request payload:', JSON.stringify(requestData, null, 2));
+      
+      const requestStartTime = Date.now();
+      
       const response = await fetch('/api/solve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ staff, observations })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
       });
 
+      const requestDuration = Date.now() - requestStartTime;
+      console.log(`📥 Response received in ${requestDuration}ms`);
+      console.log(`Response status: ${response.status} ${response.statusText}`);
+
       const result = await response.json();
+      console.log('📦 Response data:', JSON.stringify(result, null, 2));
       
       if (result.success) {
-        const updatedStaff = staff.map(member => ({
-          ...member,
-          observations: result.schedules[member.id],
-          initialized: true
-        }));
+        console.log('✅ Railway solver succeeded!');
+        console.log('Stats:', result.stats);
+        console.log(`  - Status: ${result.stats.status}`);
+        console.log(`  - Solve time: ${result.stats.solveTime}s`);
+        console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
+        console.log(`  - Distribution diff: ${result.stats.distributionDiff}`);
+        
+        // Verify schedules exist
+        if (!result.schedules) {
+          throw new Error('No schedules in response');
+        }
+        
+        console.log(`📋 Received schedules for ${Object.keys(result.schedules).length} staff members`);
+        
+        // Convert Railway response to your staff format
+        const updatedStaff = staff.map((member, index) => {
+          const schedule = result.schedules[member.id];
+          
+          if (!schedule) {
+            console.warn(`⚠️ No schedule found for staff ID: ${member.id} (${member.name})`);
+            return member; // Keep original if no schedule
+          }
+          
+          console.log(`  ✓ ${member.name}: ${Object.keys(schedule).length} hours scheduled`);
+          
+          return {
+            ...member,
+            observations: schedule,
+            initialized: true
+          };
+        });
         
         setStaff(updatedStaff);
+        console.log('✅ Schedule updated successfully from Railway solver');
+        console.log('═══════════════════════════════════════');
+        
       } else {
-        throw new Error(result.error);
+        console.error('❌ Railway solver failed');
+        console.error('Error:', result.error);
+        console.log('───────────────────────────────────────');
+        console.log('🔄 Falling back to local algorithm...');
+        
+        alert(`Railway solver failed: ${result.error}\n\nUsing local algorithm instead.`);
+        
+        const allocationCopy = runSimulation(observations, staff, start);
+        setStaff(allocationCopy);
+        console.log('✅ Local algorithm completed');
+        console.log('═══════════════════════════════════════');
       }
       
     } catch (error) {
-      console.error('Solver failed, using local algorithm:', error);
+      console.error('❌ API CALL FAILED');
+      console.error('Error type:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Full error:', error);
+      console.log('───────────────────────────────────────');
+      console.log('🔄 Falling back to local algorithm...');
+      
+      alert(`Network error: ${error.message}\n\nUsing local algorithm instead.`);
+      
       const allocationCopy = runSimulation(observations, staff, start);
       setStaff(allocationCopy);
-    } finally {
-      setIsLoadingSolver(false); // Hide loading
+      console.log('✅ Local algorithm completed');
+      console.log('═══════════════════════════════════════');
     }
     
   } else {
+    console.log('───────────────────────────────────────');
+    console.log('🏃 USING LOCAL GREEDY ALGORITHM (maxObs < 8)');
+    console.log('───────────────────────────────────────');
+    
     const allocationCopy = runSimulation(observations, staff, start);
     setStaff(allocationCopy);
+    console.log('✅ Local algorithm completed');
+    console.log('═══════════════════════════════════════');
   }
 };
-
 
   const handleNext = () => {
   if (currentPage === "patient" && observations.length < 1) {
