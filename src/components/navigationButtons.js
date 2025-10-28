@@ -1349,7 +1349,7 @@ const handleAllocate = async () => {
         id: obs.id,
         name: obs.name,
         observationType: obs.observationType,
-        StaffNeeded: obs.staff  // ← Use 'staff' as the source of truth
+        StaffNeeded: obs.staff
       }));
       
       const requestData = {
@@ -1357,8 +1357,17 @@ const handleAllocate = async () => {
         observations: railwayObservations
       };
       
-      console.log('📤 Sending to Railway API...');
-      console.log('Observations being sent:', railwayObservations.map(o => `${o.name}: ${o.StaffNeeded} staff`));
+      console.log('📤 SENDING TO RAILWAY API');
+      console.log('───────────────────────────────────────');
+      console.log('📋 STAFF ARRAY:');
+      console.log(JSON.stringify(staff, null, 2));
+      console.log('───────────────────────────────────────');
+      console.log('📋 OBSERVATIONS ARRAY:');
+      console.log(JSON.stringify(railwayObservations, null, 2));
+      console.log('───────────────────────────────────────');
+      console.log('📦 FULL REQUEST BODY:');
+      console.log(JSON.stringify(requestData, null, 2));
+      console.log('───────────────────────────────────────');
       
       const requestStartTime = Date.now();
       
@@ -1373,12 +1382,17 @@ const handleAllocate = async () => {
       console.log(`Response status: ${response.status} ${response.statusText}`);
 
       const result = await response.json();
-      console.log('📦 Response:', result.success ? '✅ Success' : '❌ Failed');
+      console.log('───────────────────────────────────────');
+      console.log('📦 RESPONSE:');
+      console.log(JSON.stringify(result, null, 2));
+      console.log('───────────────────────────────────────');
       
       if (result.success) {
-        console.log('Stats:', result.stats);
-        console.log(`  - Solve time: ${result.stats.solveTime}s`);
+        console.log('✅ Railway solver succeeded!');
         console.log(`  - Status: ${result.stats.status}`);
+        console.log(`  - Solve time: ${result.stats.solveTime}s`);
+        console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
+        console.log(`  - Workload diff: ${result.stats.workloadDiff}`);
         
         const updatedStaff = staff.map(member => {
           const schedule = result.schedules[member.id];
@@ -1438,7 +1452,6 @@ const handleAllocate = async () => {
     console.log('═══════════════════════════════════════');
   }
 };
-
   const handleNext = () => {
   if (currentPage === "patient" && observations.length < 1) {
     alert("At least 1 observation is required");
