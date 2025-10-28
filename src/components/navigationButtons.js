@@ -1443,6 +1443,20 @@ const handleAllocate = async () => {
     console.log('⚡ USING RAILWAY SOLVER');
     console.log('═══════════════════════════════════════');
     
+    // ✨ ADD RESETSTAFF HERE - BEFORE SENDING TO SOLVER ✨
+    console.log('\n🧹 Calling resetStaff before solver...');
+    resetStaff(staff, observations, start);
+    console.log('✅ resetStaff complete');
+    
+    console.log('\n🔍 STAFF STATE AFTER resetStaff:');
+    staff.forEach((member, idx) => {
+      console.log(`  ${member.name}: numObservations = ${member.numObservations}`);
+      const filledHours = Object.entries(member.observations || {}).filter(([h, v]) => v !== '-' && v);
+      if (filledHours.length > 0) {
+        console.log(`    Filled: ${filledHours.map(([h, v]) => `${h}:${v}`).join(', ')}`);
+      }
+    });
+    
     try {
       // Map your data format to Railway's expected format
       console.log('📦 Preparing request data...');
@@ -1588,6 +1602,7 @@ const handleAllocate = async () => {
     console.log('🏃 USING LOCAL GREEDY ALGORITHM (low pressure)');
     console.log('═══════════════════════════════════════');
     
+    // resetStaff is already called inside runSimulation, so no need to call it here
     console.log('🏃 Running runSimulation...');
     const simStartTime = Date.now();
     const allocationCopy = runSimulation(observations, staff, start);
