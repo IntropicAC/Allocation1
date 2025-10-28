@@ -1325,45 +1325,46 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
   return plan;
 }
 
-  const handleAllocate = async () => {
+const handleAllocate = async () => {
   const start = selectedStartHour || 9;
-  
-  // Calculate maxObs to determine which algorithm to use
   const maxObs = calculateMaxObservations(observations, staff);
+  
   console.log('═══════════════════════════════════════');
   console.log('ALLOCATION STARTED');
   console.log('═══════════════════════════════════════');
   console.log(`Max Observations: ${maxObs}`);
   console.log(`Staff Count: ${staff.length}`);
   console.log(`Observation Types: ${observations.length}`);
-  console.log(`Start Hour: ${start}`);
 
-  // one-time scrub + clear deletedObs
   applyDeletedObsOnce(staff, observations, 8);
 
-  // Use Railway solver for complex schedules (maxObs >= 8)
   if (maxObs >= 8) {
     console.log('───────────────────────────────────────');
     console.log('⚡ USING RAILWAY SOLVER (maxObs >= 8)');
     console.log('───────────────────────────────────────');
     
     try {
-      // Prepare data for Railway
+      // Map your data format to Railway's expected format
+      const railwayObservations = observations.map(obs => ({
+        id: obs.id,
+        name: obs.name,
+        observationType: obs.observationType,
+        StaffNeeded: obs.staff  // ← Use 'staff' as the source of truth
+      }));
+      
       const requestData = {
         staff: staff,
-        observations: observations
+        observations: railwayObservations
       };
       
       console.log('📤 Sending to Railway API...');
-      console.log('Request payload:', JSON.stringify(requestData, null, 2));
+      console.log('Observations being sent:', railwayObservations.map(o => `${o.name}: ${o.StaffNeeded} staff`));
       
       const requestStartTime = Date.now();
       
       const response = await fetch('/api/solve', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
       });
 
@@ -1372,33 +1373,22 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
       console.log(`Response status: ${response.status} ${response.statusText}`);
 
       const result = await response.json();
-      console.log('📦 Response data:', JSON.stringify(result, null, 2));
+      console.log('📦 Response:', result.success ? '✅ Success' : '❌ Failed');
       
       if (result.success) {
-        console.log('✅ Railway solver succeeded!');
         console.log('Stats:', result.stats);
-        console.log(`  - Status: ${result.stats.status}`);
         console.log(`  - Solve time: ${result.stats.solveTime}s`);
-        console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
-        console.log(`  - Distribution diff: ${result.stats.distributionDiff}`);
+        console.log(`  - Status: ${result.stats.status}`);
         
-        // Verify schedules exist
-        if (!result.schedules) {
-          throw new Error('No schedules in response');
-        }
-        
-        console.log(`📋 Received schedules for ${Object.keys(result.schedules).length} staff members`);
-        
-        // Convert Railway response to your staff format
-        const updatedStaff = staff.map((member, index) => {
+        const updatedStaff = staff.map(member => {
           const schedule = result.schedules[member.id];
           
           if (!schedule) {
-            console.warn(`⚠️ No schedule found for staff ID: ${member.id} (${member.name})`);
-            return member; // Keep original if no schedule
+            console.warn(`⚠️ No schedule for ${member.name} (ID: ${member.id})`);
+            return member;
           }
           
-          console.log(`  ✓ ${member.name}: ${Object.keys(schedule).length} hours scheduled`);
+          console.log(`  ✓ ${member.name}: scheduled`);
           
           return {
             ...member,
@@ -1408,12 +1398,11 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
         });
         
         setStaff(updatedStaff);
-        console.log('✅ Schedule updated successfully from Railway solver');
+        console.log('✅ Schedule updated from Railway solver');
         console.log('═══════════════════════════════════════');
         
       } else {
-        console.error('❌ Railway solver failed');
-        console.error('Error:', result.error);
+        console.error('❌ Solver failed:', result.error);
         console.log('───────────────────────────────────────');
         console.log('🔄 Falling back to local algorithm...');
         
@@ -1426,10 +1415,7 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
       }
       
     } catch (error) {
-      console.error('❌ API CALL FAILED');
-      console.error('Error type:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Full error:', error);
+      console.error('❌ API CALL FAILED:', error.message);
       console.log('───────────────────────────────────────');
       console.log('🔄 Falling back to local algorithm...');
       
