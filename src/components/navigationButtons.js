@@ -1328,6 +1328,8 @@ const handleAllocate = async () => {
   console.log('🚀 HANDLE ALLOCATE CALLED');
   console.log('🚀🚀🚀 ═══════════════════════════════════════');
   console.log('Time:', new Date().toLocaleTimeString());
+
+  setIsLoadingSolver(true);
   
   const start = selectedStartHour || 9;
   console.log('📊 Start hour:', start);
@@ -1613,7 +1615,7 @@ const handleAllocate = async () => {
     console.log('✅ Local algorithm completed');
     console.log('═══════════════════════════════════════');
   }
-  
+  setIsLoadingSolver(false);
   console.log('\n🏁 HANDLE ALLOCATE COMPLETE');
   console.log('🏁 Time:', new Date().toLocaleTimeString());
   console.log('🏁🏁🏁 ═══════════════════════════════════════\n\n');
@@ -1724,15 +1726,35 @@ const handleAllocate = async () => {
   });
 
   return (
+  <>
+    {/* ✨ NEW: Loading Overlay ✨ */}
+    {isLoadingSolver && (
+      <div className={styles.loadingOverlay}>
+        <div className={styles.loadingContent}>
+          <div className={styles.spinner}></div>
+          <div className={styles.loadingText}>
+            Optimizing Schedule...
+          </div>
+          <div className={styles.loadingSubtext}>
+            {selectedStartHour ? 
+              `Using advanced solver (${selectedStartHour}:00 - 19:00)` : 
+              'Using advanced solver'}
+          </div>
+          <div className={styles.progressBar}>
+            <div className={styles.progressBarFill}></div>
+          </div>
+        </div>
+      </div>
+    )}
+    
+    {/* Your existing navigation container - NO CHANGES */}
     <div className={styles.navigationContainer}>
-      {/* Always show the Back button on the left for "staff" or "allocation" pages */}
       {(currentPage === "staff" || currentPage === "allocation" || (currentPage === "patient" && hasCachedData)) && (
         <button onClick={onBack} className={styles.backButton}>
           Back
         </button>
       )}
 
-      {/* Right-aligned buttons for the "allocation" page */}
       {currentPage === "allocation" && (
         <div className={styles.rightButtonsContainer}>
           <button onClick={handlePrint} className={styles.backButton}>
@@ -1750,14 +1772,24 @@ const handleAllocate = async () => {
             </span>
             {isCopied && <span className={styles.checkmark}>✓</span>}
           </button>
+          
+          {/* ✨ UPDATED: Auto-Assign button with loading state ✨ */}
           <button
-  onClick={handleAutoGenerate}
-  className={styles.backButton}
-  title="Auto-assign Observations"
-  disabled={isLoadingSolver}
->
-  {isLoadingSolver ? 'Solving...' : (selectedStartHour ? `Auto-Assign ${selectedStartHour} - 19` : 'Auto-Assign')}
-</button>
+            onClick={handleAutoGenerate}
+            className={`${styles.backButton} ${isLoadingSolver ? styles.disabledButton : ''}`}
+            title="Auto-assign Observations"
+            disabled={isLoadingSolver}
+          >
+            {isLoadingSolver ? (
+              <>
+                <i className="fa-solid fa-spinner fa-spin" style={{marginRight: '8px'}}></i>
+                Solving...
+              </>
+            ) : (
+              selectedStartHour ? `Auto-Assign ${selectedStartHour} - 19` : 'Auto-Assign'
+            )}
+          </button>
+          
           <button
             onClick={handleReset}
             className={styles.backButton}
@@ -1772,12 +1804,10 @@ const handleAllocate = async () => {
         </div>
       )}
 
-      {/* Spacer for non-"staff" and non-"allocation" pages */}
       {currentPage !== "staff" && currentPage !== "allocation" && (
         <div className={styles.spacer}></div>
       )}
 
-      {/* Dynamic Display for "staff" Page */}
       {currentPage === "staff" && (
         <div className={styles.observationsInfo}>
           {observations.map((observation, index) => (
@@ -1789,7 +1819,6 @@ const handleAllocate = async () => {
         </div>
       )}
 
-      {/* Existing Next/Create Allocation Button */}
       {(currentPage === "patient" || currentPage === "staff") && (
         <button
           className={
@@ -1803,7 +1832,8 @@ const handleAllocate = async () => {
         </button>
       )}
     </div>
-  );
+  </>
+);
 }
 
 export default NavigationButtons;
