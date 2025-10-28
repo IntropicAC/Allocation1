@@ -1323,57 +1323,47 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
   }
 
 
-
-
-
-
+const handleAllocate = async () => {
+  console.log('🚀🚀🚀 ═══════════════════════════════════════');
+  console.log('🚀 HANDLE ALLOCATE CALLED');
+  console.log('🚀🚀🚀 ═══════════════════════════════════════');
+  console.log('Time:', new Date().toLocaleTimeString());
   
-
-  function createLookAheadPlan(observations, staff, startHour = 9, endHour = 19) {
-  const totalHours = endHour - startHour + 1;
-  const observationSlotsPerHour = observations.reduce((sum, obs) => sum + obs.staff, 0);
-  const totalSlots = observationSlotsPerHour * totalHours;
-  const slotsPerStaff = Math.ceil(totalSlots / staff.length);
+  const start = selectedStartHour || 9;
+  console.log('📊 Start hour:', start);
+  console.log('📊 Staff count:', staff.length);
+  console.log('📊 Observation types:', observations.length);
   
-  // Determine system pressure
-  const systemPressure = totalSlots / (staff.length * totalHours);
-  
-  const plan = {
-    slotsPerStaff,
-    systemPressure,
-    idealGap: Math.max(1, Math.floor(totalHours / slotsPerStaff)),
-    maxConsecutive: systemPressure > 0.7 ? 3 : 2,
-    staffPlans: {}
-  };
-  
-  // Create individual staff plans
-  staff.forEach((member, index) => {
-    const offset = (totalHours / staff.length) * index;
-    plan.staffPlans[member.name] = {
-      targetObservations: slotsPerStaff,
-      idealHours: [],
-      currentCount: 0
-    };
-    
-    // Distribute ideal hours evenly
-    for (let i = 0; i < slotsPerStaff; i++) {
-      const idealHour = Math.round(startHour + offset + (i * plan.idealGap)) % totalHours + startHour;
-      if (idealHour <= endHour) {
-        plan.staffPlans[member.name].idealHours.push(idealHour);
-      }
+  // Log current staff state BEFORE any processing
+  console.log('\n🔍 STAFF STATE BEFORE PROCESSING:');
+  staff.forEach((member, idx) => {
+    console.log(`\n  Staff ${idx + 1}: ${member.name}`);
+    console.log(`    - ID: ${member.id}`);
+    console.log(`    - Break: ${member.break}`);
+    console.log(`    - Role: ${member.role}`);
+    console.log(`    - Initialized: ${member.initialized}`);
+    console.log(`    - NumObservations: ${member.numObservations}`);
+    console.log(`    - Has originalObservations: ${!!member.originalObservations}`);
+    if (member.originalObservations) {
+      console.log(`    - OriginalObservations keys:`, Object.keys(member.originalObservations).length);
+      console.log(`    - OriginalObservations sample:`, 
+        Object.entries(member.originalObservations).slice(0, 3).map(([h, v]) => `${h}:${v}`).join(', '));
     }
+    console.log(`    - Current observations keys:`, Object.keys(member.observations || {}).length);
+    const filledHours = Object.entries(member.observations || {}).filter(([h, v]) => v !== '-' && v);
+    console.log(`    - Filled hours (${filledHours.length}):`, 
+      filledHours.map(([h, v]) => `${h}:${v}`).join(', '));
   });
   
-  return plan;
-}
-
-const handleAllocate = async () => {
-  const start = selectedStartHour || 9;
+  console.log('\n📊 Calculating metrics...');
+  const metricsStartTime = Date.now();
   const metrics = calculateEffectiveMaxObservations(observations, staff, start, 19);
+  const metricsDuration = Date.now() - metricsStartTime;
   
   console.log('═══════════════════════════════════════');
-  console.log('ALLOCATION STARTED');
+  console.log('📈 METRICS CALCULATION COMPLETE');
   console.log('═══════════════════════════════════════');
+  console.log(`⏱️ Calculation time: ${metricsDuration}ms`);
   console.log(`Effective Max Observations: ${metrics.effectiveMaxObs}`);
   console.log(`Total Slots Needed: ${metrics.totalObsSlots}`);
   console.log(`Total Available Capacity: ${metrics.totalAvailableSlots}`);
@@ -1391,6 +1381,7 @@ const handleAllocate = async () => {
 
   // Show detailed alert if infeasible
   if (!metrics.isFeasible) {
+    console.log('⚠️ SCHEDULE IS NOT FEASIBLE!');
     let alertMessage = 'Warning: This schedule is NOT feasible!\n\n';
     
     if (metrics.infeasibleHours.length > 0) {
@@ -1413,16 +1404,204 @@ const handleAllocate = async () => {
     alert(alertMessage);
   }
 
+  console.log('\n🧹 Calling applyDeletedObsOnce...');
+  const beforeApply = JSON.parse(JSON.stringify(staff.map(s => ({
+    name: s.name,
+    observations: s.observations
+  }))));
+  
   applyDeletedObsOnce(staff, observations, 8);
+  
+  console.log('🧹 applyDeletedObsOnce complete');
+  const afterApply = JSON.parse(JSON.stringify(staff.map(s => ({
+    name: s.name,
+    observations: s.observations
+  }))));
+  
+  // Check if anything changed
+  const changed = staff.some((member, idx) => 
+    JSON.stringify(beforeApply[idx].observations) !== JSON.stringify(afterApply[idx].observations)
+  );
+  console.log(`   Changed any observations: ${changed}`);
+  
+  console.log('\n🔍 STAFF STATE AFTER applyDeletedObsOnce:');
+  staff.forEach((member, idx) => {
+    console.log(`  ${member.name}: numObservations = ${member.numObservations}`);
+    const filledHours = Object.entries(member.observations || {}).filter(([h, v]) => v !== '-' && v);
+    if (filledHours.length > 0) {
+      console.log(`    Filled: ${filledHours.map(([h, v]) => `${h}:${v}`).join(', ')}`);
+    }
+  });
 
-  // Use system pressure for decision instead of simple maxObs
-  if (metrics.systemPressure > 0.65 || metrics.effectiveMaxObs >= 8) {
+  // Decision time
+  const shouldUseSolver = metrics.systemPressure > 0.65 || metrics.effectiveMaxObs >= 8;
+  console.log(`\n🤔 Decision: ${shouldUseSolver ? 'USE SOLVER' : 'USE LOCAL ALGORITHM'}`);
+  console.log(`   Reason: pressure=${metrics.systemPressure.toFixed(2)} (threshold: 0.65), maxObs=${metrics.effectiveMaxObs} (threshold: 8)`);
+
+  if (shouldUseSolver) {
+    console.log('\n═══════════════════════════════════════');
     console.log('⚡ USING RAILWAY SOLVER');
-    // ... Railway solver code
+    console.log('═══════════════════════════════════════');
+    
+    try {
+      // Map your data format to Railway's expected format
+      console.log('📦 Preparing request data...');
+      const railwayObservations = observations.map(obs => ({
+        id: obs.id,
+        name: obs.name,
+        observationType: obs.observationType,
+        StaffNeeded: obs.staff
+      }));
+      
+      const requestData = {
+        staff: staff,
+        observations: railwayObservations
+      };
+      
+      // Log request size
+      const requestSize = JSON.stringify(requestData).length;
+      console.log(`📦 Request size: ${(requestSize / 1024).toFixed(2)} KB`);
+      
+      console.log('📤 SENDING TO RAILWAY API');
+      console.log('───────────────────────────────────────');
+      console.log('📋 STAFF ARRAY:');
+      console.log(JSON.stringify(staff, null, 2));
+      console.log('───────────────────────────────────────');
+      console.log('📋 OBSERVATIONS ARRAY:');
+      console.log(JSON.stringify(railwayObservations, null, 2));
+      console.log('───────────────────────────────────────');
+      
+      const endpoint = '/api/solve';  // Always use Vercel proxy
+      
+      console.log(`🎯 Endpoint: ${endpoint}`);
+      
+      const requestStartTime = Date.now();
+      console.log(`⏰ Request start time: ${new Date(requestStartTime).toLocaleTimeString()}`);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+          // API key is securely handled by Vercel serverless function
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      const requestDuration = Date.now() - requestStartTime;
+      console.log(`\n📥 Response received in ${requestDuration}ms`);
+      console.log(`📊 Response status: ${response.status} ${response.statusText}`);
+      console.log(`📊 Response headers:`, [...response.headers.entries()]);
+
+      const resultText = await response.text();
+      console.log(`📊 Response body length: ${resultText.length} characters`);
+      console.log(`📊 Response body preview (first 200 chars):`);
+      console.log(resultText.substring(0, 200));
+      
+      let result;
+      try {
+        result = JSON.parse(resultText);
+        console.log('✅ Successfully parsed JSON response');
+      } catch (parseError) {
+        console.error('❌ Failed to parse JSON:', parseError);
+        console.log('Full response text:', resultText);
+        throw new Error(`Invalid JSON response: ${parseError.message}`);
+      }
+      
+      console.log('───────────────────────────────────────');
+      console.log('📦 PARSED RESPONSE:');
+      console.log(JSON.stringify(result, null, 2));
+      console.log('───────────────────────────────────────');
+      
+      if (result.success) {
+        console.log('✅ Railway solver succeeded!');
+        console.log(`  - Status: ${result.stats.status}`);
+        console.log(`  - Solve time: ${result.stats.solveTime}s`);
+        console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
+        console.log(`  - Workload diff: ${result.stats.workloadDiff}`);
+        
+        console.log('\n🔄 Updating staff with solver results...');
+        const updatedStaff = staff.map((member, idx) => {
+          const schedule = result.schedules[member.id];
+          
+          if (!schedule) {
+            console.warn(`⚠️ No schedule for ${member.name} (ID: ${member.id})`);
+            return member;
+          }
+          
+          console.log(`  ✓ ${idx + 1}. ${member.name}:`);
+          const assignments = Object.entries(schedule).filter(([h, v]) => v !== '-' && v !== 'break');
+          console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
+          
+          return {
+            ...member,
+            observations: schedule,
+            initialized: true
+          };
+        });
+        
+        console.log('\n💾 Calling setStaff with updated data...');
+        setStaff(updatedStaff);
+        console.log('✅ Schedule updated from Railway solver');
+        console.log('═══════════════════════════════════════');
+        
+      } else {
+        console.error('❌ Solver failed:', result.error);
+        console.log('───────────────────────────────────────');
+        console.log('🔄 Falling back to local algorithm...');
+        
+        alert(`Railway solver failed: ${result.error}\n\nUsing local algorithm instead.`);
+        
+        console.log('🏃 Running runSimulation...');
+        const simStartTime = Date.now();
+        const allocationCopy = runSimulation(observations, staff, start);
+        const simDuration = Date.now() - simStartTime;
+        console.log(`✅ runSimulation completed in ${simDuration}ms`);
+        
+        setStaff(allocationCopy);
+        console.log('✅ Local algorithm completed');
+        console.log('═══════════════════════════════════════');
+      }
+      
+    } catch (error) {
+      console.error('❌ API CALL FAILED');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.log('───────────────────────────────────────');
+      console.log('🔄 Falling back to local algorithm...');
+      
+      alert(`Network error: ${error.message}\n\nUsing local algorithm instead.`);
+      
+      console.log('🏃 Running runSimulation...');
+      const simStartTime = Date.now();
+      const allocationCopy = runSimulation(observations, staff, start);
+      const simDuration = Date.now() - simStartTime;
+      console.log(`✅ runSimulation completed in ${simDuration}ms`);
+      
+      setStaff(allocationCopy);
+      console.log('✅ Local algorithm completed');
+      console.log('═══════════════════════════════════════');
+    }
+    
   } else {
-    console.log('🏃 USING LOCAL GREEDY ALGORITHM');
-    // ... Local algorithm code
+    console.log('\n═══════════════════════════════════════');
+    console.log('🏃 USING LOCAL GREEDY ALGORITHM (low pressure)');
+    console.log('═══════════════════════════════════════');
+    
+    console.log('🏃 Running runSimulation...');
+    const simStartTime = Date.now();
+    const allocationCopy = runSimulation(observations, staff, start);
+    const simDuration = Date.now() - simStartTime;
+    console.log(`✅ runSimulation completed in ${simDuration}ms`);
+    
+    setStaff(allocationCopy);
+    console.log('✅ Local algorithm completed');
+    console.log('═══════════════════════════════════════');
   }
+  
+  console.log('\n🏁 HANDLE ALLOCATE COMPLETE');
+  console.log('🏁 Time:', new Date().toLocaleTimeString());
+  console.log('🏁🏁🏁 ═══════════════════════════════════════\n\n');
 };
 
   const handleNext = () => {
