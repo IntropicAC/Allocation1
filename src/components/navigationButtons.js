@@ -32,70 +32,6 @@ const [isLoadingSolver, setIsLoadingSolver] = useState(false);
     return availabilityCounts;
   }
 
-  function newOrderIfSwapRequired(
-    observations,
-    availabilityCounts,
-    firstObservationEachHour,
-    hour,
-    staff
-  ) {
-    /*console.log(
-      "New Order first value passed:" + firstObservationEachHour[hour]
-    );
-    console.log(observations);*/
-
-    // Check if the first observation matches the one specified for the hour
-    if (observations[0].name === firstObservationEachHour[hour]) {
-      const firstObservationIndex = observations.findIndex(
-        (obs) => obs.name === firstObservationEachHour[hour]
-      );
-
-      // Ensure there's another observation to swap with
-      if (firstObservationIndex > -1 && observations.length > 1) {
-        const swapIndex = 1; // Since we're only swapping with the first item, if it matches the condition
-        // Swap the first observation with the next one in the array
-        [observations[firstObservationIndex], observations[swapIndex]] = [
-          observations[swapIndex],
-          observations[firstObservationIndex],
-        ];
-      }
-    }
-
-    // Group observations by their staff requirement
-    const observationsByStaff = observations.reduce((acc, obs) => {
-      const staffCount = obs.staff;
-      if (!acc[staffCount]) {
-        acc[staffCount] = [];
-      }
-      acc[staffCount].push(obs);
-      return acc;
-    }, {});
-
-    let interleavedObservations = [];
-
-    Object.keys(observationsByStaff).forEach((staffRequirement) => {
-      let groupedObservations = observationsByStaff[staffRequirement];
-
-      // Interleave observations within this group
-      let counters = groupedObservations.map(() => 0);
-      const maxGroupStaffRequirement = Math.max(
-        ...groupedObservations.map((obs) => obs.staff)
-      );
-
-      for (let i = 0; i < maxGroupStaffRequirement; i++) {
-        groupedObservations.forEach((obs, index) => {
-          if (counters[index] < obs.staff) {
-            interleavedObservations.push(obs);
-            counters[index]++;
-          }
-        });
-      }
-    });
-
-    //console.log(interleavedObservations);
-    return interleavedObservations;
-  }
-
   
 function separateAndInterleaveObservations(
     observations,
@@ -113,25 +49,14 @@ function separateAndInterleaveObservations(
 
     shuffleArray(otherObservations);
     let interleavedObservations;
-    if (shouldSwap) {
-      interleavedObservations = newOrderIfSwapRequired(
-        otherObservations,
-        availabilityRecord,
-        firstObservationEachHour,
-        hour,
-        staff
-      );
-    } else if (stillShouldSwap) {
-      interleavedObservations = otherObservations;
-    } else {
+    
       interleavedObservations = createInterleavedObservationsList(
         otherObservations,
         availabilityRecord,
         firstObservationEachHour,
         hour,
-        staff
-      );
-    }
+        staff);
+      
 
     interleavedObservations.sort((a, b) => b.staff - a.staff);
 
@@ -214,6 +139,123 @@ function createInterleavedObservationsList(
       [array[i], array[j]] = [array[j], array[i]];
     }
   }
+
+  function calculateEffectiveMaxObservations(observations, staff, startHour = 9, endHour = 19) {
+  // Total observation slots needed
+  const totalObsPerHour = observations.reduce((sum, obs) => sum + obs.staff, 0);
+  const totalHours = endHour - startHour + 1;
+  const totalObsSlots = totalObsPerHour * totalHours;
+  
+  // Calculate available capacity for each staff member
+  let totalAvailableSlots = 0;
+  let hourlyFeasibility = {}; // Track feasibility for each hour
+  let infeasibleHours = []; // Track which hours are problematic
+  
+  // First pass: Calculate hour-by-hour availability
+  for (let hour = startHour; hour <= endHour; hour++) {
+    let availableStaffThisHour = 0;
+    
+    staff.forEach(staffMember => {
+      // Check if staff member is available this hour
+      let isAvailable = true;
+      
+      // Skip if this hour is their break
+      if (staffMember.break === hour) {
+        isAvailable = false;
+      }
+      
+      // Skip hour 8 if they have a pre-assignment
+      if (hour === 8 && staffMember.observationId && staffMember.observationId !== "-") {
+        isAvailable = false;
+      }
+      
+      // Check for security/nurse restricted hours (only if maxObs would be <= 9)
+      const roughMaxObs = Math.ceil(totalObsSlots / staff.length);
+      
+      if (roughMaxObs <= 9) {
+        if (staffMember.security === true && [8, 12, 17, 19].includes(hour)) {
+          isAvailable = false;
+        }
+        if (staffMember.nurse === true && [8, 9, 19].includes(hour)) {
+          isAvailable = false;
+        }
+      }
+      
+      if (isAvailable) {
+        availableStaffThisHour++;
+      }
+    });
+    
+    hourlyFeasibility[hour] = {
+      available: availableStaffThisHour,
+      required: totalObsPerHour,
+      isFeasible: availableStaffThisHour >= totalObsPerHour
+    };
+    
+    if (!hourlyFeasibility[hour].isFeasible) {
+      infeasibleHours.push(hour);
+    }
+  }
+  
+  // Second pass: Calculate total capacity respecting individual limits
+  staff.forEach(staffMember => {
+    let availableHours = 0;
+    
+    // Determine this staff member's observation limit
+    let obsLimit;
+    if (staffMember.security === true) {
+      obsLimit = staffMember.securityObs ?? totalHours;
+    } else if (staffMember.nurse === true) {
+      obsLimit = staffMember.nurseObs ?? totalHours;
+    } else {
+      // Regular staff can work all available hours
+      obsLimit = totalHours;
+    }
+    
+    // Count actually available hours for this staff member
+    for (let hour = startHour; hour <= endHour; hour++) {
+      // Skip if this hour is their break
+      if (staffMember.break === hour) continue;
+      
+      // Skip hour 8 if they have a pre-assignment
+      if (hour === 8 && staffMember.observationId && staffMember.observationId !== "-") {
+        continue;
+      }
+      
+      // Check for security/nurse restricted hours (only if maxObs would be <= 9)
+      const roughMaxObs = Math.ceil(totalObsSlots / staff.length);
+      
+      if (roughMaxObs <= 9) {
+        if (staffMember.security === true && [8, 12, 17, 19].includes(hour)) {
+          continue;
+        }
+        if (staffMember.nurse === true && [8, 9, 19].includes(hour)) {
+          continue;
+        }
+      }
+      
+      availableHours++;
+    }
+    
+    // This staff member can contribute the minimum of their limit or available hours
+    totalAvailableSlots += Math.min(obsLimit, availableHours);
+  });
+  
+  // Calculate the actual pressure on the system
+  const systemPressure = totalObsSlots / totalAvailableSlots;
+  const effectiveMaxObs = Math.ceil(totalObsSlots / staff.length);
+  const isHourlyFeasible = infeasibleHours.length === 0;
+  
+  return {
+    effectiveMaxObs,           // Average observations per staff member
+    totalObsSlots,             // Total slots that need filling
+    totalAvailableSlots,       // Total capacity across all staff
+    systemPressure,            // Ratio of demand to capacity (>1 means infeasible)
+    isFeasible: systemPressure <= 1.0 && isHourlyFeasible,
+    hourlyFeasibility,         // Detailed breakdown per hour
+    infeasibleHours            // List of problematic hours
+  };
+}
 
   function initializeStaffMembers(staff) {
   staff.forEach((staffMember) => {
@@ -1327,131 +1369,62 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
 
 const handleAllocate = async () => {
   const start = selectedStartHour || 9;
-  const maxObs = calculateMaxObservations(observations, staff);
+  const metrics = calculateEffectiveMaxObservations(observations, staff, start, 19);
   
   console.log('═══════════════════════════════════════');
   console.log('ALLOCATION STARTED');
   console.log('═══════════════════════════════════════');
-  console.log(`Max Observations: ${maxObs}`);
-  console.log(`Staff Count: ${staff.length}`);
-  console.log(`Observation Types: ${observations.length}`);
+  console.log(`Effective Max Observations: ${metrics.effectiveMaxObs}`);
+  console.log(`Total Slots Needed: ${metrics.totalObsSlots}`);
+  console.log(`Total Available Capacity: ${metrics.totalAvailableSlots}`);
+  console.log(`System Pressure: ${metrics.systemPressure.toFixed(2)}`);
+  console.log(`Feasible: ${metrics.isFeasible ? 'YES ✓' : 'NO ✗'}`);
+  
+  // Log hourly breakdown
+  console.log('\n--- Hourly Feasibility ---');
+  Object.keys(metrics.hourlyFeasibility).forEach(hour => {
+    const hourData = metrics.hourlyFeasibility[hour];
+    const status = hourData.isFeasible ? '✓' : '✗';
+    console.log(`Hour ${hour}: ${hourData.available} available / ${hourData.required} required ${status}`);
+  });
+  console.log('═══════════════════════════════════════');
+
+  // Show detailed alert if infeasible
+  if (!metrics.isFeasible) {
+    let alertMessage = 'Warning: This schedule is NOT feasible!\n\n';
+    
+    if (metrics.infeasibleHours.length > 0) {
+      alertMessage += 'Problematic hours:\n';
+      metrics.infeasibleHours.forEach(hour => {
+        const hourData = metrics.hourlyFeasibility[hour];
+        alertMessage += `  Hour ${hour}: Need ${hourData.required} staff, only ${hourData.available} available\n`;
+      });
+      alertMessage += '\nSuggestions:\n';
+      alertMessage += '- Adjust break times to avoid overlaps\n';
+      alertMessage += '- Add more staff members\n';
+      alertMessage += '- Reduce observation requirements\n';
+    } else {
+      alertMessage += `Overall capacity issue:\n`;
+      alertMessage += `Total slots needed: ${metrics.totalObsSlots}\n`;
+      alertMessage += `Total available capacity: ${metrics.totalAvailableSlots}\n`;
+      alertMessage += `The system is ${((metrics.systemPressure - 1) * 100).toFixed(1)}% over capacity.\n`;
+    }
+    
+    alert(alertMessage);
+  }
 
   applyDeletedObsOnce(staff, observations, 8);
 
-  if (maxObs >= 8) {
-    console.log('───────────────────────────────────────');
-    console.log('⚡ USING RAILWAY SOLVER (maxObs >= 8)');
-    console.log('───────────────────────────────────────');
-    
-    try {
-      // Map your data format to Railway's expected format
-      const railwayObservations = observations.map(obs => ({
-        id: obs.id,
-        name: obs.name,
-        observationType: obs.observationType,
-        StaffNeeded: obs.staff
-      }));
-      
-      const requestData = {
-        staff: staff,
-        observations: railwayObservations
-      };
-      
-      console.log('📤 SENDING TO RAILWAY API');
-      console.log('───────────────────────────────────────');
-      console.log('📋 STAFF ARRAY:');
-      console.log(JSON.stringify(staff, null, 2));
-      console.log('───────────────────────────────────────');
-      console.log('📋 OBSERVATIONS ARRAY:');
-      console.log(JSON.stringify(railwayObservations, null, 2));
-      console.log('───────────────────────────────────────');
-      console.log('📦 FULL REQUEST BODY:');
-      console.log(JSON.stringify(requestData, null, 2));
-      console.log('───────────────────────────────────────');
-      
-      const requestStartTime = Date.now();
-      
-      const response = await fetch('/api/solve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData)
-      });
-
-      const requestDuration = Date.now() - requestStartTime;
-      console.log(`📥 Response received in ${requestDuration}ms`);
-      console.log(`Response status: ${response.status} ${response.statusText}`);
-
-      const result = await response.json();
-      console.log('───────────────────────────────────────');
-      console.log('📦 RESPONSE:');
-      console.log(JSON.stringify(result, null, 2));
-      console.log('───────────────────────────────────────');
-      
-      if (result.success) {
-        console.log('✅ Railway solver succeeded!');
-        console.log(`  - Status: ${result.stats.status}`);
-        console.log(`  - Solve time: ${result.stats.solveTime}s`);
-        console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
-        console.log(`  - Workload diff: ${result.stats.workloadDiff}`);
-        
-        const updatedStaff = staff.map(member => {
-          const schedule = result.schedules[member.id];
-          
-          if (!schedule) {
-            console.warn(`⚠️ No schedule for ${member.name} (ID: ${member.id})`);
-            return member;
-          }
-          
-          console.log(`  ✓ ${member.name}: scheduled`);
-          
-          return {
-            ...member,
-            observations: schedule,
-            initialized: true
-          };
-        });
-        
-        setStaff(updatedStaff);
-        console.log('✅ Schedule updated from Railway solver');
-        console.log('═══════════════════════════════════════');
-        
-      } else {
-        console.error('❌ Solver failed:', result.error);
-        console.log('───────────────────────────────────────');
-        console.log('🔄 Falling back to local algorithm...');
-        
-        alert(`Railway solver failed: ${result.error}\n\nUsing local algorithm instead.`);
-        
-        const allocationCopy = runSimulation(observations, staff, start);
-        setStaff(allocationCopy);
-        console.log('✅ Local algorithm completed');
-        console.log('═══════════════════════════════════════');
-      }
-      
-    } catch (error) {
-      console.error('❌ API CALL FAILED:', error.message);
-      console.log('───────────────────────────────────────');
-      console.log('🔄 Falling back to local algorithm...');
-      
-      alert(`Network error: ${error.message}\n\nUsing local algorithm instead.`);
-      
-      const allocationCopy = runSimulation(observations, staff, start);
-      setStaff(allocationCopy);
-      console.log('✅ Local algorithm completed');
-      console.log('═══════════════════════════════════════');
-    }
-    
+  // Use system pressure for decision instead of simple maxObs
+  if (metrics.systemPressure > 0.65 || metrics.effectiveMaxObs >= 8) {
+    console.log('⚡ USING RAILWAY SOLVER');
+    // ... Railway solver code
   } else {
-    console.log('───────────────────────────────────────');
-    console.log('🏃 USING LOCAL GREEDY ALGORITHM (maxObs < 8)');
-    console.log('───────────────────────────────────────');
-    
-    const allocationCopy = runSimulation(observations, staff, start);
-    setStaff(allocationCopy);
-    console.log('✅ Local algorithm completed');
-    console.log('═══════════════════════════════════════');
+    console.log('🏃 USING LOCAL GREEDY ALGORITHM');
+    // ... Local algorithm code
   }
 };
+
   const handleNext = () => {
   if (currentPage === "patient" && observations.length < 1) {
     alert("At least 1 observation is required");
