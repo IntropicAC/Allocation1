@@ -1549,9 +1549,15 @@ const handleAllocate = async () => {
           const assignments = Object.entries(schedule).filter(([h, v]) => v !== '-' && v !== 'break');
           console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
           
+          // Merge solver schedule with existing observations to preserve all hours
+          const mergedObservations = { ...member.observations };
+          Object.entries(schedule).forEach(([hour, value]) => {
+            mergedObservations[hour] = value;
+          });
+          
           return {
             ...member,
-            observations: schedule,
+            observations: mergedObservations,
             initialized: true
           };
         });
