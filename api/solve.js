@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { staff, observations } = req.body;
+    const { staff, observations, startHour } = req.body; // ✨ Extract startHour
 
     // Validate input
     if (!staff || !observations) {
@@ -31,7 +31,8 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log(`Solving for ${staff.length} staff, ${observations.length} observations`);
+    // ✨ Log the startHour for debugging
+    console.log(`Solving for ${staff.length} staff, ${observations.length} observations, startHour: ${startHour || 8}`);
 
     // Call Railway API with secure API key
     const response = await fetch('https://pythonsolver-production.up.railway.app/solve', {
@@ -40,7 +41,11 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
         'X-API-Key': process.env.RAILWAY_API_KEY  // Secure!
       },
-      body: JSON.stringify({ staff, observations })
+      body: JSON.stringify({ 
+        staff, 
+        observations,
+        startHour: startHour || 8  // ✨ Pass startHour with default fallback
+      })
     });
 
     const data = await response.json();

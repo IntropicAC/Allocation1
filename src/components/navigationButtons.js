@@ -1471,7 +1471,8 @@ const handleAllocate = async () => {
       
       const requestData = {
         staff: staff,
-        observations: railwayObservations
+        observations: railwayObservations,
+        startHour: start
       };
       
       // Log request size
