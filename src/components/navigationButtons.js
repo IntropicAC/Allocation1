@@ -1165,22 +1165,12 @@ function resetStaff(staff, observations, startHour = 9) {
   // Get deletedObs array (all observations share the same deletedObs)
   const deletedObservations = observations[0]?.deletedObs || [];
   
-  // Build a comprehensive list of all observation values to clear
-  const observationsToClean = new Set();
+  // Build list of DELETED observations to clear from ALL hours
+  const deletedObservationsSet = new Set(deletedObservations);
   
-  // Add current observations
-  currentObservationNames.forEach(name => {
-    observationsToClean.add(name);
-  });
-  
-  // Add deleted observations
-  deletedObservations.forEach(name => {
-    observationsToClean.add(name);
-  });
-  
-  // Add shortened form for "Generals"
-  if (currentObservationNames.includes("Generals") || deletedObservations.includes("Generals")) {
-    observationsToClean.add("Gen");
+  // Add shortened form for "Generals" if it was deleted
+  if (deletedObservations.includes("Generals")) {
+    deletedObservationsSet.add("Gen");
   }
   
   staff.forEach((staffMember) => {
@@ -1189,15 +1179,26 @@ function resetStaff(staff, observations, startHour = 9) {
     staffMember.obsCounts = {};
     staffMember.lastReceived = {};
     
-    // Reset observations while preserving user-set values
+    // ✅ FIX: Handle hours before startHour - only clear DELETED observations
+    for (let hour = 7; hour < startHour; hour++) {
+      const currentValue = staffMember.observations[hour];
+      // Only clear if it's a DELETED observation
+      if (deletedObservationsSet.has(currentValue)) {
+        staffMember.observations[hour] = "-";
+      }
+      // Otherwise leave it unchanged (even if it matches a current observation name)
+    }
+    
+    // Reset observations in the scheduling window (startHour to 19)
     for (let hour = startHour; hour <= 19; hour++) {
       const currentValue = staffMember.observations[hour];
       
-      // Check if this value should be cleared (is a known observation)
-      if (observationsToClean.has(currentValue)) {
-        // This is a known observation (current or deleted) - clear it
+      // Check if this value should be cleared (is a current or deleted observation)
+      if (currentObservationNames.includes(currentValue) || deletedObservationsSet.has(currentValue)) {
+        // Clear this observation
         staffMember.observations[hour] =
           hour === 8 &&
+          startHour <= 8 &&
           staffMember.observationId &&
           staffMember.observationId !== "-"
             ? staffMember.observationId
@@ -1207,11 +1208,6 @@ function resetStaff(staff, observations, startHour = 9) {
       else {
         // Preserve the existing value
         staffMember.observations[hour] = currentValue || "-";
-      }
-      
-      // Always set hour 7 to free
-      if (hour === 7) {
-        staffMember.observations[hour] = "-";
       }
     }
     
@@ -1226,7 +1222,6 @@ function resetStaff(staff, observations, startHour = 9) {
     }
   });
 }
-
 // Run ONCE before the simulation. Mutates `staff` and `observations` in place.
 function applyDeletedObsOnce(staff, observations, startHour = 7) {
   // Collect deleted labels
