@@ -1530,31 +1530,38 @@ const handleAllocate = async () => {
       console.log('───────────────────────────────────────');
       
       if (result.success) {
-        console.log('✅ Railway solver succeeded!');
-        console.log(`  - Status: ${result.stats.status}`);
-        console.log(`  - Solve time: ${result.stats.solveTime}s`);
-        console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
-        console.log(`  - Workload diff: ${result.stats.workloadDiff}`);
-        
-        console.log('\n🔄 Updating staff with solver results...');
-        const updatedStaff = staff.map((member, idx) => {
-          const schedule = result.schedules[member.id];
-          
-          if (!schedule) {
-            console.warn(`⚠️ No schedule for ${member.name} (ID: ${member.id})`);
-            return member;
-          }
-          
-          console.log(`  ✓ ${idx + 1}. ${member.name}:`);
-          const assignments = Object.entries(schedule).filter(([h, v]) => v !== '-' && v !== 'break');
-          console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
-          
-          return {
-            ...member,
-            observations: schedule,
-            initialized: true
-          };
-        });
+  console.log('✅ Railway solver succeeded!');
+  console.log(`  - Status: ${result.stats.status}`);
+  console.log(`  - Solve time: ${result.stats.solveTime}s`);
+  console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
+  console.log(`  - Workload diff: ${result.stats.workloadDiff}`);
+  
+  console.log('\n🔄 Updating staff with solver results...');
+  const updatedStaff = staff.map((member, idx) => {
+    const schedule = result.schedules[member.id];
+    
+    if (!schedule) {
+      console.warn(`⚠️ No schedule for ${member.name} (ID: ${member.id})`);
+      return member;
+    }
+    
+    console.log(`  ✓ ${idx + 1}. ${member.name}:`);
+    const assignments = Object.entries(schedule).filter(([h, v]) => v !== '-' && v !== 'break');
+    console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
+    
+    // ✅ FIX: Merge old observations (hours < start) with new schedule (hours >= start)
+    const mergedObservations = {
+      ...member.observations,  // Keep ALL existing hours
+      ...schedule              // Overwrite only the scheduled hours (start to 19)
+    };
+    
+    return {
+      ...member,
+      observations: mergedObservations,  // ✅ Use merged observations
+      initialized: true
+    };
+  });
+  
         
         console.log('\n💾 Calling setStaff with updated data...');
         setStaff(updatedStaff);
