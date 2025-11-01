@@ -1160,17 +1160,24 @@ function runSimulation(observations, staff, startHour = 9) {
 
 function resetStaff(staff, observations, startHour = 9) {
   // Get list of current observation names
-  const currentObservationNames = observations.map(obs => obs.name);
+  const currentObservationNames = new Set(observations.map(obs => obs.name));
   
   // Get deletedObs array (all observations share the same deletedObs)
   const deletedObservations = observations[0]?.deletedObs || [];
   
-  // Build list of DELETED observations to clear from ALL hours
-  const deletedObservationsSet = new Set(deletedObservations);
+  // ✅ FIX: Only actually delete observations that are NOT current
+  const observationsToClean = new Set();
   
-  // Add shortened form for "Generals" if it was deleted
-  if (deletedObservations.includes("Generals")) {
-    deletedObservationsSet.add("Gen");
+  // Add ONLY deleted observations that are NOT current
+  deletedObservations.forEach(name => {
+    if (!currentObservationNames.has(name)) {
+      observationsToClean.add(name);
+    }
+  });
+  
+  // Add shortened form for "Generals" if it was deleted (and not current)
+  if (deletedObservations.includes("Generals") && !currentObservationNames.has("Generals")) {
+    observationsToClean.add("Gen");
   }
   
   staff.forEach((staffMember) => {
@@ -1179,22 +1186,23 @@ function resetStaff(staff, observations, startHour = 9) {
     staffMember.obsCounts = {};
     staffMember.lastReceived = {};
     
-    // ✅ FIX: Handle hours before startHour - only clear DELETED observations
+    // Handle hours before startHour - only clear DELETED (non-current) observations
     for (let hour = 7; hour < startHour; hour++) {
       const currentValue = staffMember.observations[hour];
-      // Only clear if it's a DELETED observation
-      if (deletedObservationsSet.has(currentValue)) {
+      // Only clear if it's a DELETED observation that's not current
+      if (observationsToClean.has(currentValue)) {
         staffMember.observations[hour] = "-";
       }
-      // Otherwise leave it unchanged (even if it matches a current observation name)
+      // Otherwise leave it unchanged (includes current observations)
     }
     
     // Reset observations in the scheduling window (startHour to 19)
     for (let hour = startHour; hour <= 19; hour++) {
       const currentValue = staffMember.observations[hour];
       
-      // Check if this value should be cleared (is a current or deleted observation)
-      if (currentObservationNames.includes(currentValue) || deletedObservationsSet.has(currentValue)) {
+      // Check if this value should be cleared
+      // Clear if: (1) it's a current observation OR (2) it's a deleted non-current observation
+      if (currentObservationNames.has(currentValue) || observationsToClean.has(currentValue)) {
         // Clear this observation
         staffMember.observations[hour] =
           hour === 8 &&
@@ -1216,12 +1224,14 @@ function resetStaff(staff, observations, startHour = 9) {
     for (let hour = 7; hour <= 19; hour++) {
       const obs = staffMember.observations[hour];
       // Count only valid observation assignments that are still in the current list
-      if (obs && currentObservationNames.includes(obs)) {
+      if (obs && currentObservationNames.has(obs)) {
         staffMember.numObservations++;
       }
     }
   });
 }
+
+
 // Run ONCE before the simulation. Mutates `staff` and `observations` in place.
 function applyDeletedObsOnce(staff, observations, startHour = 7) {
   // Collect deleted labels
@@ -1231,15 +1241,29 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
 
   if (toDelete.size === 0) return false; // nothing to do
 
+  // ✅ FIX: Get current observation names - don't delete these!
+  const currentNames = new Set(observations.map(o => o.name));
+  
+  // ✅ FIX: Only delete observations that are NOT currently active
+  const toActuallyDelete = new Set([...toDelete].filter(name => !currentNames.has(name)));
+
+  if (toActuallyDelete.size === 0) {
+    // All "deleted" observations are actually current, so just clear the deletedObs array
+    observations.forEach(o => {
+      if (Array.isArray(o.deletedObs) && o.deletedObs.length) o.deletedObs = [];
+    });
+    return false;
+  }
+
   // For counting valid obs later
   const validNames = new Set(observations.map(o => o.name));
 
-  // 1) Remove any timetable values that match deletedObs
+  // 1) Remove any timetable values that match deletedObs (but not current observations)
   staff.forEach(member => {
     const obsMap = member.observations || {};
     for (let h = startHour; h <= 19; h++) {
       const val = obsMap[h];
-      if (toDelete.has(val)) {
+      if (toActuallyDelete.has(val)) {  // ✅ Use filtered set
         obsMap[h] =
           h === 8 && member.observationId && member.observationId !== "-"
             ? member.observationId
