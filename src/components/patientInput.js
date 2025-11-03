@@ -50,79 +50,92 @@ function PatientInput({ observations, setObservations, setStaff, setUnassignedOb
   };
   
   const addObservation = (e) => {
-    e.preventDefault();
-    
-    if (observations.length >= 10) {
-      alert("The maximum number of 10 patients has been reached, please remove a patient to add another.");
-      return;
-    }
+  e.preventDefault();
   
-    if (["gen", "gens"].includes(newObservation.name.toLowerCase())) {
-      alert(`${newObservation.name} is a reserved name. If you are trying to add Generals, select it within observation type.`);
-      return;
-    }
+  if (observations.length >= 10) {
+    alert("The maximum number of 10 patients has been reached, please remove a patient to add another.");
+    return;
+  }
 
-    let observationToAdd = { ...newObservation, StaffNeeded: newObservation.staff };
+  if (["gen", "gens"].includes(newObservation.name.toLowerCase())) {
+    alert(`${newObservation.name} is a reserved name. If you are trying to add Generals, select it within observation type.`);
+    return;
+  }
 
-    if (newObservation.observationType === "other" && otherStaff) {
-      observationToAdd.staff = Number(otherStaff.split(":")[0]);
-    }
+  let observationToAdd = { ...newObservation, StaffNeeded: newObservation.staff };
 
+  if (newObservation.observationType === "other" && otherStaff) {
+    observationToAdd.staff = Number(otherStaff.split(":")[0]);
+  }
+
+  setObservations(prevObservations => {
+    const maxId = prevObservations.reduce((max, item) => Math.max(max, item.id), -1);
+    const newId = maxId + 1;
+    
+    // ✅ FIX: Preserve deletedObs even when observations array is empty
+    // Check if we have a stored deletedObs in localStorage or use existing
+    const currentDeletedObs = prevObservations.length > 0 
+      ? (prevObservations[0]?.deletedObs || []) 
+      : (JSON.parse(localStorage.getItem('pendingDeletedObs') || '[]'));
+    
+    console.log('📝 Adding observation, preserving deletedObs:', currentDeletedObs);
+    
+    // Clear the temporary storage
+    localStorage.removeItem('pendingDeletedObs');
+    
+    const newObservations = updateObservationsWithStaffNeeded(
+      [...prevObservations, { ...observationToAdd, id: newId, deletedObs: currentDeletedObs }], 
+      newId
+    );
+    
+    return newObservations.map(obs => ({
+      ...obs,
+      deletedObs: currentDeletedObs
+    }));
+  });
+
+  setNewObservation({
+    name: "",
+    observationType: "1:1",
+    staff: 1, 
+  });
+  setOtherStaff("");
+};
+
+const removeObservation = (observationIdToRemove) => {
+  const observationToRemove = observations.find(obs => obs.id === observationIdToRemove);
+
+  if (observationToRemove) {
     setObservations(prevObservations => {
-      const maxId = prevObservations.reduce((max, item) => Math.max(max, item.id), -1);
-      const newId = maxId + 1;
+      const updatedObservations = prevObservations.filter(obs => obs.id !== observationIdToRemove);
       
-      // Preserve deletedObs from existing observations
-      const existingDeletedObs = prevObservations[0]?.deletedObs || [];
+      const currentDeletedObs = updatedObservations[0]?.deletedObs || [];
+      const newDeletedObs = [...currentDeletedObs, observationToRemove.name];
       
-      const newObservations = updateObservationsWithStaffNeeded(
-        [...prevObservations, { ...observationToAdd, id: newId, deletedObs: existingDeletedObs }], 
-        newId
-      );
+      console.log('🗑️ Removing observation, updated deletedObs:', newDeletedObs);
       
-      // Ensure all observations have the same deletedObs array
-      return newObservations.map(obs => ({
+      // ✅ If no observations left, store deletedObs temporarily
+      if (updatedObservations.length === 0) {
+        console.log('⚠️ No observations left, storing deletedObs in localStorage');
+        localStorage.setItem('pendingDeletedObs', JSON.stringify(newDeletedObs));
+        return [];
+      }
+      
+      return updatedObservations.map(obs => ({
         ...obs,
-        deletedObs: existingDeletedObs
+        deletedObs: newDeletedObs
       }));
     });
 
-    setNewObservation({
-      name: "",
-      observationType: "1:1",
-      staff: 1, 
-    });
-    setOtherStaff("");
-  };
-
-  const removeObservation = (observationIdToRemove) => {
-    // Find the name of the observation to be removed
-    const observationToRemove = observations.find(obs => obs.id === observationIdToRemove);
-
-    if (observationToRemove) {
-      setObservations(prevObservations => {
-          const updatedObservations = prevObservations.filter(obs => obs.id !== observationIdToRemove);
-          
-          // Add the deleted observation name to deletedObs array
-          const currentDeletedObs = updatedObservations[0]?.deletedObs || [];
-          
-          // Update all observations with the new deletedObs array
-          return updatedObservations.map(obs => ({
-            ...obs,
-            deletedObs: [...currentDeletedObs, observationToRemove.name]
-          }));
-      });
-
-        // Update the staff array
-        setStaff(currentStaff =>
-            currentStaff.map(staffMember => {
-                if (staffMember.observationId === observationToRemove.name) {
-                    return { ...staffMember, observationId: '-' }; // Reset the observationId
-                }
-                return staffMember;
-            })
-        );
-    }
+    setStaff(currentStaff =>
+      currentStaff.map(staffMember => {
+        if (staffMember.observationId === observationToRemove.name) {
+          return { ...staffMember, observationId: '-' };
+        }
+        return staffMember;
+      })
+    );
+  }
 };
 useEffect(()=>{
   console.log("Patient:", observations)

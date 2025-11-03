@@ -33,52 +33,78 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
   }
 
   const nameInputRef = useRef(null);
+
+
   const addStaffMember = (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (staff.length >= 20) {
-      alert("The maximum number of 20 staff members has been reached. No more staff members can be added.");
-      return;
+  if (staff.length >= 20) {
+    alert("The maximum number of 20 staff members has been reached. No more staff members can be added.");
+    return;
+  }
+  
+  const doesNameExist = staff.some(
+    (staffMember) =>
+      staffMember.name.toLowerCase() === newStaff.name.toLowerCase()
+  );
+
+  if (doesNameExist) {
+    alert("A staff member with this name already exists!");
+    return;
+  }
+
+  // Find the current max ID in the staff list and add 1
+  const maxId = staff.reduce((max, item) => Math.max(max, item.id), -1);
+  const newId = maxId + 1;
+
+  // ✨ Initialize observations object for hours 7-19
+  const observations = {};
+  const observationId = "-"; // Default observationId
+  
+  for (let hour = 7; hour <= 19; hour++) {
+    // Hour 8 gets the observationId if set, otherwise "-"
+    observations[hour] =
+      hour === 8 && observationId && observationId !== "-"
+        ? observationId
+        : "-";
+    // Hour 7 is always "-"
+    if (hour === 7) {
+      observations[hour] = "-";
     }
-    
-    const doesNameExist = staff.some(
-      (staffMember) =>
-        staffMember.name.toLowerCase() === newStaff.name.toLowerCase()
-    );
+  }
 
-    if (doesNameExist) {
-      alert("A staff member with this name already exists!");
-      return;
-    }
-
-    // Find the current max ID in the staff list and add 1
-    const maxId = staff.reduce((max, item) => Math.max(max, item.id), -1);
-    const newId = maxId + 1;
-
-    const staffWithIdAndObservations = {
-      ...newStaff,
-      id: newId,
-      numObservations: 0,
-      observationId: "-",
-      // Set security and nurse based on role
-      security: newStaff.role === "Security",
-      nurse: newStaff.role === "Nurse",
-      securityObs: newStaff.role === "Security" ? 0 : null,
-      nurseObs: newStaff.role === "Nurse" ? 4 : null, // Default 4 for nurse
-    };
-
-    setStaff([...staff, staffWithIdAndObservations]);
-    setNewStaff({
-      name: "",
-      break: "Break",
-      role: "HCA",
-      security: false,
-      nurse: false,
-      securityObs: null,
-      nurseObs: null,
-      numObservations: 0,
-    });
+  const staffWithIdAndObservations = {
+    ...newStaff,
+    id: newId,
+    numObservations: 0,
+    observationId: observationId,
+    // Set security and nurse based on role
+    security: newStaff.role === "Security",
+    nurse: newStaff.role === "Nurse",
+    securityObs: newStaff.role === "Security" ? 0 : null,
+    nurseObs: newStaff.role === "Nurse" ? 4 : null,
+    // ✨ Add initialization fields immediately (hours 7-19)
+    observations: observations,
+    lastObservation: observationId,
+    obsCounts: {},
+    lastReceived: {},
+    initialized: true,
   };
+
+  console.log(`✅ Adding ${newStaff.name} with initialized observations (7-19):`, observations);
+
+  setStaff([...staff, staffWithIdAndObservations]);
+  setNewStaff({
+    name: "",
+    break: "Break",
+    role: "HCA",
+    security: false,
+    nurse: false,
+    securityObs: null,
+    nurseObs: null,
+    numObservations: 0,
+  });
+};
 
   const removeStaffMember = (staffIdToRemove) => {
     // First, find the observationId of the staff member who is being removed.
@@ -266,6 +292,7 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
   useEffect(()=>{
     console.log("Staff",staff)
     console.log("Observation:", observations)
+    console.log()
   },[staff])
 
   const rainbowNames = ["Alex1","Charlotte2","Adna3","Aliah4"]

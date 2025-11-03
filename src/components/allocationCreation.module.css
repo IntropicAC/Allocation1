@@ -30,10 +30,8 @@
   border-left: 0.1rem solid black;
   border-radius: 0.8rem 0.8rem 0 0;
   align-items: center;
-  justify-content: center;
-  display: flex;
+  justify-content: flex-start; /* Changed from center to flex-start */
   flex-direction: row;
-  align-items: center;  /* Ensure vertical center alignment */
   gap: 10px;
   padding: 10px;
 }
@@ -42,6 +40,24 @@
   display: flex;
   align-items: center;  /* Center each child vertically */
 }
+
+/* ✨ Undo/Redo wrapper - stays on the left ✨ */
+.undoRedoWrapper {
+  display: flex;
+  align-items: center;
+  padding-left: 0.5rem;
+  flex-shrink: 0; /* Prevents it from shrinking */
+}
+
+/* ✨ NEW: Wrapper for centered items (Color Toggle, X, Observations) ✨ */
+.centeredItems {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1; /* Takes up remaining space */
+  justify-content: center; /* Centers the items within this wrapper */
+}
+
 .obsCells {
   justify-content: center;
   align-items: center;
@@ -218,17 +234,3 @@ table td:not(.hourCell):hover {
 .hourCell:hover {
   background-color: #f0f0f0;
 }
-
-/* Remove or comment out the selectionInfo styles since we're not using it anymore */
-/*
-.selectionInfo {
-  background-color: #e7f3ff;
-  border: 1px solid #007bff;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 5px;
-  text-align: center;
-  font-weight: bold;
-  color: #0056b3;
-}
-*/

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./navigationButtons.module.css";
 import { useReactToPrint } from "react-to-print";
+
 //import { allocateObservations } from "./allocationCode";
 //import { createTable } from "./allocationCode";
 
@@ -16,7 +17,10 @@ function NavigationButtons({
   setStaff,
   tableRef,
   selectedStartHour,
-  hasCachedData
+  hasCachedData,
+  isAllocationReady,
+  setIsAllocationReady,
+  resetHistory
 }) {
   
 const [isLoadingSolver, setIsLoadingSolver] = useState(false);
@@ -255,42 +259,6 @@ function createInterleavedObservationsList(
     hourlyFeasibility,         // Detailed breakdown per hour
     infeasibleHours            // List of problematic hours
   };
-}
-
-  function initializeStaffMembers(staff) {
-  staff.forEach((staffMember) => {
-    console.log(`Checking ${staffMember.name}: initialized = ${staffMember.initialized}`);
-    
-    if (!staffMember.initialized) {
-      console.log(`Initializing ${staffMember.name}`);
-      staffMember.observations = {};
-      staffMember.lastObservation = staffMember.observationId;
-      staffMember.obsCounts = {};
-      staffMember.lastReceived = {};
-      for (let hour = 7; hour <= 19; hour++) {
-        staffMember.observations[hour] =
-          hour === 8 &&
-          staffMember.observationId &&
-          staffMember.observationId !== "-"
-            ? staffMember.observationId
-            : "-";
-        if (hour === 7) staffMember.observations[hour] = "-";
-      }
-      staffMember.numObservations =
-        staffMember.observationId && staffMember.observationId !== "-"
-          ? 1
-          : 0;
-
-      staffMember.initialized = true;
-      console.log(`${staffMember.name} after init:`, staffMember.observations);
-    }
-    if (staffMember.initialized) {
-      console.log(`Setting hour 8 for ${staffMember.name}`);
-      staffMember.observations[8] = staffMember.observationId
-        ? staffMember.observationId
-        : "-";
-    }
-  });
 }
 
   function getLastObservationHour(staffMember, hour, observations) {
@@ -1351,31 +1319,113 @@ const handleAllocate = async () => {
   setIsLoadingSolver(true);
   
   const start = selectedStartHour || 9;
-  console.log('📊 Start hour:', start);
-  console.log('📊 Staff count:', staff.length);
-  console.log('📊 Observation types:', observations.length);
   
-  // Log current staff state BEFORE any processing
-  console.log('\n🔍 STAFF STATE BEFORE PROCESSING:');
-  staff.forEach((member, idx) => {
-    console.log(`\n  Staff ${idx + 1}: ${member.name}`);
-    console.log(`    - ID: ${member.id}`);
-    console.log(`    - Break: ${member.break}`);
-    console.log(`    - Role: ${member.role}`);
-    console.log(`    - Initialized: ${member.initialized}`);
-    console.log(`    - NumObservations: ${member.numObservations}`);
-    console.log(`    - Has originalObservations: ${!!member.originalObservations}`);
-    if (member.originalObservations) {
-      console.log(`    - OriginalObservations keys:`, Object.keys(member.originalObservations).length);
-      console.log(`    - OriginalObservations sample:`, 
-        Object.entries(member.originalObservations).slice(0, 3).map(([h, v]) => `${h}:${v}`).join(', '));
-    }
-    console.log(`    - Current observations keys:`, Object.keys(member.observations || {}).length);
-    const filledHours = Object.entries(member.observations || {}).filter(([h, v]) => v !== '-' && v);
-    console.log(`    - Filled hours (${filledHours.length}):`, 
-      filledHours.map(([h, v]) => `${h}:${v}`).join(', '));
+  // ═══════════════════════════════════════
+  // 🔍 STEP 1: LOG OBSERVATIONS STATE
+  // ═══════════════════════════════════════
+  console.log('\n📋 ═══════════════════════════════════════');
+  console.log('📋 OBSERVATIONS STATE');
+  console.log('📋 ═══════════════════════════════════════');
+  console.log('Total observations:', observations.length);
+  observations.forEach((obs, idx) => {
+    console.log(`\n  ${idx + 1}. Observation: "${obs.name}"`);
+    console.log(`     - ID: ${obs.id}`);
+    console.log(`     - Type: ${obs.observationType}`);
+    console.log(`     - Staff needed: ${obs.staff}`);
+    console.log(`     - StaffNeeded: ${obs.StaffNeeded}`);
+    console.log(`     - deletedObs:`, obs.deletedObs || []);
   });
   
+  // Create a set of current observation names
+  const currentObservationNames = new Set(observations.map(obs => obs.name));
+  console.log('\n📋 Current observation names (Set):', [...currentObservationNames]);
+  
+  // Get all deletedObs
+  const allDeletedObs = observations.flatMap(o => o.deletedObs || []);
+  console.log('📋 All deleted observations:', allDeletedObs);
+  
+  // ═══════════════════════════════════════
+  // 🔍 STEP 2: LOG STAFF STATE BEFORE PROCESSING
+  // ═══════════════════════════════════════
+  console.log('\n👥 ═══════════════════════════════════════');
+  console.log('👥 STAFF STATE BEFORE PROCESSING');
+  console.log('👥 ═══════════════════════════════════════');
+  console.log('Total staff:', staff.length);
+  
+  staff.forEach((member, idx) => {
+    console.log(`\n  ${idx + 1}. Staff: ${member.name}`);
+    console.log(`     - ID: ${member.id}`);
+    console.log(`     - Break: ${member.break}`);
+    console.log(`     - Role: ${member.role}`);
+    console.log(`     - ObservationId: ${member.observationId}`);
+    console.log(`     - NumObservations: ${member.numObservations}`);
+    console.log(`     - Initialized: ${member.initialized}`);
+    
+    // Check what observation values are in their schedule
+    if (member.observations) {
+      const allObsValues = new Set();
+      const obsEntries = [];
+      
+      for (let hour = 7; hour <= 19; hour++) {
+        const val = member.observations[hour];
+        if (val && val !== '-') {
+          allObsValues.add(val);
+          obsEntries.push(`${hour}:${val}`);
+        }
+      }
+      
+      console.log(`     - Unique observation values:`, [...allObsValues]);
+      console.log(`     - All assignments:`, obsEntries.join(', '));
+      
+      // Check for obsolete observations
+      const obsoleteObs = [...allObsValues].filter(val => 
+        val !== 'X' && 
+        val !== 'Break' && 
+        val !== 'break' && 
+        !currentObservationNames.has(val)
+      );
+      
+      if (obsoleteObs.length > 0) {
+        console.log(`     ⚠️ OBSOLETE observations found:`, obsoleteObs);
+      }
+    }
+  });
+  
+  // ═══════════════════════════════════════
+  // 🔍 STEP 3: ANALYZE WHAT SHOULD BE CLEANED
+  // ═══════════════════════════════════════
+  console.log('\n🧹 ═══════════════════════════════════════');
+  console.log('🧹 CLEANUP ANALYSIS');
+  console.log('🧹 ═══════════════════════════════════════');
+  
+  // Collect all observation values currently in staff
+  const allStaffObsValues = new Set();
+  staff.forEach(member => {
+    if (member.observations) {
+      Object.values(member.observations).forEach(val => {
+        if (val && val !== '-' && val !== 'X' && val !== 'Break' && val !== 'break') {
+          allStaffObsValues.add(val);
+        }
+      });
+    }
+  });
+  
+  console.log('All observation values in staff schedules:', [...allStaffObsValues]);
+  console.log('Current valid observations:', [...currentObservationNames]);
+  
+  // Find what's in staff but NOT in current observations
+  const shouldBeDeleted = [...allStaffObsValues].filter(val => !currentObservationNames.has(val));
+  console.log('❌ Values that should be deleted:', shouldBeDeleted);
+  
+  // Find what's marked as deleted in deletedObs
+  const markedAsDeleted = allDeletedObs.filter(val => !currentObservationNames.has(val));
+  console.log('🗑️ Values marked in deletedObs:', markedAsDeleted);
+  
+  // Check if they match
+  if (shouldBeDeleted.length > 0 && markedAsDeleted.length === 0) {
+    console.warn('⚠️ WARNING: Found obsolete observations but deletedObs is empty!');
+  }
+
   console.log('\n📊 Calculating metrics...');
   const metricsStartTime = Date.now();
   const metrics = calculateEffectiveMaxObservations(observations, staff, start, 19);
@@ -1425,34 +1475,65 @@ const handleAllocate = async () => {
     alert(alertMessage);
   }
 
-  console.log('\n🧹 Calling applyDeletedObsOnce...');
+  // ═══════════════════════════════════════
+  // 🔍 STEP 4: BEFORE applyDeletedObsOnce
+  // ═══════════════════════════════════════
+  console.log('\n🧹 ═══════════════════════════════════════');
+  console.log('🧹 BEFORE applyDeletedObsOnce');
+  console.log('🧹 ═══════════════════════════════════════');
+  
   const beforeApply = JSON.parse(JSON.stringify(staff.map(s => ({
     name: s.name,
-    observations: s.observations
+    observations: s.observations,
+    numObservations: s.numObservations
   }))));
   
-  applyDeletedObsOnce(staff, observations, 8);
+  console.log('Snapshot taken for comparison');
   
-  console.log('🧹 applyDeletedObsOnce complete');
+  // ═══════════════════════════════════════
+  // 🔍 STEP 5: RUN applyDeletedObsOnce
+  // ═══════════════════════════════════════
+  console.log('\n🧹 Calling applyDeletedObsOnce...');
+  const didClean = applyDeletedObsOnce(staff, observations, 8);
+  console.log('🧹 applyDeletedObsOnce returned:', didClean);
+  
+  // ═══════════════════════════════════════
+  // 🔍 STEP 6: AFTER applyDeletedObsOnce
+  // ═══════════════════════════════════════
+  console.log('\n🧹 ═══════════════════════════════════════');
+  console.log('🧹 AFTER applyDeletedObsOnce');
+  console.log('🧹 ═══════════════════════════════════════');
+  
   const afterApply = JSON.parse(JSON.stringify(staff.map(s => ({
     name: s.name,
-    observations: s.observations
+    observations: s.observations,
+    numObservations: s.numObservations
   }))));
   
-  // Check if anything changed
-  const changed = staff.some((member, idx) => 
-    JSON.stringify(beforeApply[idx].observations) !== JSON.stringify(afterApply[idx].observations)
-  );
-  console.log(`   Changed any observations: ${changed}`);
-  
-  console.log('\n🔍 STAFF STATE AFTER applyDeletedObsOnce:');
+  // Compare before and after
   staff.forEach((member, idx) => {
-    console.log(`  ${member.name}: numObservations = ${member.numObservations}`);
-    const filledHours = Object.entries(member.observations || {}).filter(([h, v]) => v !== '-' && v);
-    if (filledHours.length > 0) {
-      console.log(`    Filled: ${filledHours.map(([h, v]) => `${h}:${v}`).join(', ')}`);
+    const before = beforeApply[idx];
+    const after = afterApply[idx];
+    
+    const changedHours = [];
+    for (let hour = 7; hour <= 19; hour++) {
+      const beforeVal = before.observations?.[hour];
+      const afterVal = after.observations?.[hour];
+      if (beforeVal !== afterVal) {
+        changedHours.push(`${hour}: "${beforeVal}" → "${afterVal}"`);
+      }
+    }
+    
+    if (changedHours.length > 0) {
+      console.log(`\n  ${member.name}:`);
+      console.log(`    Changes: ${changedHours.join(', ')}`);
+      console.log(`    numObservations: ${before.numObservations} → ${after.numObservations}`);
     }
   });
+  
+  if (!didClean) {
+    console.log('  ℹ️ No changes made by applyDeletedObsOnce');
+  }
 
   // Decision time
   const shouldUseSolver = metrics.systemPressure > 0.65 || metrics.effectiveMaxObs >= 8;
@@ -1464,10 +1545,56 @@ const handleAllocate = async () => {
     console.log('⚡ USING RAILWAY SOLVER');
     console.log('═══════════════════════════════════════');
     
-    // ✨ ADD RESETSTAFF HERE - BEFORE SENDING TO SOLVER ✨
-    console.log('\n🧹 Calling resetStaff before solver...');
+    // ═══════════════════════════════════════
+    // 🔍 STEP 7: BEFORE resetStaff
+    // ═══════════════════════════════════════
+    console.log('\n🔄 ═══════════════════════════════════════');
+    console.log('🔄 BEFORE resetStaff');
+    console.log('🔄 ═══════════════════════════════════════');
+    
+    const beforeReset = JSON.parse(JSON.stringify(staff.map(s => ({
+      name: s.name,
+      observations: s.observations,
+      numObservations: s.numObservations
+    }))));
+    
+    console.log('\n🔄 Calling resetStaff...');
     resetStaff(staff, observations, start);
     console.log('✅ resetStaff complete');
+    
+    // ═══════════════════════════════════════
+    // 🔍 STEP 8: AFTER resetStaff
+    // ═══════════════════════════════════════
+    console.log('\n🔄 ═══════════════════════════════════════');
+    console.log('🔄 AFTER resetStaff');
+    console.log('🔄 ═══════════════════════════════════════');
+    
+    const afterReset = JSON.parse(JSON.stringify(staff.map(s => ({
+      name: s.name,
+      observations: s.observations,
+      numObservations: s.numObservations
+    }))));
+    
+    // Compare before and after resetStaff
+    staff.forEach((member, idx) => {
+      const before = beforeReset[idx];
+      const after = afterReset[idx];
+      
+      const changedHours = [];
+      for (let hour = 7; hour <= 19; hour++) {
+        const beforeVal = before.observations?.[hour];
+        const afterVal = after.observations?.[hour];
+        if (beforeVal !== afterVal) {
+          changedHours.push(`${hour}: "${beforeVal}" → "${afterVal}"`);
+        }
+      }
+      
+      if (changedHours.length > 0) {
+        console.log(`\n  ${member.name}:`);
+        console.log(`    Changes: ${changedHours.join(', ')}`);
+        console.log(`    numObservations: ${before.numObservations} → ${after.numObservations}`);
+      }
+    });
     
     console.log('\n🔍 STAFF STATE AFTER resetStaff:');
     staff.forEach((member, idx) => {
@@ -1518,7 +1645,6 @@ const handleAllocate = async () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
-          // API key is securely handled by Vercel serverless function
         },
         body: JSON.stringify(requestData)
       });
@@ -1526,12 +1652,9 @@ const handleAllocate = async () => {
       const requestDuration = Date.now() - requestStartTime;
       console.log(`\n📥 Response received in ${requestDuration}ms`);
       console.log(`📊 Response status: ${response.status} ${response.statusText}`);
-      console.log(`📊 Response headers:`, [...response.headers.entries()]);
 
       const resultText = await response.text();
       console.log(`📊 Response body length: ${resultText.length} characters`);
-      console.log(`📊 Response body preview (first 200 chars):`);
-      console.log(resultText.substring(0, 200));
       
       let result;
       try {
@@ -1549,38 +1672,36 @@ const handleAllocate = async () => {
       console.log('───────────────────────────────────────');
       
       if (result.success) {
-  console.log('✅ Railway solver succeeded!');
-  console.log(`  - Status: ${result.stats.status}`);
-  console.log(`  - Solve time: ${result.stats.solveTime}s`);
-  console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
-  console.log(`  - Workload diff: ${result.stats.workloadDiff}`);
-  
-  console.log('\n🔄 Updating staff with solver results...');
-  const updatedStaff = staff.map((member, idx) => {
-    const schedule = result.schedules[member.id];
-    
-    if (!schedule) {
-      console.warn(`⚠️ No schedule for ${member.name} (ID: ${member.id})`);
-      return member;
-    }
-    
-    console.log(`  ✓ ${idx + 1}. ${member.name}:`);
-    const assignments = Object.entries(schedule).filter(([h, v]) => v !== '-' && v !== 'break');
-    console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
-    
-    // ✅ FIX: Merge old observations (hours < start) with new schedule (hours >= start)
-    const mergedObservations = {
-      ...member.observations,  // Keep ALL existing hours
-      ...schedule              // Overwrite only the scheduled hours (start to 19)
-    };
-    
-    return {
-      ...member,
-      observations: mergedObservations,  // ✅ Use merged observations
-      initialized: true
-    };
-  });
-  
+        console.log('✅ Railway solver succeeded!');
+        console.log(`  - Status: ${result.stats.status}`);
+        console.log(`  - Solve time: ${result.stats.solveTime}s`);
+        console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
+        console.log(`  - Workload diff: ${result.stats.workloadDiff}`);
+        
+        console.log('\n🔄 Updating staff with solver results...');
+        const updatedStaff = staff.map((member, idx) => {
+          const schedule = result.schedules[member.id];
+          
+          if (!schedule) {
+            console.warn(`⚠️ No schedule for ${member.name} (ID: ${member.id})`);
+            return member;
+          }
+          
+          console.log(`  ✓ ${idx + 1}. ${member.name}:`);
+          const assignments = Object.entries(schedule).filter(([h, v]) => v !== '-' && v !== 'break');
+          console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
+          
+          const mergedObservations = {
+            ...member.observations,
+            ...schedule
+          };
+          
+          return {
+            ...member,
+            observations: mergedObservations,
+            initialized: true
+          };
+        });
         
         console.log('\n💾 Calling setStaff with updated data...');
         setStaff(updatedStaff);
@@ -1631,7 +1752,6 @@ const handleAllocate = async () => {
     console.log('🏃 USING LOCAL GREEDY ALGORITHM (low pressure)');
     console.log('═══════════════════════════════════════');
     
-    // resetStaff is already called inside runSimulation, so no need to call it here
     console.log('🏃 Running runSimulation...');
     const simStartTime = Date.now();
     const allocationCopy = runSimulation(observations, staff, start);
@@ -1642,6 +1762,7 @@ const handleAllocate = async () => {
     console.log('✅ Local algorithm completed');
     console.log('═══════════════════════════════════════');
   }
+  
   setIsLoadingSolver(false);
   console.log('\n🏁 HANDLE ALLOCATE COMPLETE');
   console.log('🏁 Time:', new Date().toLocaleTimeString());
@@ -1660,18 +1781,23 @@ const handleAllocate = async () => {
   }
 
   if (currentPage === "staff") {
-    console.log("=== BEFORE INITIALIZATION ===");
-    console.log("Staff initialized flags:", staff.map(s => ({ name: s.name, initialized: s.initialized })));
-    console.log("Staff observations:", staff.map(s => ({ name: s.name, observations: s.observations })));
+    console.log("=== NAVIGATING TO ALLOCATION ===");
+    console.log("Staff:", staff.map(s => ({ name: s.name, initialized: s.initialized })));
     
+    // Check if any staff need initialization (shouldn't happen with new approach)
     const needsInitialization = staff.some(member => !member.initialized);
-    console.log("Needs initialization?", needsInitialization);
-    
     if (needsInitialization) {
-      initializeStaffMembers(staff);
-      console.log("=== AFTER INITIALIZATION ===");
-      console.log("Staff observations:", staff.map(s => ({ name: s.name, observations: s.observations })));
+      console.warn("⚠️ Some staff not initialized - this shouldn't happen!");
       setStaff([...staff]);
+    }
+    
+    // ✨ Initialize undo/redo tracking ONLY THE FIRST TIME
+    if (!isAllocationReady && staff.length > 0) {
+      console.log('🟢 Starting undo/redo tracking for AllocationCreation (first time only)');
+      resetHistory(staff); // Only called ONCE
+      setIsAllocationReady(true);
+    } else if (isAllocationReady) {
+      console.log('ℹ️ Undo/redo already active, not resetting');
     }
     
     setTimeout(() => {
@@ -1754,7 +1880,7 @@ const handleAllocate = async () => {
 
   return (
   <>
-    {/* ✨ NEW: Loading Overlay ✨ */}
+    {/* Loading Overlay */}
     {isLoadingSolver && (
       <div className={styles.loadingOverlay}>
         <div className={styles.loadingContent}>
@@ -1774,7 +1900,7 @@ const handleAllocate = async () => {
       </div>
     )}
     
-    {/* Your existing navigation container - NO CHANGES */}
+    {/* Navigation container */}
     <div className={styles.navigationContainer}>
       {(currentPage === "staff" || currentPage === "allocation" || (currentPage === "patient" && hasCachedData)) && (
         <button onClick={onBack} className={styles.backButton}>
@@ -1784,9 +1910,11 @@ const handleAllocate = async () => {
 
       {currentPage === "allocation" && (
         <div className={styles.rightButtonsContainer}>
+
           <button onClick={handlePrint} className={styles.backButton}>
             Print Table
           </button>
+          
           <button
             onClick={handleCopyClick}
             className={styles.animatedCopyButton}
@@ -1800,7 +1928,6 @@ const handleAllocate = async () => {
             {isCopied && <span className={styles.checkmark}>✓</span>}
           </button>
           
-          {/* ✨ UPDATED: Auto-Assign button with loading state ✨ */}
           <button
             onClick={handleAutoGenerate}
             className={`${styles.backButton} ${isLoadingSolver ? styles.disabledButton : ''}`}

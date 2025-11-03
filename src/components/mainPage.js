@@ -8,7 +8,22 @@ import WelcomePage from "./WelcomePage";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
-function MainPage({ observations, setObservations, staff, setStaff, clearAllData }) {
+function MainPage({ 
+  observations, 
+  setObservations, 
+  staff, 
+  setStaff, 
+  clearAllData,
+  undo,
+  redo,
+  canUndo,
+  canRedo,
+  currentIndex,
+  historyLength,
+  isAllocationReady,
+  setIsAllocationReady,
+  resetHistory
+}) {
   // Check if there's cached data
   const hasCachedData = observations.length > 0 || staff.length > 0;
   
@@ -209,13 +224,19 @@ const handleContinue = () => {
           {currentPage === "allocation" && (
             <DndProvider backend={HTML5Backend}>
               <AllocationCreation
-                setTableRef={setTableRef}
-                observations={observations}
-                setObservations={setObservations}
                 staff={staff}
                 setStaff={setStaff}
+                observations={observations}
+                setObservations={setObservations}
                 selectedStartHour={selectedStartHour}
                 setSelectedStartHour={setSelectedStartHour}
+                setTableRef={setTableRef}
+                undo={undo}
+                redo={redo}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                currentIndex={currentIndex}
+                historyLength={historyLength}
               />
             </DndProvider>
           )}
@@ -234,6 +255,9 @@ const handleContinue = () => {
             tableRef={tableRef}
             selectedStartHour={selectedStartHour}
             hasCachedData={hasCachedData}
+            isAllocationReady={isAllocationReady}
+            setIsAllocationReady={setIsAllocationReady}
+            resetHistory={resetHistory}
           />
         )}
       </main>
