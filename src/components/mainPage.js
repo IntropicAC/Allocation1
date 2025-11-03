@@ -155,6 +155,8 @@ const handleContinue = () => {
       clonedTable.style.minHeight = "100%";
       clonedTable.style.minHeight = "100vh";
       clonedTable.style.fontFamily = "Calibri, sans-serif";
+      clonedTable.style.width = "100%"; // Make table full width
+      clonedTable.style.tableLayout = "fixed"; // Force equal column widths
       
       const cells = clonedTable.querySelectorAll("td, th");
       cells.forEach((cell) => {
@@ -164,6 +166,8 @@ const handleContinue = () => {
         cell.style.textAlign = "center";
         cell.style.verticalAlign = "middle";
         cell.style.whiteSpace = "nowrap";
+        cell.style.width = "auto"; // Let table-layout: fixed handle width
+        cell.style.overflow = "hidden"; // Prevent content overflow
       });
 
       clonedTable.style.border = "1px solid black";
