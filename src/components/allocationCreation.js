@@ -35,9 +35,6 @@ function AllocationCreation({
     setTableRef(localTableRef.current);
   }, [setTableRef]);
 
-  useEffect(() => {
-    setTableRef(localTableRef.current);
-  }, [setTableRef]);
 
   const observationColors = {
     0: '#FFE5E5', 1: '#E5F3FF', 2: '#FFF4E5', 3: '#E5FFE5', 4: '#F5E5FF',

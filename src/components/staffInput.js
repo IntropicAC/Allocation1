@@ -292,7 +292,6 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
   useEffect(()=>{
     console.log("Staff",staff)
     console.log("Observation:", observations)
-    console.log()
   },[staff])
 
   const rainbowNames = ["Alex1","Charlotte2","Adna3","Aliah4"]
@@ -312,8 +311,6 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
       return priorityA - priorityB;
     }
 
-    // If same priority, sort alphabetically by name
-    return a.name.localeCompare(b.name);
   });
 
   return (
