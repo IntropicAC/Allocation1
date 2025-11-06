@@ -136,29 +136,47 @@ function AllocationCreation({
 
   // ✨ updateObservation - now saves via setStaff which handles history
   const updateObservation = (staffName, hour, newObservation) => {
-    setStaff(prevStaff =>
-      prevStaff.map(staffMember => {
-        if (staffMember.name === staffName) {
-          if (staffMember.break === hour) {
-            return staffMember;
-          }
-          if (hour === 8) {
-            return {
-              ...staffMember,
-              observations: { ...staffMember.observations, [hour]: newObservation },
-              observationId: newObservation
-            };
-          } else {
-            return {
-              ...staffMember,
-              observations: { ...staffMember.observations, [hour]: newObservation }
-            };
-          }
+  console.log('📝 ========== UPDATE OBSERVATION START ==========');
+  console.log('  - staffName:', staffName);
+  console.log('  - hour:', hour);
+  console.log('  - newObservation:', newObservation);
+  
+  setStaff(prevStaff => {
+    console.log('  - INSIDE updateObservation setStaff callback');
+    console.log('  - prevStaff length:', prevStaff.length);
+    
+    const updatedStaff = prevStaff.map(staffMember => {
+      if (staffMember.name === staffName) {
+        console.log('  - Found staff member:', staffName);
+        console.log('  - Current observation at hour', hour, ':', staffMember.observations[hour]);
+        
+        if (staffMember.break === hour) {
+          console.log('  - Hour is break time, skipping');
+          return staffMember;
         }
-        return staffMember;
-      })
-    );
-  };
+        if (hour === 8) {
+          console.log('  - Updating hour 8 AND observationId');
+          return {
+            ...staffMember,
+            observations: { ...staffMember.observations, [hour]: newObservation },
+            observationId: newObservation
+          };
+        } else {
+          console.log('  - Updating hour', hour, 'only');
+          return {
+            ...staffMember,
+            observations: { ...staffMember.observations, [hour]: newObservation }
+          };
+        }
+      }
+      return staffMember;
+    });
+    
+    console.log('  - Returning updated staff, length:', updatedStaff.length);
+    console.log('  ========== UPDATE OBSERVATION END ==========');
+    return updatedStaff;
+  });
+};
 
   // Sort staff for display
   const sortedStaff = [...staff]

@@ -31,46 +31,6 @@ function MainPage({
   const [currentPage, setCurrentPage] = useState(hasCachedData ? "welcome" : "patient");
   const [selectedStartHour, setSelectedStartHour] = useState(null);
 
-  // Initialize staff members when loading from cache
-  useEffect(() => {
-    if (hasCachedData && staff.length > 0) {
-      const needsInitialization = staff.some(member => !member.observations || !member.initialized);
-      
-      if (needsInitialization) {
-        console.log('Initializing staff members from cache...');
-        const initializedStaff = staff.map(member => {
-          // If already has observations object, keep it
-          if (member.observations && typeof member.observations === 'object') {
-            return {
-              ...member,
-              initialized: true
-            };
-          }
-          
-          // Otherwise, initialize observations
-          const observations = {};
-          for (let hour = 7; hour <= 19; hour++) {
-            observations[hour] = 
-              hour === 8 && member.observationId && member.observationId !== "-"
-                ? member.observationId
-                : "-";
-          }
-          
-          return {
-            ...member,
-            observations,
-            obsCounts: member.obsCounts || {},
-            lastReceived: member.lastReceived || {},
-            numObservations: member.observationId && member.observationId !== "-" ? 1 : 0,
-            initialized: true
-          };
-        });
-        
-        setStaff(initializedStaff);
-      }
-    }
-  }, [hasCachedData]);
-
   const handleNewAllocation = () => {
     if (window.confirm('This will delete your previous allocation. Are you sure?')) {
       clearAllData();
@@ -80,13 +40,8 @@ function MainPage({
 
 const handleContinue = () => {
   const hasCompleteData = observations.length > 0 && staff.length > 1;
-
+  
   if (hasCompleteData) {
-    const needsInitialization = staff.some(m => !m.observations || !m.initialized);
-    if (needsInitialization) {
-      // (Optionally) use functional setState to avoid stale closures
-      setStaff(prev => initializeStaffFromCache(prev));
-    }
     setCurrentPage("allocation");
   } else if (observations.length > 0 && staff.length <= 1) {
     setCurrentPage("staff");
