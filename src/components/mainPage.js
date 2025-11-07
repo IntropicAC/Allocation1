@@ -80,28 +80,6 @@ const handleContinue = () => {
     tableRef.current = ref;
   };
 
-  function initializeStaffFromCache(staff) {
-   return staff.map(member => {
-     if (member.observations && typeof member.observations === 'object') {
-       return { ...member, initialized: true };
-     }
-     const observations = {};
-     for (let hour = 7; hour <= 19; hour++) {
-       observations[hour] =
-         hour === 8 && member.observationId && member.observationId !== "-"
-           ? member.observationId
-           : "-";
-     }
-     return {
-       ...member,
-       observations,
-       obsCounts: member.obsCounts || {},
-       lastReceived: member.lastReceived || {},
-       numObservations: member.observationId && member.observationId !== "-" ? 1 : 0,
-       initialized: true     };
-   });
- }
-
   const copyTable = async () => {
     const table = tableRef.current;
     if (table) {

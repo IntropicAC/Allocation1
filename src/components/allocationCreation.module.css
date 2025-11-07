@@ -19,6 +19,10 @@
   overflow: auto; /* Enables scrolling */
   /* Use the modern approach to attempt overlay scrollbars */
   overflow: overlay;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
 }
 .draggableObsContainer {
   display: flex;
@@ -104,7 +108,7 @@
 .allocationTable th, .hourCell, table td {
   border: 0.1rem solid black;
   text-align: center;
-  padding: 0.6rem;
+  padding: 0.6rem 0.2rem 0 0.2rem;
   width: 12rem;
   height: 3rem;
   white-space: normal; /* Allows text to wrap */
@@ -123,6 +127,11 @@
 .allocationTable th {
   pointer-events: auto;
   user-select: none; /* Prevent text selection during drag */
+}
+
+.allocationTable td {
+  vertical-align: top; /* Change from center/middle to top */
+  padding-top: 0.6rem; /* Ensure consistent top padding */
 }
 
 table td:not(.hourCell):hover {
@@ -160,20 +169,27 @@ table td:not(.hourCell):hover {
   outline: none;
 }
 
-/* In your CSS module or stylesheet */
-.editableInput { /* Ensures input occupies full cell width */
-  padding: 0; /* Matches cell padding or set explicitly */
-  margin: 0; /* Removes any default margin */
-  font-size: inherit; /* Inherits font size from parent */
-  font-family: inherit; /* Inherits font family from parent */
-  box-sizing: border-box; /* Includes padding and border in height calculation */
-  background-color: transparent; /* Optional: Makes input background match cell */
-  text-align: center; /* Keeps text centered */
-  border: none;
+.editingCell {
+  animation: pulse 0.5s ease-in-out;
 }
 
-.editableInput:focus {
-  outline: none; /* Remove focus outline to maintain cell appearance */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+/* Ensure table cells maintain consistent styling */
+.allocationTable td {
+  position: relative;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Prevent contenteditable from adding its own styling */
+.allocationTable td[contenteditable="true"] {
+  outline: none;
 }
 
 .AmPmToggle {

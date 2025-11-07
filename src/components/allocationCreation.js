@@ -10,12 +10,13 @@ function capitalizeFirstLetter(string) {
 }
 
 // Single DragDropCell component OUTSIDE of AllocationCreation
+
 const DragDropCell = ({ 
   staffMember, 
   hour, 
   observation, 
   originalObservation, 
-  moveObservation, 
+  moveObservation,
   updateObservation,
   editingCell,
   setEditingCell,
@@ -27,84 +28,55 @@ const DragDropCell = ({
   getObservationColor
 }) => {
   const isEditing = editingCell === `${staffMember.name}-${hour}`;
-  const [isDragStarted, setIsDragStarted] = useState(false);
-  const isDraggingRef = useRef(false);
-  const inputRef = useRef(null);
-
-  // Only enable drag if dragDropEnabled is true
-  const [{ isDragging }, dragRef, dragSource] = useDrag(() => ({
+  const cellRef = useRef(null);
+  const combinedRef = useRef(null);
+  const [localEditValue, setLocalEditValue] = useState('');
+  
+  // Drag functionality - always set up but conditionally enabled
+  const [{ isDragging }, dragRef] = useDrag({
     type: 'observation',
-    item: () => {
-      setIsDragStarted(true);
-      isDraggingRef.current = true;
-      return { sourceStaffName: staffMember.name, sourceHour: hour };
-    },
-    canDrag: () => !isEditing && dragDropEnabled,
-    collect: monitor => ({ isDragging: monitor.isDragging() }),
-    end: () => {
-      setIsDragStarted(false);
-      setTimeout(() => {
-        isDraggingRef.current = false;
-      }, 150);
-    }
-  }), [staffMember.name, hour, isEditing, dragDropEnabled]);
+    item: { sourceStaffName: staffMember.name, sourceHour: hour },
+    canDrag: dragDropEnabled && !isEditing && staffMember.break !== hour,
+    collect: monitor => ({ isDragging: !!monitor.isDragging() }),
+  }, [staffMember.name, hour, isEditing, dragDropEnabled, staffMember.break]);
 
   const [{ isOver }, dropRef] = useDrop({
     accept: ['observation', 'externalObservation', 'specialObservation'],
+    canDrop: () => dragDropEnabled && staffMember.break !== hour,
     drop: (item, monitor) => {
-      if (!dragDropEnabled) return;
-      
       if (editingCell) {
         setEditingCell(null);
         setEditValue('');
       }
       
-      if (monitor.getItemType() === 'externalObservation' || monitor.getItemType() === 'specialObservation') {
+      const itemType = monitor.getItemType();
+      if (itemType === 'externalObservation' || itemType === 'specialObservation') {
         updateObservation(staffMember.name, hour, item.observationName);
-      } else if (monitor.getItemType() === 'observation') {
+      } else if (itemType === 'observation') {
         moveObservation(item.sourceStaffName, item.sourceHour, staffMember.name, hour);
       }
     },
-    collect: monitor => ({ isOver: monitor.isOver() && dragDropEnabled }),
-  }, [dragDropEnabled, editingCell, staffMember.name, hour, moveObservation, updateObservation]);
+    collect: monitor => ({ isOver: !!monitor.isOver() && dragDropEnabled }),
+  }, [dragDropEnabled, editingCell, staffMember.name, hour, moveObservation, updateObservation, staffMember.break]);
 
-  const ref = useRef(null);
-  dragRef(dropRef(ref));
-
-  const handleCellMouseDown = (e) => {
-    if (hour === staffMember.break) return;
-    if (dragDropEnabled) return;
-    
-    e.preventDefault();
-    
-    const cellId = `${staffMember.name}-${hour}`;
-    
-    if (editingCell && editingCell !== cellId) {
-      const [currentStaffName, currentHour] = editingCell.split('-');
-      const currentStaffMember = staff.find(s => s.name === currentStaffName);
-      const originalValue = currentStaffMember?.observations[parseInt(currentHour)] || '-';
-      const normalizedEdit = editValue === '' ? '-' : editValue;
-      
-      if (originalValue !== normalizedEdit) {
-        updateObservation(currentStaffName, parseInt(currentHour), normalizedEdit);
-      }
+  // Combine refs
+  useEffect(() => {
+    if (dragDropEnabled) {
+      dragRef(dropRef(combinedRef));
     }
-    
-    const actualObservation = staffMember.observations[hour] || '-';
-    setEditingCell(cellId);
-    setEditValue(actualObservation === "-" ? "" : actualObservation);
-  };
+  }, [dragDropEnabled, dragRef, dropRef]);
+  
+  const isBreak = staffMember.break === hour;
+  const colorToUse = isBreak ? 'transparent' : getObservationColor(originalObservation);
 
   const handleCellClick = (e) => {
-    if (hour === staffMember.break) return;
-    if (!dragDropEnabled) return;
+    if (isBreak || dragDropEnabled) return;
     
     e.stopPropagation();
     
     const cellId = `${staffMember.name}-${hour}`;
     
-    if (isEditing) return;
-    
+    // Save any other cell that was being edited
     if (editingCell && editingCell !== cellId) {
       const [currentStaffName, currentHour] = editingCell.split('-');
       const currentStaffMember = staff.find(s => s.name === currentStaffName);
@@ -116,14 +88,59 @@ const DragDropCell = ({
       }
     }
     
+    // Start editing this cell
     const actualObservation = staffMember.observations[hour] || '-';
+    const initialValue = actualObservation === "-" ? "" : actualObservation;
     setEditingCell(cellId);
-    setEditValue(actualObservation === "-" ? "" : actualObservation);
+    setEditValue(initialValue);
+    setLocalEditValue(initialValue);
+  };
+
+  const handleBeforeInput = (e) => {
+    // Prevent input if at max length
+    const currentText = e.target.textContent || '';
+    if (currentText.length >= 14 && e.inputType === 'insertText') {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  const handleInput = (e) => {
+    const text = (e.target.textContent || '').slice(0, 14);
+    setLocalEditValue(text);
+    setEditValue(text);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      finishEditing();
+      return;
+    }
+    
+    // Allow all navigation and deletion keys
+    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+    if (allowedKeys.includes(e.key)) {
+      return;
+    }
+    
+    // Check length for other keys
+    const currentLength = cellRef.current ? cellRef.current.textContent.length : 0;
+    if (currentLength >= 14 && e.key.length === 1) {
+      e.preventDefault();
+    }
+  };
+
+  const handleBlur = () => {
+    finishEditing();
   };
 
   const finishEditing = () => {
+    if (!isEditing) return;
+    
     const originalValue = staffMember.observations[hour] || '-';
-    const normalizedEdit = editValue === '' ? '-' : editValue;
+    const finalValue = localEditValue || editValue || '';
+    const normalizedEdit = finalValue === '' ? '-' : finalValue;
     
     if (originalValue !== normalizedEdit) {
       updateObservation(staffMember.name, hour, normalizedEdit);
@@ -131,63 +148,92 @@ const DragDropCell = ({
     
     setEditingCell(null);
     setEditValue('');
+    setLocalEditValue('');
   };
 
-  const handleInputChange = (e) => {
-    setEditValue(e.target.value);
-  };
-
-  // Focus management for cursor position
+  // Set initial content and cursor position when entering edit mode
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      // Set cursor to end when first entering edit mode
-      const length = editValue.length;
-      inputRef.current.setSelectionRange(length, length);
+    if (isEditing && cellRef.current) {
+      // Set the initial text content
+      cellRef.current.textContent = localEditValue;
+      
+      // Focus and place cursor at end
+      cellRef.current.focus();
+      const range = document.createRange();
+      const sel = window.getSelection();
+      
+      if (cellRef.current.childNodes.length > 0) {
+        const textNode = cellRef.current.firstChild;
+        const position = textNode ? textNode.length : 0;
+        range.setStart(textNode || cellRef.current, position);
+        range.setEnd(textNode || cellRef.current, position);
+      } else {
+        range.selectNodeContents(cellRef.current);
+        range.collapse(false);
+      }
+      
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }, [isEditing]); // Only run when isEditing changes
+
+  // Sync local state when editingCell changes
+  useEffect(() => {
+    if (!isEditing) {
+      setLocalEditValue('');
     }
   }, [isEditing]);
 
-  const handleBlur = () => {
-    if (isDraggingRef.current) return;
-    if (dragDropEnabled) {
-      finishEditing();
-    }
-  };
-
-  const cellStyle = isDragging ? styles.draggingCell : isOver ? styles.hoveringCell : '';
-
-  if (isEditing) {
+  // Break cells
+  if (isBreak) {
     return (
-      <td ref={ref} style={{ padding: 0, margin: 0, overflow: 'hidden' }}>
-        <input
-          ref={inputRef}
-          maxLength={12}
-          type="text"
-          value={editValue}
-          onChange={handleInputChange}
-          onBlur={handleBlur}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') finishEditing();
-          }}
-          className={styles.editableInput}
-          autoFocus
-          style={{ width: '100%', height: '100%', boxSizing: 'border-box', overflow: 'hidden' }}
-        />
+      <td ref={combinedRef} style={{ backgroundColor: 'transparent', cursor: 'default' }}>
+        <strong className={styles.break}>Break</strong>
       </td>
     );
   }
 
-  const isBreak = staffMember.break === hour;
-  const colorToUse = isBreak ? 'transparent' : getObservationColor(originalObservation);
+  // Draggable mode
+  if (dragDropEnabled) {
+    const cellStyle = isDragging ? styles.draggingCell : isOver ? styles.hoveringCell : '';
+    return (
+      <td 
+        ref={combinedRef}
+        className={cellStyle}
+        style={{ 
+          backgroundColor: colorToUse,
+          cursor: 'grab',
+          opacity: isDragging ? 0.5 : 1
+        }}
+      >
+        {observation}
+      </td>
+    );
+  }
 
+  // Editable mode
   return (
     <td 
-      ref={ref} 
-      className={cellStyle} 
-      onMouseDown={handleCellMouseDown}
-      onClick={handleCellClick} 
-      style={{ backgroundColor: colorToUse }}
+      ref={isEditing ? cellRef : combinedRef}
+      onClick={handleCellClick}
+      onBeforeInput={isEditing ? handleBeforeInput : undefined}
+      onInput={isEditing ? handleInput : undefined}
+      onKeyDown={isEditing ? handleKeyDown : undefined}
+      onBlur={isEditing ? handleBlur : undefined}
+      contentEditable={isEditing}
+      suppressContentEditableWarning={true}
+      style={{ 
+        backgroundColor: colorToUse,
+        cursor: isEditing ? 'text' : 'pointer',
+        outline: "none",
+        outlineOffset: '-2px',
+        whiteSpace: 'normal',
+        wordWrap: 'break-word',
+        overflowWrap: 'break-word',
+        userSelect: isEditing ? 'text' : 'none'
+      }}
     >
-      {observation}
+      {!isEditing && observation}
     </td>
   );
 };
@@ -215,6 +261,27 @@ function AllocationCreation({
   
   const localTableRef = useRef(null);
 
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.ctrlKey && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        setDragDropEnabled(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // When drag/drop is turned ON, exit any editing mode (existing)
+  useEffect(() => {
+    if (dragDropEnabled && editingCell) {
+      const [currentStaffName, currentHour] = editingCell.split('-');
+      updateObservation(currentStaffName, parseInt(currentHour), editValue);
+      setEditingCell(null);
+      setEditValue('');
+    }
+  }, [dragDropEnabled]);
+
   // When drag/drop is turned ON, exit any editing mode
   useEffect(() => {
     if (dragDropEnabled && editingCell) {
@@ -226,8 +293,23 @@ function AllocationCreation({
   }, [dragDropEnabled]);
 
   useEffect(() => {
+  if (localTableRef.current) {
+    const container = localTableRef.current.parentElement;
+    const table = localTableRef.current;
+    const scaleX = container.clientWidth / table.scrollWidth;
+    const scaleY = container.clientHeight / table.scrollHeight;
+    const scale = Math.min(scaleX, scaleY, 1);
+    
+    // Use zoom instead of transform scale
+    table.style.zoom = scale;
+  }
+}, [staff, observations]);
+
+  useEffect(() => {
     setTableRef(localTableRef.current);
   }, [setTableRef]);
+
+  
 
   const observationColors = {
     0: '#FFE5E5', 1: '#E5F3FF', 2: '#FFF4E5', 3: '#E5FFE5', 4: '#F5E5FF',
@@ -443,6 +525,7 @@ function AllocationCreation({
             <DragDropToggle 
               dragDropEnabled={dragDropEnabled}
               setDragDropEnabled={setDragDropEnabled}
+              
             />
           </div>
 

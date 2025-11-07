@@ -14,10 +14,6 @@ function UndoRedoButtons({ canUndo, canRedo, onUndo, onRedo, currentIndex, histo
           <span className={styles.icon}>↶</span>
         </button>
         
-        <div className={styles.historyIndicator}>
-          {currentIndex} / {historyLength - 1}
-        </div>
-        
         <button 
           onClick={onRedo}
           disabled={!canRedo}

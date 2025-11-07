@@ -71,14 +71,3 @@
   line-height: 1;
   font-weight: bold;
 }
-
-.historyIndicator {
-  font-size: 1.2rem;
-  color: black;
-  font-weight: 600;
-  padding: 0 0.6rem;
-  min-width: 4.5rem;
-  text-align: center;
-  user-select: none;
-  letter-spacing: 0.05rem;
-}
