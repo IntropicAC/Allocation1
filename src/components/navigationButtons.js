@@ -168,8 +168,9 @@ function createInterleavedObservationsList(
         isAvailable = false;
       }
       
-      // Skip hour 8 if they have a pre-assignment
-      if (hour === 8 && staffMember.observationId && staffMember.observationId !== "-") {
+      
+      // Skip hour 8 if they have a user-assigned observation
+      if (hour === 8 && staffMember.observations[8] && staffMember.observations[8] !== "-") {
         isAvailable = false;
       }
       
@@ -221,8 +222,8 @@ function createInterleavedObservationsList(
       // Skip if this hour is their break
       if (staffMember.break === hour) continue;
       
-      // Skip hour 8 if they have a pre-assignment
-      if (hour === 8 && staffMember.observationId && staffMember.observationId !== "-") {
+      // Skip hour 8 if they have a user-assigned observation
+      if (hour === 8 && staffMember.observations[8] && staffMember.observations[8] !== "-") {
         continue;
       }
       
@@ -1061,7 +1062,7 @@ function runSimulation(observations, staff, startHour = 9) {
             observations: { ...originalObservations }, // Create a copy for this template
             obsCounts: {},
             lastReceived: {},
-            numObservations: member.observationId && member.observationId !== "-" ? 1 : 0,
+            numObservations: 0,
             initialized: true
         };
     });
@@ -1078,7 +1079,7 @@ function runSimulation(observations, staff, startHour = 9) {
             observations: { ...member.originalObservations }, // Restore original state each iteration
             obsCounts: {},
             lastReceived: {},
-            numObservations: member.observationId && member.observationId !== "-" ? 1 : 0
+            numObservations: 0,
         }));
         
         allocateObservations(observations, staffClone, iterationLogs, unassignedCountRef, startHour);
@@ -1150,7 +1151,7 @@ function resetStaff(staff, observations, startHour = 9) {
   
   staff.forEach((staffMember) => {
     // Reset tracking variables
-    staffMember.lastObservation = staffMember.observationId;
+    staffMember.lastObservation = staffMember.observations[8];
     staffMember.obsCounts = {};
     staffMember.lastReceived = {};
     
@@ -1167,18 +1168,22 @@ function resetStaff(staff, observations, startHour = 9) {
     // Reset observations in the scheduling window (startHour to 19)
     for (let hour = startHour; hour <= 19; hour++) {
       const currentValue = staffMember.observations[hour];
+
+      // CRITICAL: Preserve user-assigned hour 8 if startHour <= 8
+      if (hour === 8 && startHour <= 8) {
+        const hour8Value = staffMember.observations[8];
+        // Only preserve if it's a CURRENT observation (not deleted)
+        if (hour8Value && hour8Value !== "-" && currentObservationNames.has(hour8Value)) {
+          // Keep the user's hour 8 assignment
+          continue;
+        }
+      }
       
       // Check if this value should be cleared
       // Clear if: (1) it's a current observation OR (2) it's a deleted non-current observation
       if (currentObservationNames.has(currentValue) || observationsToClean.has(currentValue)) {
         // Clear this observation
-        staffMember.observations[hour] =
-          hour === 8 &&
-          startHour <= 8 &&
-          staffMember.observationId &&
-          staffMember.observationId !== "-"
-            ? staffMember.observationId
-            : "-";
+       staffMember.observations[hour] = "-";
       }
       // Otherwise, keep the value (user-entered custom values, Break, X, etc.)
       else {
@@ -1231,11 +1236,11 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
     const obsMap = member.observations || {};
     for (let h = startHour; h <= 19; h++) {
       const val = obsMap[h];
-      if (toActuallyDelete.has(val)) {  // ✅ Use filtered set
-        obsMap[h] =
-          h === 8 && member.observationId && member.observationId !== "-"
-            ? member.observationId
-            : "-";
+      if (h === 8 && val && val !== "-" && validNames.has(val)) {
+          continue;
+        }
+      if (toActuallyDelete.has(val)) {
+        obsMap[h] = "-";
       }
     }
     // Recount actual assignments (only current/valid obs names)
@@ -1691,10 +1696,18 @@ const handleAllocate = async () => {
           const assignments = Object.entries(schedule).filter(([h, v]) => v !== '-' && v !== 'break');
           console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
           
-          const mergedObservations = {
-            ...member.observations,
-            ...schedule
-          };
+          // CRITICAL: Preserve user-assigned hour 8
+            const mergedObservations = { ...member.observations };
+            Object.entries(schedule).forEach(([hour, value]) => {
+              const h = parseInt(hour);
+              // Don't overwrite hour 8 if user has set it and we're starting at 8 or earlier
+              if (h === 8 && start <= 8 && member.observations[8] && member.observations[8] !== "-") {
+                // Keep the user's assignment
+                console.log(`     ⚠️ Preserving user-assigned hour 8: ${member.observations[8]}`);
+                return;
+              }
+              mergedObservations[h] = value;
+            });
           
           return {
             ...member,
@@ -1826,10 +1839,12 @@ const handleAllocate = async () => {
     if (resetObservations) {
       let observations = {};
       for (let hour = 7; hour <= 19; hour++) {
-        observations[hour] = 
-          hour === 8 && staffMember.observationId && staffMember.observationId !== "-"
-            ? staffMember.observationId
-            : "-";
+  // Preserve hour 8 if it has a user assignment
+        if (hour === 8 && staffMember.observations[8] && staffMember.observations[8] !== "-") {
+          observations[hour] = staffMember.observations[8];
+        } else {
+          observations[hour] = "-";
+        }
       }
       
       return {
@@ -1837,7 +1852,7 @@ const handleAllocate = async () => {
         observations,
         obsCounts: {},
         lastReceived: {},
-        numObservations: staffMember.observationId && staffMember.observationId !== "-" ? 1 : 0,
+        numObservations: (observations[8] && observations[8] !== "-") ? 1 : 0,
         initialized: true, // Keep initialized as true even after reset
       };
     }

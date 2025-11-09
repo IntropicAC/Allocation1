@@ -257,7 +257,7 @@ function AllocationCreation({
   const [colorCodingEnabled, setColorCodingEnabled] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
-  const [dragDropEnabled, setDragDropEnabled] = useState(true);
+  const [dragDropEnabled, setDragDropEnabled] = useState(false);
   
   const localTableRef = useRef(null);
 
@@ -272,16 +272,6 @@ function AllocationCreation({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  // When drag/drop is turned ON, exit any editing mode (existing)
-  useEffect(() => {
-    if (dragDropEnabled && editingCell) {
-      const [currentStaffName, currentHour] = editingCell.split('-');
-      updateObservation(currentStaffName, parseInt(currentHour), editValue);
-      setEditingCell(null);
-      setEditValue('');
-    }
-  }, [dragDropEnabled]);
-
   // When drag/drop is turned ON, exit any editing mode
   useEffect(() => {
     if (dragDropEnabled && editingCell) {
@@ -293,23 +283,21 @@ function AllocationCreation({
   }, [dragDropEnabled]);
 
   useEffect(() => {
-  if (localTableRef.current) {
-    const container = localTableRef.current.parentElement;
-    const table = localTableRef.current;
-    const scaleX = container.clientWidth / table.scrollWidth;
-    const scaleY = container.clientHeight / table.scrollHeight;
-    const scale = Math.min(scaleX, scaleY, 1);
-    
-    // Use zoom instead of transform scale
-    table.style.zoom = scale;
-  }
-}, [staff, observations]);
+    if (localTableRef.current) {
+      const container = localTableRef.current.parentElement;
+      const table = localTableRef.current;
+      const scaleX = container.clientWidth / table.scrollWidth;
+      const scaleY = container.clientHeight / table.scrollHeight;
+      const scale = Math.min(scaleX, scaleY, 1);
+      
+      // Use zoom instead of transform scale
+      table.style.zoom = scale;
+    }
+  }, [staff, observations]);
 
   useEffect(() => {
     setTableRef(localTableRef.current);
   }, [setTableRef]);
-
-  
 
   const observationColors = {
     0: '#FFE5E5', 1: '#E5F3FF', 2: '#FFF4E5', 3: '#E5FFE5', 4: '#F5E5FF',
@@ -364,6 +352,7 @@ function AllocationCreation({
       const sourceStaff = updatedStaff[sourceStaffIndex];
       const targetStaff = updatedStaff[targetStaffIndex];
 
+      // Update StaffNeeded if moving to/from hour 8
       if (sourceHour === 8 || targetHour === 8) {
         if (sourceHour === 8 && targetHour === 8) {
           updateStaffNeeded(sourceStaff.observations[sourceHour], true);
@@ -387,21 +376,6 @@ function AllocationCreation({
         targetStaff.break = sourceHour;
       }
 
-      const sourceIsHourEight = sourceHour === 8;
-      const targetIsHourEight = targetHour === 8;
-
-      if (sourceIsHourEight || targetIsHourEight) {
-        let tempObservationId = sourceStaff.observations[sourceHour];
-        if (sourceIsHourEight && targetIsHourEight) {
-          sourceStaff.observationId = targetStaff.observations[targetHour];
-          targetStaff.observationId = tempObservationId;
-        } else if (sourceIsHourEight) {
-          sourceStaff.observationId = targetStaff.observations[targetHour];
-        } else if (targetIsHourEight) {
-          targetStaff.observationId = tempObservationId;
-        }
-      }
-
       const tempObservation = sourceStaff.observations[sourceHour] || '-';
       sourceStaff.observations[sourceHour] = targetStaff.observations[targetHour] || '-';
       targetStaff.observations[targetHour] = tempObservation;
@@ -411,31 +385,53 @@ function AllocationCreation({
   };
 
   const updateObservation = (staffName, hour, newObservation) => {
-    setStaff(prevStaff => {
-      const updatedStaff = prevStaff.map(staffMember => {
-        if (staffMember.name === staffName) {
-          if (staffMember.break === hour) {
-            return staffMember;
+  setStaff(prevStaff => {
+    const updatedStaff = prevStaff.map(staffMember => {
+      if (staffMember.name === staffName) {
+        if (staffMember.break === hour) {
+          return staffMember;
+        }
+        
+        // Handle hour 8 - update observations StaffNeeded
+        if (hour === 8) {
+          const oldObservation = staffMember.observations[8];
+          
+          // If changing from a valid observation, increment its StaffNeeded
+          if (oldObservation && oldObservation !== "-") {
+            setObservations(currentObservations => 
+              currentObservations.map(obs => {
+                if (obs.name === oldObservation && obs.StaffNeeded < obs.staff) {
+                  return { ...obs, StaffNeeded: obs.StaffNeeded + 1 };
+                }
+                return obs;
+              })
+            );
           }
-          if (hour === 8) {
-            return {
-              ...staffMember,
-              observations: { ...staffMember.observations, [hour]: newObservation },
-              observationId: newObservation
-            };
-          } else {
-            return {
-              ...staffMember,
-              observations: { ...staffMember.observations, [hour]: newObservation }
-            };
+          
+          // If changing to a valid observation, decrement its StaffNeeded
+          if (newObservation && newObservation !== "-") {
+            setObservations(currentObservations => 
+              currentObservations.map(obs => {
+                if (obs.name === newObservation && obs.StaffNeeded > 0) {
+                  return { ...obs, StaffNeeded: obs.StaffNeeded - 1 };
+                }
+                return obs;
+              })
+            );
           }
         }
-        return staffMember;
-      });
-      
-      return updatedStaff;
+        
+        return {
+          ...staffMember,
+          observations: { ...staffMember.observations, [hour]: newObservation }
+        };
+      }
+      return staffMember;
     });
-  };
+    
+    return updatedStaff;
+  });
+};
 
   // Memoize sorted staff
   const sortedStaff = useMemo(() => {
@@ -525,7 +521,6 @@ function AllocationCreation({
             <DragDropToggle 
               dragDropEnabled={dragDropEnabled}
               setDragDropEnabled={setDragDropEnabled}
-              
             />
           </div>
 

@@ -1,25 +1,3 @@
-const staff = [
-  //{ name: 'Alex', 		 break: 14, numObservations: 0, 8: '-', security: 3 },
-  { name: "Charl", break: 14, numObservations: 0, 8: "-" },
-  { name: "Jon", break: 13, numObservations: 0, 8: "-" },
-  { name: "Nigel", break: 15, numObservations: 0, 8: "BS" },
-  { name: "Fill", break: 15, numObservations: 0, 8: "Gen" },
-  { name: "Paul", break: 16, numObservations: 0, 8: "BS" },
-  { name: "Will", break: 16, numObservations: 0, 8: "HH" },
-  { name: "Pat", break: 18, numObservations: 0, 8: "GG" },
-  { name: "Nan", break: 19, numObservations: 0, 8: "-" },
-  { name: "Crane", break: 16, numObservations: 0, 8: "-" },
-  { name: "Matt", break: 13, numObservations: 0, 8: "BW" },
-  { name: "Kane", break: 19, numObservations: 0, 8: "BW" },
-];
-
-const observations = [
-  { name: "GG", staff: 1 },
-  { name: "BW", staff: 2 },
-  { name: "BS", staff: 2 },
-  { name: "HH", staff: 1 },
-  { name: "Gen", staff: 1 },
-];
 
 //allocationCode.JS
 
