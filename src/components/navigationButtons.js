@@ -371,8 +371,8 @@ let repetitionPenalty = 0;
 let varietyBonus = 0;
 
 const prevHours = [prev1, prev2, prev3, prev4, prev5, prev6, prev7, prev8, prev9];
-const penaltyValues = [30, 25, 20, 15, 14, 13, 12, 11, 10]; // Decreasing weight for older hours
-const bonusValues = [30, 25, 20, 15, 14, 13, 12, 11, 10];
+const penaltyValues = [50, 45, 40, 35, 30, 25, 20, 15, 10]; // Decreasing weight for older hours
+const bonusValues = [50, 45, 40, 35, 30, 25, 20, 15, 10];
 
 for (let i = 0; i < prevHours.length; i++) {
   if (hour >= (9 + i) && isActualObservation(prevHours[i])) {
