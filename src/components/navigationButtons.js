@@ -344,16 +344,8 @@ function calculateStaffScore(
     // Baseline score
     addPoints(maxObs - staffMember.numObservations + 1, "non-security baseline (maxObs - numObservations)");
     
-    // Break bonus check
-
-    if (maxObs >= 8 && staffMember.break === hour + 1) {
-      const hadGeneralsInPast2Hours = (hour >= 9 && prev1 === "Generals") || (hour >= 10 && prev2 === "Generals");
-      const hadObservationsInPast2Hours = (hour >= 9 && isActualObservation(prev1)) || (hour >= 10 && isActualObservation(prev2));
-      
-      if (hadGeneralsInPast2Hours && !hadObservationsInPast2Hours) {
-        addPoints(5, "bonus for break in next hour when maxObs >= 8, had Generals in past 2 hours, no observations in past 2 hours");
-      }
-    }
+    const workloadGap = maxObs - staffMember.numObservations;
+    addPoints(workloadGap * 10, "strong workload balance incentive");
     
     // FIXED: Consecutive busy hour penalties - only count actual observations as "busy"
     if (hour >= 11 && isActualObservation(prev1) && isActualObservation(prev2)) {
@@ -372,122 +364,37 @@ function calculateStaffScore(
       addPoints(-50, "penalty for 5 consecutive hours with observations");
     }
     
-    // Special penalty for consecutive non-free/non-Generals (only actual observations)
-    if (hour >= 10 && isActualObservation(prev1) && prev1 !== "Generals" && 
-        isActualObservation(prev2) && prev2 !== "Generals") {
-      addPoints(-15, "penalty for 2 consecutive hours with non-Generals observations");
+   
+
+// CUMULATIVE SCORING - Check each past hour individually
+let repetitionPenalty = 0;
+let varietyBonus = 0;
+
+const prevHours = [prev1, prev2, prev3, prev4, prev5, prev6, prev7, prev8, prev9];
+const penaltyValues = [30, 25, 20, 15, 14, 13, 12, 11, 10]; // Decreasing weight for older hours
+const bonusValues = [30, 25, 20, 15, 14, 13, 12, 11, 10];
+
+for (let i = 0; i < prevHours.length; i++) {
+  if (hour >= (9 + i) && isActualObservation(prevHours[i])) {
+    if (prevHours[i] === obsName) {
+      // Had THIS observation - penalty compounds
+      repetitionPenalty -= penaltyValues[i];
+    } else {
+      // Had DIFFERENT observation - bonus compounds
+      varietyBonus += bonusValues[i];
     }
-
-// Even distribution checks - additive penalties for repeating (only actual observations)
-
-if (!isActualObservation(prev1)) {
-  addPoints(22, "bonus for free hour in the previous hour");
+  }
 }
 
-if (hour >= 10 && !isActualObservation(prev1) && !isActualObservation(prev2)) {
-  addPoints(15, "bonus for 2 consecutive free hours");
+// Apply cumulative totals
+if (repetitionPenalty < 0) {
+  addPoints(repetitionPenalty, `cumulative penalty: had '${obsName}' ${Math.abs(repetitionPenalty)} penalty points from recent history`);
 }
 
-if (hour >= 11 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3)) {
-  addPoints(15, "bonus for 3 consecutive free hours");
+if (varietyBonus > 0) {
+  addPoints(varietyBonus, `cumulative variety bonus: ${varietyBonus} points for having different observations recently`);
 }
-
-if (hour >= 12 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3) && !isActualObservation(prev4)) {
-  addPoints(15, "bonus for 4 consecutive free hours");
-}
-
-if (hour >= 13 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3) && !isActualObservation(prev4) && !isActualObservation(prev5)) {
-  addPoints(20, "bonus for 5 consecutive free hours");
-}
-
-if (hour >= 14 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3) && !isActualObservation(prev4) && !isActualObservation(prev5) && !isActualObservation(prev6)) {
-  addPoints(20, "bonus for 6 consecutive free hours");
-}
-    
-// Even distribution checks - additive penalties for repeating (only actual observations)
-
-if (hour >= 9 && isActualObservation(prev1) && prev1 === obsName) {
-  addPoints(-15, "penalty for repeating same observation 1 hour ago");
-}
-
-if (hour >= 10 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName))) {
-  addPoints(-15, "penalty for repeating same observation 1-2 hours ago");
-}
-
-if (hour >= 11 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-3 hours ago");
-}
-
-if (hour >= 12 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-4 hours ago");
-}
-
-if (hour >= 13 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-5 hours ago");
-}
-
-if (hour >= 14 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName) || (isActualObservation(prev6) && prev6 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-6 hours ago");
-}
-
-if (hour >= 15 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName) || (isActualObservation(prev6) && prev6 === obsName) || (isActualObservation(prev7) && prev7 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-7 hours ago");
-}
-
-if (hour >= 16 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName) || (isActualObservation(prev6) && prev6 === obsName) || (isActualObservation(prev7) && prev7 === obsName) || (isActualObservation(prev8) && prev8 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-8 hours ago");
-}
-
-if (hour >= 17 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName) || (isActualObservation(prev6) && prev6 === obsName) || (isActualObservation(prev7) && prev7 === obsName) || (isActualObservation(prev8) && prev8 === obsName) || (isActualObservation(prev9) && prev9 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-9 hours ago");
-}
-
-
-// Bonuses for NOT repeating the same observation
-if (hour >= 9 && (!isActualObservation(prev1) || prev1 !== obsName)) {
-  addPoints(15, "bonus for not repeating same observation 1 hour ago");
-}
-
-if (hour >= 10 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName)) {
-  addPoints(15, "bonus for not repeating same observation 1-2 hours ago");
-}
-
-if (hour >= 11 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-3 hours ago");
-}
-
-if (hour >= 12 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-4 hours ago");
-}
-
-if (hour >= 13 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-5 hours ago");
-}
-
-if (hour >= 14 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName) && (!isActualObservation(prev6) || prev6 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-6 hours ago");
-}
-
-if (hour >= 15 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName) && (!isActualObservation(prev6) || prev6 !== obsName) && (!isActualObservation(prev7) || prev7 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-7 hours ago");
-}
-
-if (hour >= 16 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName) && (!isActualObservation(prev6) || prev6 !== obsName) && (!isActualObservation(prev7) || prev7 !== obsName) && (!isActualObservation(prev8) || prev8 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-8 hours ago");
-}
-
-if (hour >= 17 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName) && (!isActualObservation(prev6) || prev6 !== obsName) && (!isActualObservation(prev7) || prev7 !== obsName) && (!isActualObservation(prev8) || prev8 !== obsName) && (!isActualObservation(prev9) || prev9 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-9 hours ago");
-}
-    // Special case penalties - only consider actual observations as "busy"
-    if (maxObs <= 8 && hour >= 10 && isActualObservation(prev1) && isActualObservation(prev2) && 
-        prev1 !== "Generals" && prev2 !== "Generals") {
-      addPoints(-20, "large penalty for 2 consecutive observation hours when maxObs <= 8");
-    }
-
-    if (maxObs >= 9 && hour === 9 && prev1 === "Generals") {
-      addPoints(20, "small bonus for Generals in previous hour when maxObs >= 9");
-    }
+   
   }
 
   // Security staff logic - optimized
