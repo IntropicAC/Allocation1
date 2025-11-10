@@ -1520,11 +1520,13 @@ const handleAllocate = async () => {
     try {
     // ✨ CREATE ANONYMIZER
     const anonymizer = new DataAnonymizer();
-    
+    console.log('BEFORE ANONYMIZATION:', staff[0].name, staff[0].observations[9]);
     // ✨ ANONYMIZE DATA BEFORE SENDING
     console.log('🔒 Anonymizing data...');
     const anonymizedStaff = anonymizer.anonymizeStaff(staff);
     const anonymizedObservations = anonymizer.anonymizeObservations(railwayObservations);
+
+    console.log('AFTER ANONYMIZATION:', anonymizedStaff[0].name, anonymizedStaff[0].observations[9]);
     
     console.log('📤 SENDING ANONYMIZED DATA TO RAILWAY');
     console.log('───────────────────────────────────────');
