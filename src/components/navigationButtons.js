@@ -1559,14 +1559,7 @@ const handleAllocate = async () => {
       console.log(`📦 Request size: ${(requestSize / 1024).toFixed(2)} KB`);
       
       console.log('📤 SENDING TO RAILWAY API');
-      console.log('───────────────────────────────────────');
-      console.log('📋 STAFF ARRAY:');
-      console.log(JSON.stringify(staff, null, 2));
-      console.log('───────────────────────────────────────');
-      console.log('📋 OBSERVATIONS ARRAY:');
-      console.log(JSON.stringify(railwayObservations, null, 2));
-      console.log('───────────────────────────────────────');
-      
+    
       const endpoint = '/api/solve';  // Always use Vercel proxy
       
       console.log(`🎯 Endpoint: ${endpoint}`);
