@@ -852,8 +852,6 @@ const renderTable = () => {
               onClick={handleTimeRangeToggle}
               style={{ 
                 cursor: 'pointer',
-                backgroundColor: timeRange === 'night' ? '#3498db' : 'transparent',
-                color: timeRange === 'night' ? 'white' : 'inherit'
               }}
               title="Click to toggle between Day (8-19) and Night (20-7) display"
             >

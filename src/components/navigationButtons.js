@@ -1,6 +1,6 @@
 //navigationButtons.js
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./navigationButtons.module.css";
 import { useReactToPrint } from "react-to-print";
 import DataAnonymizer from './services/dataAnonymizer';
@@ -22,6 +22,43 @@ function NavigationButtons({
   resetHistory
 }) {
   
+  useEffect(() => {
+  console.log('\n🔔 ═══════════════════════════════════════');
+  console.log('🔔 STATE CHANGE DETECTED');
+  console.log('🔔 ═══════════════════════════════════════');
+  console.log('Time:', new Date().toLocaleTimeString());
+  console.log('Staff array length:', staff.length);
+  console.log('Staff is array:', Array.isArray(staff));
+  
+  if (staff.length > 0) {
+    console.log('\n📊 First staff member in state:');
+    console.log('  Name:', staff[0].name);
+    console.log('  ID:', staff[0].id);
+    console.log('  Observations type:', typeof staff[0].observations);
+    console.log('  Observations keys:', Object.keys(staff[0].observations || {}));
+    console.log('  Full observations:', JSON.stringify(staff[0].observations, null, 2));
+    
+    // Check all staff for valid observations
+    const staffWithInvalidObs = staff.filter(s => 
+      !s.observations || 
+      typeof s.observations !== 'object' || 
+      Array.isArray(s.observations) ||
+      Object.keys(s.observations).length === 0
+    );
+    
+    if (staffWithInvalidObs.length > 0) {
+      console.warn('⚠️ Found staff with invalid observations:');
+      staffWithInvalidObs.forEach(s => {
+        console.warn(`  - ${s.name}: observations =`, s.observations);
+      });
+    } else {
+      console.log('✅ All staff have valid observations objects');
+    }
+  }
+  
+  console.log('═══════════════════════════════════════\n');
+}, [staff]);
+
 const [isLoadingSolver, setIsLoadingSolver] = useState(false);
   function calculateAvailabilityForEachObservation(observations, staff, hour) {
     let availabilityCounts = {};
@@ -1203,6 +1240,51 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
     return staff;
   }
 
+  const logAnonymizerDebug = (stage, data) => {
+  console.log(`\n🔍 ═══════════════════════════════════════`);
+  console.log(`🔍 ${stage}`);
+  console.log(`🔍 ═══════════════════════════════════════`);
+  
+  if (data.staff) {
+    console.log(`📊 Staff Array Length: ${data.staff.length}`);
+    data.staff.forEach((s, idx) => {
+      console.log(`\n  ${idx + 1}. Staff Member:`);
+      console.log(`     - ID: ${s.id}`);
+      console.log(`     - Name: "${s.name}"`);
+      console.log(`     - Break: ${s.break}`);
+      console.log(`     - Nurse: ${s.nurse || false}`);
+      console.log(`     - Security: ${s.security || false}`);
+      console.log(`     - Initialized: ${s.initialized}`);
+      console.log(`     - ObservationId: ${s.observationId}`);
+      console.log(`     - NumObservations: ${s.numObservations}`);
+      
+      if (s.observations) {
+        const obsEntries = Object.entries(s.observations);
+        console.log(`     - Observations Object Keys: [${Object.keys(s.observations).join(', ')}]`);
+        console.log(`     - Observations:`);
+        obsEntries.forEach(([hour, obs]) => {
+          console.log(`       * Hour ${hour}: "${obs}"`);
+        });
+      } else {
+        console.log(`     - Observations: MISSING/UNDEFINED`);
+      }
+    });
+  }
+  
+  if (data.observations) {
+    console.log(`\n📋 Observations Array Length: ${data.observations.length}`);
+    data.observations.forEach((obs, idx) => {
+      console.log(`\n  ${idx + 1}. Observation:`);
+      console.log(`     - Name: "${obs.name}"`);
+      console.log(`     - Staff: ${obs.staff}`);
+      console.log(`     - StaffNeeded: ${obs.StaffNeeded}`);
+      console.log(`     - Color: ${obs.color || 'N/A'}`);
+    });
+  }
+  
+  console.log(`\n🔍 ═══════════════════════════════════════\n`);
+};
+
 
 const handleAllocate = async () => {
   console.log('🚀🚀🚀 ═══════════════════════════════════════');
@@ -1499,57 +1581,106 @@ const handleAllocate = async () => {
       }
     });
     
-   try {
-  // ✨ CREATE ANONYMIZER
-  const anonymizer = new DataAnonymizer();
-  
-  // 🧪 TESTING: BEFORE
-  console.log('\n🧪 ANONYMIZATION TEST:');
-  console.log('BEFORE ANONYMIZATION:', staff[0].name, staff[0].observations[8]);
-  
-  // Map your data format to Railway's expected format FIRST
-  const railwayObservations = observations.map(obs => ({
-    id: obs.id,
-    name: obs.name,
-    observationType: obs.observationType,
-    StaffNeeded: obs.staff
-  }));
-  
-  // ✨ ANONYMIZE DATA BEFORE SENDING
-  console.log('🔒 Anonymizing data...');
-  const anonymizedStaff = anonymizer.anonymizeStaff(staff);
-  const anonymizedObservations = anonymizer.anonymizeObservations(railwayObservations);
-  
-  // 🧪 TESTING: AFTER
-  console.log('AFTER ANONYMIZATION:', anonymizedStaff[0].name, anonymizedStaff[0].observations[8]);
-  
-  console.log('📤 SENDING ANONYMIZED DATA TO RAILWAY');
-  console.log('───────────────────────────────────────');
-  console.log('📋 ANONYMIZED STAFF SAMPLE:');
-  console.log(JSON.stringify(anonymizedStaff[0], null, 2));
-  console.log('───────────────────────────────────────');
-  console.log('📋 ANONYMIZED OBSERVATIONS:');
-  console.log(JSON.stringify(anonymizedObservations, null, 2));
-  console.log('───────────────────────────────────────');
-  
-  const requestData = {
-    staff: anonymizedStaff,           // ✨ Send anonymized
-    observations: anonymizedObservations, // ✨ Send anonymized
-    startHour: start
-  };
+    try {
+      // ═══════════════════════════════════════
+      // 🔒 NEW: DETAILED ANONYMIZATION LOGGING
+      // ═══════════════════════════════════════
+      console.log('\n🔒 ═══════════════════════════════════════');
+      console.log('🔒 ANONYMIZATION PROCESS');
+      console.log('🔒 ═══════════════════════════════════════');
+      
+      const anonymizer = new DataAnonymizer();
+      
+      // Log original data structure
+      console.log('\n📊 ORIGINAL DATA STRUCTURE:');
+      console.log('Staff count:', staff.length);
+      console.log('Observations count:', observations.length);
+      
+      console.log('\n👤 First staff member BEFORE anonymization:');
+      console.log('  Name:', staff[0].name);
+      console.log('  ID:', staff[0].id);
+      console.log('  Break:', staff[0].break, '(type:', typeof staff[0].break, ')');
+      console.log('  Observations type:', typeof staff[0].observations);
+      console.log('  Observations keys:', Object.keys(staff[0].observations || {}));
+      console.log('  Hour 8 value:', staff[0].observations?.[8]);
+      console.log('  Full observations:', JSON.stringify(staff[0].observations, null, 2));
+      
+      // Map your data format to Railway's expected format
+      const railwayObservations = observations.map(obs => ({
+        id: obs.id,
+        name: obs.name,
+        observationType: obs.observationType,
+        StaffNeeded: obs.staff
+      }));
+      
+      // Anonymize data
+      console.log('\n🔒 Calling anonymizer.anonymizeStaff...');
+      const anonymizedStaff = anonymizer.anonymizeStaff(staff);
+      
+      console.log('\n🔒 Calling anonymizer.anonymizeObservations...');
+      const anonymizedObservations = anonymizer.anonymizeObservations(railwayObservations);
+      
+      // Log anonymized data structure
+      console.log('\n📊 ANONYMIZED DATA STRUCTURE:');
+      console.log('Anonymized staff count:', anonymizedStaff.length);
+      console.log('Anonymized observations count:', anonymizedObservations.length);
+      
+      console.log('\n👤 First staff member AFTER anonymization:');
+      console.log('  Name:', anonymizedStaff[0].name);
+      console.log('  ID:', anonymizedStaff[0].id);
+      console.log('  Break:', anonymizedStaff[0].break, '(type:', typeof anonymizedStaff[0].break, ')');
+      console.log('  Observations type:', typeof anonymizedStaff[0].observations);
+      console.log('  Observations is array:', Array.isArray(anonymizedStaff[0].observations));
+      console.log('  Observations keys:', Object.keys(anonymizedStaff[0].observations || {}));
+      console.log('  Hour 8 value:', anonymizedStaff[0].observations?.[8]);
+      console.log('  Full observations:', JSON.stringify(anonymizedStaff[0].observations, null, 2));
+      
+      // Log the mapping created by anonymizer
+      console.log('\n🗺️ ANONYMIZER MAPPINGS:');
+      console.log('Staff name mapping (first 3):');
+      staff.slice(0, 3).forEach((s, i) => {
+        console.log(`  "${s.name}" → "staff_${s.id}"`);
+      });
+      
+      console.log('\nObservation name mapping:');
+      anonymizer.observationMap.forEach((anonymized, original) => {
+        console.log(`  "${original}" → "${anonymized}"`);
+      });
+      
+      console.log('\nReverse observation mapping:');
+      anonymizer.reverseObservationMap.forEach((original, anonymized) => {
+        console.log(`  "${anonymized}" → "${original}"`);
+      });
+      
+      // Log full anonymized data samples
+      console.log('\n📦 ANONYMIZED DATA SAMPLES:');
+      console.log('───────────────────────────────────────');
+      console.log('First anonymized staff:');
+      console.log(JSON.stringify(anonymizedStaff[0], null, 2));
+      console.log('───────────────────────────────────────');
+      console.log('Anonymized observations:');
+      console.log(JSON.stringify(anonymizedObservations, null, 2));
+      console.log('───────────────────────────────────────');
+      
+      const requestData = {
+        staff: anonymizedStaff,
+        observations: anonymizedObservations,
+        startHour: start
+      };
       
       // Log request size
       const requestSize = JSON.stringify(requestData).length;
-      console.log(`📦 Request size: ${(requestSize / 1024).toFixed(2)} KB`);
+      console.log(`\n📦 Request size: ${(requestSize / 1024).toFixed(2)} KB`);
       
+      console.log('\n📤 ═══════════════════════════════════════');
       console.log('📤 SENDING TO RAILWAY API');
+      console.log('📤 ═══════════════════════════════════════');
     
-      const endpoint = '/api/solve';  // Always use Vercel proxy
-      
+      const endpoint = '/api/solve';
       console.log(`🎯 Endpoint: ${endpoint}`);
       
       const requestStartTime = Date.now();
-      console.log(`⏰ Request start time: ${new Date(requestStartTime).toLocaleTimeString()}`);
+      console.log(`⏰ Request start: ${new Date(requestStartTime).toLocaleTimeString()}`);
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -1576,65 +1707,146 @@ const handleAllocate = async () => {
         throw new Error(`Invalid JSON response: ${parseError.message}`);
       }
       
-      console.log('───────────────────────────────────────');
-      console.log('📦 PARSED RESPONSE:');
-      console.log(JSON.stringify(result, null, 2));
-      console.log('───────────────────────────────────────');
+      // ═══════════════════════════════════════
+      // 📥 NEW: DETAILED API RESPONSE LOGGING
+      // ═══════════════════════════════════════
+      console.log('\n📥 ═══════════════════════════════════════');
+      console.log('📥 RAW API RESPONSE ANALYSIS');
+      console.log('📥 ═══════════════════════════════════════');
+      console.log('Full response:', JSON.stringify(result, null, 2));
+      
+      console.log('\n📊 Response structure:');
+      console.log('  success:', result.success);
+      console.log('  error:', result.error);
+      console.log('  schedules type:', typeof result.schedules);
+      console.log('  schedules keys:', result.schedules ? Object.keys(result.schedules) : 'N/A');
+      
+      if (result.schedules) {
+        console.log('\n📋 First schedule in response:');
+        const firstKey = Object.keys(result.schedules)[0];
+        const firstSchedule = result.schedules[firstKey];
+        console.log(`  Key: "${firstKey}"`);
+        console.log(`  Schedule type: ${typeof firstSchedule}`);
+        console.log(`  Schedule is array: ${Array.isArray(firstSchedule)}`);
+        if (firstSchedule) {
+          console.log(`  Schedule keys: [${Object.keys(firstSchedule).join(', ')}]`);
+          console.log(`  Full schedule:`, JSON.stringify(firstSchedule, null, 2));
+        }
+      }
       
       if (result.success) {
-      console.log('✅ Railway solver succeeded!');
-      console.log('🔓 De-anonymizing results...');
-      
-      // ✨ DE-ANONYMIZE THE SCHEDULES
-      const updatedStaff = staff.map((member, idx) => {
-        const anonymousId = `staff_${member.id}`;
-        const anonymizedSchedule = result.schedules[anonymousId];
+        // ═══════════════════════════════════════
+        // 🔓 NEW: DETAILED DE-ANONYMIZATION LOGGING
+        // ═══════════════════════════════════════
+        console.log('\n🔓 ═══════════════════════════════════════');
+        console.log('🔓 DE-ANONYMIZATION PROCESS');
+        console.log('🔓 ═══════════════════════════════════════');
+        console.log('✅ Railway solver succeeded!');
         
-        if (!anonymizedSchedule) {
-          console.warn(`⚠️ No schedule for ${member.name} (anonymous ID: ${anonymousId})`);
-          return member;
-        }
+        // Verify anonymizer still has the mappings
+        console.log('\n🗺️ Verifying anonymizer mappings still exist:');
+        console.log('  observationMap size:', anonymizer.observationMap.size);
+        console.log('  reverseObservationMap size:', anonymizer.reverseObservationMap.size);
         
-        // De-anonymize each observation value in the schedule
-        const deAnonymizedSchedule = {};
-        Object.entries(anonymizedSchedule).forEach(([hour, value]) => {
-          if (value === '-' || value === 'X' || value === 'Break' || value === 'break') {
-            deAnonymizedSchedule[hour] = value;
-          } else {
-            // Reverse lookup to get original observation name
-            deAnonymizedSchedule[hour] = anonymizer.reverseObservationMap.get(value) || value;
+        console.log('\n🔄 Processing each staff member...');
+        const updatedStaff = staff.map((member, idx) => {
+          console.log(`\n  ─── Staff ${idx + 1}: "${member.name}" ───`);
+          
+          const anonymousId = `staff_${member.id}`;
+          console.log(`  Looking for anonymous ID: "${anonymousId}"`);
+          
+          const anonymizedSchedule = result.schedules[anonymousId];
+          
+          if (!anonymizedSchedule) {
+            console.warn(`  ⚠️ No schedule found in result.schedules`);
+            console.warn(`  Available keys:`, Object.keys(result.schedules));
+            return member;
           }
+          
+          console.log(`  ✓ Found schedule for ${anonymousId}`);
+          console.log(`  Schedule type: ${typeof anonymizedSchedule}`);
+          console.log(`  Schedule is array: ${Array.isArray(anonymizedSchedule)}`);
+          console.log(`  Schedule keys: [${Object.keys(anonymizedSchedule).join(', ')}]`);
+          console.log(`  Raw schedule:`, JSON.stringify(anonymizedSchedule, null, 2));
+          
+          // De-anonymize each observation value
+          console.log(`\n  🔓 De-anonymizing observations:`);
+          const deAnonymizedSchedule = {};
+          Object.entries(anonymizedSchedule).forEach(([hour, value]) => {
+            console.log(`    Hour ${hour}: "${value}" (type: ${typeof value})`);
+            
+            if (value === '-' || value === 'X' || value === 'Break' || value === 'break') {
+              deAnonymizedSchedule[hour] = value;
+              console.log(`      → Keeping as-is: "${value}"`);
+            } else {
+              const originalName = anonymizer.reverseObservationMap.get(value);
+              deAnonymizedSchedule[hour] = originalName || value;
+              console.log(`      → De-anonymized to: "${originalName || value}"`);
+              
+              if (!originalName) {
+                console.warn(`      ⚠️ No mapping found for "${value}"`);
+              }
+            }
+          });
+          
+          console.log(`\n  ✓ De-anonymized schedule:`, JSON.stringify(deAnonymizedSchedule, null, 2));
+          
+          // Log assignments
+          const assignments = Object.entries(deAnonymizedSchedule).filter(([h, v]) => v !== '-' && v !== 'break');
+          console.log(`  📋 Assignments: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
+          
+          // CRITICAL: Preserve user-assigned hour 8
+          const mergedObservations = { ...member.observations };
+          Object.entries(deAnonymizedSchedule).forEach(([hour, value]) => {
+            const h = parseInt(hour);
+            if (h === 8 && start <= 8 && member.observations[8] && member.observations[8] !== "-") {
+              console.log(`  ⚠️ Preserving user-assigned hour 8: ${member.observations[8]}`);
+              return;
+            }
+            mergedObservations[h] = value;
+          });
+          
+          console.log(`  ✓ Final merged observations:`, JSON.stringify(mergedObservations, null, 2));
+          
+          return {
+            ...member,
+            observations: mergedObservations,
+            initialized: true
+          };
         });
         
-        console.log(`  ✓ ${idx + 1}. ${member.name}:`);
-        const assignments = Object.entries(deAnonymizedSchedule).filter(([h, v]) => v !== '-' && v !== 'break');
-        console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
+        // ═══════════════════════════════════════
+        // 💾 NEW: LOG BEFORE setState
+        // ═══════════════════════════════════════
+        console.log('\n💾 ═══════════════════════════════════════');
+        console.log('💾 FINAL DATA BEFORE setState');
+        console.log('💾 ═══════════════════════════════════════');
+        console.log('Updated staff count:', updatedStaff.length);
+        console.log('Updated staff is array:', Array.isArray(updatedStaff));
         
-        // CRITICAL: Preserve user-assigned hour 8
-        const mergedObservations = { ...member.observations };
-        Object.entries(deAnonymizedSchedule).forEach(([hour, value]) => {
-          const h = parseInt(hour);
-          if (h === 8 && start <= 8 && member.observations[8] && member.observations[8] !== "-") {
-            console.log(`     ⚠️ Preserving user-assigned hour 8: ${member.observations[8]}`);
-            return;
-          }
-          mergedObservations[h] = value;
+        console.log('\n📋 Summary of all staff:');
+        updatedStaff.forEach((s, idx) => {
+          console.log(`\n  ${idx + 1}. "${s.name}"`);
+          console.log(`     - ID: ${s.id}`);
+          console.log(`     - Break: ${s.break}`);
+          console.log(`     - Initialized: ${s.initialized}`);
+          console.log(`     - Observations type: ${typeof s.observations}`);
+          console.log(`     - Observations keys: [${Object.keys(s.observations || {}).join(', ')}]`);
+          
+          const assignments = Object.entries(s.observations || {})
+            .filter(([h, v]) => v !== '-' && v !== 'break')
+            .map(([h, v]) => `${h}:${v}`);
+          console.log(`     - Assignments: ${assignments.join(', ')}`);
         });
         
-        return {
-          ...member,
-          observations: mergedObservations,
-          initialized: true
-        };
-      });
-      
-      console.log('\n💾 Calling setStaff with de-anonymized data...');
-      setStaff(updatedStaff);
-      console.log('✅ Schedule updated from Railway solver');
-      console.log('🔒 All sensitive data remained client-side');
-      console.log('═══════════════════════════════════════');
-      
-    } else {
+        console.log('\n💾 Calling setStaff with de-anonymized data...');
+        setStaff(updatedStaff);
+        console.log('✅ setStaff called successfully');
+        console.log('✅ Schedule updated from Railway solver');
+        console.log('🔒 All sensitive data remained client-side');
+        console.log('═══════════════════════════════════════');
+        
+      } else {
         console.error('❌ Solver failed:', result.error);
         console.log('───────────────────────────────────────');
         console.log('🔄 Falling back to local algorithm...');
@@ -1653,11 +1865,13 @@ const handleAllocate = async () => {
       }
       
     } catch (error) {
+      console.error('\n❌ ═══════════════════════════════════════');
       console.error('❌ API CALL FAILED');
+      console.error('❌ ═══════════════════════════════════════');
       console.error('Error type:', error.constructor.name);
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
-      console.log('───────────────────────────────────────');
+      console.error('❌ ═══════════════════════════════════════');
       console.log('🔄 Falling back to local algorithm...');
       
       alert(`Network error: ${error.message}\n\nUsing local algorithm instead.`);
@@ -1694,6 +1908,9 @@ const handleAllocate = async () => {
   console.log('🏁 Time:', new Date().toLocaleTimeString());
   console.log('🏁🏁🏁 ═══════════════════════════════════════\n\n');
 };
+
+
+
 
   const handleNext = () => {
   if (currentPage === "patient" && observations.length < 1) {
