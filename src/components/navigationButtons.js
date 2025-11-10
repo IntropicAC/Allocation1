@@ -1744,18 +1744,20 @@ const requestData = {
         
         // Verify anonymizer still has the mappings
         console.log('\n🗺️ Verifying anonymizer mappings still exist:');
-        console.log('  observationMap size:', anonymizer.observationMap.size);
+        console.log('  observationMap size:', anonymizer.observationNameMap.size);
         console.log('  reverseObservationMap size:', anonymizer.reverseObservationMap.size);
         
         console.log('\n🔄 Processing each staff member...');
         const updatedStaff = staff.map((member, idx) => {
           console.log(`\n  ─── Staff ${idx + 1}: "${member.name}" ───`);
           
-          const anonymousId = `staff_${member.id}`;
+          const staffKey = String(member.id);
+
+
           console.log(`  Looking for anonymous ID: "${anonymousId}"`);
           
-          const anonymizedSchedule = result.schedules[anonymousId];
-          
+          const anonymizedSchedule = result.schedules?.[staffKey];
+
           if (!anonymizedSchedule) {
             console.warn(`  ⚠️ No schedule found in result.schedules`);
             console.warn(`  Available keys:`, Object.keys(result.schedules));
