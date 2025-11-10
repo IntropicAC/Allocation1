@@ -340,21 +340,19 @@ function calculateStaffScore(
     const prev8 = obs[hour - 8];
     const prev9 = obs[hour - 9];
 
-  if (!isSecurity) {
+  if (!isSecurity && !isNurse) {
     // Baseline score
-    addPoints(maxObs - staffMember.numObservations + 1, "non-security baseline (maxObs - numObservations)");
+    addPoints((maxObs - staffMember.numObservations + 1) * 5, "non-security baseline - strong workload balance");
+    const workloadGap = maxObs - staffMember.numObservations;
+    addPoints(workloadGap * 10, "strong workload balance incentive");
     
-    // Break bonus check
-
-    if (maxObs >= 8 && staffMember.break === hour + 1) {
-      const hadGeneralsInPast2Hours = (hour >= 9 && prev1 === "Generals") || (hour >= 10 && prev2 === "Generals");
-      const hadObservationsInPast2Hours = (hour >= 9 && isActualObservation(prev1)) || (hour >= 10 && isActualObservation(prev2));
-      
-      if (hadGeneralsInPast2Hours && !hadObservationsInPast2Hours) {
-        addPoints(5, "bonus for break in next hour when maxObs >= 8, had Generals in past 2 hours, no observations in past 2 hours");
-      }
+    if (hour >= 9 && isActualObservation(prev1) ) {
+      addPoints(-30, "penalty for 1 consecutive hours with observations");
     }
     
+    if (hour >= 11 && isActualObservation(prev1) && isActualObservation(prev2)) {
+      addPoints(-20, "penalty for 2 consecutive hours with observations");
+    }
     // FIXED: Consecutive busy hour penalties - only count actual observations as "busy"
     if (hour >= 11 && isActualObservation(prev1) && isActualObservation(prev2)) {
       addPoints(-20, "penalty for 2 consecutive hours with observations");
@@ -371,123 +369,62 @@ function calculateStaffScore(
     if (hour >= 14 && isActualObservation(prev1) && isActualObservation(prev2) && isActualObservation(prev3) && isActualObservation(prev4) && isActualObservation(prev5)) {
       addPoints(-50, "penalty for 5 consecutive hours with observations");
     }
-    
-    // Special penalty for consecutive non-free/non-Generals (only actual observations)
-    if (hour >= 10 && isActualObservation(prev1) && prev1 !== "Generals" && 
-        isActualObservation(prev2) && prev2 !== "Generals") {
-      addPoints(-15, "penalty for 2 consecutive hours with non-Generals observations");
-    }
 
 // Even distribution checks - additive penalties for repeating (only actual observations)
 
 if (!isActualObservation(prev1)) {
-  addPoints(22, "bonus for free hour in the previous hour");
+  addPoints(30, "bonus for free hour in the previous hour");
 }
 
 if (hour >= 10 && !isActualObservation(prev1) && !isActualObservation(prev2)) {
-  addPoints(15, "bonus for 2 consecutive free hours");
+  addPoints(30, "bonus for 2 consecutive free hours");
 }
 
 if (hour >= 11 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3)) {
-  addPoints(15, "bonus for 3 consecutive free hours");
+  addPoints(30, "bonus for 3 consecutive free hours");
 }
 
 if (hour >= 12 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3) && !isActualObservation(prev4)) {
-  addPoints(15, "bonus for 4 consecutive free hours");
+  addPoints(30, "bonus for 4 consecutive free hours");
 }
 
 if (hour >= 13 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3) && !isActualObservation(prev4) && !isActualObservation(prev5)) {
-  addPoints(20, "bonus for 5 consecutive free hours");
+  addPoints(30, "bonus for 5 consecutive free hours");
 }
 
 if (hour >= 14 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3) && !isActualObservation(prev4) && !isActualObservation(prev5) && !isActualObservation(prev6)) {
-  addPoints(20, "bonus for 6 consecutive free hours");
+  addPoints(30, "bonus for 6 consecutive free hours");
 }
     
-// Even distribution checks - additive penalties for repeating (only actual observations)
+// CUMULATIVE SCORING - Check each past hour individually
+let repetitionPenalty = 0;
+let varietyBonus = 0;
 
-if (hour >= 9 && isActualObservation(prev1) && prev1 === obsName) {
-  addPoints(-15, "penalty for repeating same observation 1 hour ago");
-}
+const prevHours = [prev1, prev2, prev3, prev4, prev5, prev6, prev7, prev8, prev9];
+const penaltyValues = [30, 30, 30, 20, 20, 10, 10, 10, 10]; // Decreasing weight for older hours
+const bonusValues = [30, 30, 30, 20, 20, 10, 10, 10, 10];
 
-if (hour >= 10 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName))) {
-  addPoints(-15, "penalty for repeating same observation 1-2 hours ago");
-}
-
-if (hour >= 11 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-3 hours ago");
-}
-
-if (hour >= 12 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-4 hours ago");
-}
-
-if (hour >= 13 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-5 hours ago");
-}
-
-if (hour >= 14 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName) || (isActualObservation(prev6) && prev6 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-6 hours ago");
-}
-
-if (hour >= 15 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName) || (isActualObservation(prev6) && prev6 === obsName) || (isActualObservation(prev7) && prev7 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-7 hours ago");
-}
-
-if (hour >= 16 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName) || (isActualObservation(prev6) && prev6 === obsName) || (isActualObservation(prev7) && prev7 === obsName) || (isActualObservation(prev8) && prev8 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-8 hours ago");
-}
-
-if (hour >= 17 && ((isActualObservation(prev1) && prev1 === obsName) || (isActualObservation(prev2) && prev2 === obsName) || (isActualObservation(prev3) && prev3 === obsName) || (isActualObservation(prev4) && prev4 === obsName) || (isActualObservation(prev5) && prev5 === obsName) || (isActualObservation(prev6) && prev6 === obsName) || (isActualObservation(prev7) && prev7 === obsName) || (isActualObservation(prev8) && prev8 === obsName) || (isActualObservation(prev9) && prev9 === obsName))) {
-  addPoints(-10, "penalty for repeating same observation 1-9 hours ago");
-}
-
-
-// Bonuses for NOT repeating the same observation
-if (hour >= 9 && (!isActualObservation(prev1) || prev1 !== obsName)) {
-  addPoints(15, "bonus for not repeating same observation 1 hour ago");
-}
-
-if (hour >= 10 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName)) {
-  addPoints(15, "bonus for not repeating same observation 1-2 hours ago");
-}
-
-if (hour >= 11 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-3 hours ago");
-}
-
-if (hour >= 12 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-4 hours ago");
-}
-
-if (hour >= 13 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-5 hours ago");
-}
-
-if (hour >= 14 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName) && (!isActualObservation(prev6) || prev6 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-6 hours ago");
-}
-
-if (hour >= 15 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName) && (!isActualObservation(prev6) || prev6 !== obsName) && (!isActualObservation(prev7) || prev7 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-7 hours ago");
-}
-
-if (hour >= 16 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName) && (!isActualObservation(prev6) || prev6 !== obsName) && (!isActualObservation(prev7) || prev7 !== obsName) && (!isActualObservation(prev8) || prev8 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-8 hours ago");
-}
-
-if (hour >= 17 && (!isActualObservation(prev1) || prev1 !== obsName) && (!isActualObservation(prev2) || prev2 !== obsName) && (!isActualObservation(prev3) || prev3 !== obsName) && (!isActualObservation(prev4) || prev4 !== obsName) && (!isActualObservation(prev5) || prev5 !== obsName) && (!isActualObservation(prev6) || prev6 !== obsName) && (!isActualObservation(prev7) || prev7 !== obsName) && (!isActualObservation(prev8) || prev8 !== obsName) && (!isActualObservation(prev9) || prev9 !== obsName)) {
-  addPoints(10, "bonus for not repeating same observation 1-9 hours ago");
-}
-    // Special case penalties - only consider actual observations as "busy"
-    if (maxObs <= 8 && hour >= 10 && isActualObservation(prev1) && isActualObservation(prev2) && 
-        prev1 !== "Generals" && prev2 !== "Generals") {
-      addPoints(-20, "large penalty for 2 consecutive observation hours when maxObs <= 8");
+for (let i = 0; i < prevHours.length; i++) {
+  if (hour >= (9 + i) && isActualObservation(prevHours[i])) {
+    if (prevHours[i] === obsName) {
+      // Had THIS observation - penalty compounds
+      repetitionPenalty -= penaltyValues[i];
+    } else {
+      // Had DIFFERENT observation - bonus compounds
+      varietyBonus += bonusValues[i];
     }
+  }
+}
 
-    if (maxObs >= 9 && hour === 9 && prev1 === "Generals") {
-      addPoints(20, "small bonus for Generals in previous hour when maxObs >= 9");
-    }
+// Apply cumulative totals
+if (repetitionPenalty < 0) {
+  addPoints(repetitionPenalty, `cumulative penalty: had '${obsName}' ${Math.abs(repetitionPenalty)} penalty points from recent history`);
+}
+
+if (varietyBonus > 0) {
+  addPoints(varietyBonus, `cumulative variety bonus: ${varietyBonus} points for having different observations recently`);
+}
+
   }
 
   // Security staff logic - optimized
@@ -1611,20 +1548,28 @@ const handleAllocate = async () => {
     });
     
     try {
-      // Map your data format to Railway's expected format
-      console.log('📦 Preparing request data...');
-      const railwayObservations = observations.map(obs => ({
-        id: obs.id,
-        name: obs.name,
-        observationType: obs.observationType,
-        StaffNeeded: obs.staff
-      }));
-      
-      const requestData = {
-        staff: staff,
-        observations: railwayObservations,
-        startHour: start
-      };
+    // ✨ CREATE ANONYMIZER
+    const anonymizer = new DataAnonymizer();
+    
+    // ✨ ANONYMIZE DATA BEFORE SENDING
+    console.log('🔒 Anonymizing data...');
+    const anonymizedStaff = anonymizer.anonymizeStaff(staff);
+    const anonymizedObservations = anonymizer.anonymizeObservations(railwayObservations);
+    
+    console.log('📤 SENDING ANONYMIZED DATA TO RAILWAY');
+    console.log('───────────────────────────────────────');
+    console.log('📋 ANONYMIZED STAFF SAMPLE:');
+    console.log(JSON.stringify(anonymizedStaff[0], null, 2)); // Show first one as example
+    console.log('───────────────────────────────────────');
+    console.log('📋 ANONYMIZED OBSERVATIONS:');
+    console.log(JSON.stringify(anonymizedObservations, null, 2));
+    console.log('───────────────────────────────────────');
+    
+    const requestData = {
+      staff: anonymizedStaff,           // ✨ Send anonymized
+      observations: anonymizedObservations, // ✨ Send anonymized
+      startHour: start
+    };
       
       // Log request size
       const requestSize = JSON.stringify(requestData).length;
@@ -1677,51 +1622,59 @@ const handleAllocate = async () => {
       console.log('───────────────────────────────────────');
       
       if (result.success) {
-        console.log('✅ Railway solver succeeded!');
-        console.log(`  - Status: ${result.stats.status}`);
-        console.log(`  - Solve time: ${result.stats.solveTime}s`);
-        console.log(`  - Consecutive penalty: ${result.stats.consecutivePenalty}`);
-        console.log(`  - Workload diff: ${result.stats.workloadDiff}`);
+      console.log('✅ Railway solver succeeded!');
+      console.log('🔓 De-anonymizing results...');
+      
+      // ✨ DE-ANONYMIZE THE SCHEDULES
+      const updatedStaff = staff.map((member, idx) => {
+        const anonymousId = `staff_${member.id}`;
+        const anonymizedSchedule = result.schedules[anonymousId];
         
-        console.log('\n🔄 Updating staff with solver results...');
-        const updatedStaff = staff.map((member, idx) => {
-          const schedule = result.schedules[member.id];
-          
-          if (!schedule) {
-            console.warn(`⚠️ No schedule for ${member.name} (ID: ${member.id})`);
-            return member;
+        if (!anonymizedSchedule) {
+          console.warn(`⚠️ No schedule for ${member.name} (anonymous ID: ${anonymousId})`);
+          return member;
+        }
+        
+        // De-anonymize each observation value in the schedule
+        const deAnonymizedSchedule = {};
+        Object.entries(anonymizedSchedule).forEach(([hour, value]) => {
+          if (value === '-' || value === 'X' || value === 'Break' || value === 'break') {
+            deAnonymizedSchedule[hour] = value;
+          } else {
+            // Reverse lookup to get original observation name
+            deAnonymizedSchedule[hour] = anonymizer.reverseObservationMap.get(value) || value;
           }
-          
-          console.log(`  ✓ ${idx + 1}. ${member.name}:`);
-          const assignments = Object.entries(schedule).filter(([h, v]) => v !== '-' && v !== 'break');
-          console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
-          
-          // CRITICAL: Preserve user-assigned hour 8
-            const mergedObservations = { ...member.observations };
-            Object.entries(schedule).forEach(([hour, value]) => {
-              const h = parseInt(hour);
-              // Don't overwrite hour 8 if user has set it and we're starting at 8 or earlier
-              if (h === 8 && start <= 8 && member.observations[8] && member.observations[8] !== "-") {
-                // Keep the user's assignment
-                console.log(`     ⚠️ Preserving user-assigned hour 8: ${member.observations[8]}`);
-                return;
-              }
-              mergedObservations[h] = value;
-            });
-          
-          return {
-            ...member,
-            observations: mergedObservations,
-            initialized: true
-          };
         });
         
-        console.log('\n💾 Calling setStaff with updated data...');
-        setStaff(updatedStaff);
-        console.log('✅ Schedule updated from Railway solver');
-        console.log('═══════════════════════════════════════');
+        console.log(`  ✓ ${idx + 1}. ${member.name}:`);
+        const assignments = Object.entries(deAnonymizedSchedule).filter(([h, v]) => v !== '-' && v !== 'break');
+        console.log(`     Assigned hours: ${assignments.map(([h, v]) => `${h}:${v}`).join(', ')}`);
         
-      } else {
+        // CRITICAL: Preserve user-assigned hour 8
+        const mergedObservations = { ...member.observations };
+        Object.entries(deAnonymizedSchedule).forEach(([hour, value]) => {
+          const h = parseInt(hour);
+          if (h === 8 && start <= 8 && member.observations[8] && member.observations[8] !== "-") {
+            console.log(`     ⚠️ Preserving user-assigned hour 8: ${member.observations[8]}`);
+            return;
+          }
+          mergedObservations[h] = value;
+        });
+        
+        return {
+          ...member,
+          observations: mergedObservations,
+          initialized: true
+        };
+      });
+      
+      console.log('\n💾 Calling setStaff with de-anonymized data...');
+      setStaff(updatedStaff);
+      console.log('✅ Schedule updated from Railway solver');
+      console.log('🔒 All sensitive data remained client-side');
+      console.log('═══════════════════════════════════════');
+      
+    } else {
         console.error('❌ Solver failed:', result.error);
         console.log('───────────────────────────────────────');
         console.log('🔄 Falling back to local algorithm...');

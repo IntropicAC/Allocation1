@@ -4,6 +4,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import DragDropToggle from './helperComponents/DragAndDropToggle';
 import ColorToggleButton from './helperComponents/ColorToggleButton';
 import UndoRedoButtons from './helperComponents/UndoRedoButtons';
+import SettingsButton from './helperComponents/SettingsButton';
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
@@ -25,7 +26,7 @@ const DragDropCell = ({
   dragDropEnabled,
   staff,
   styles,
-  getObservationColor
+  getObservationColor,
 }) => {
   const isEditing = editingCell === `${staffMember.name}-${hour}`;
   const cellRef = useRef(null);
@@ -36,13 +37,30 @@ const DragDropCell = ({
   const [{ isDragging }, dragRef] = useDrag({
     type: 'observation',
     item: { sourceStaffName: staffMember.name, sourceHour: hour },
-    canDrag: dragDropEnabled && !isEditing && staffMember.break !== hour,
+    canDrag: dragDropEnabled && !isEditing,
     collect: monitor => ({ isDragging: !!monitor.isDragging() }),
-  }, [staffMember.name, hour, isEditing, dragDropEnabled, staffMember.break]);
+  }, [staffMember.name, hour, isEditing, dragDropEnabled]);
 
   const [{ isOver }, dropRef] = useDrop({
     accept: ['observation', 'externalObservation', 'specialObservation'],
-    canDrop: () => dragDropEnabled && staffMember.break !== hour,
+    canDrop: (item, monitor) => {
+      if (!dragDropEnabled) return false;
+      
+      const itemType = monitor.getItemType();
+      
+      // If dragging a break, only allow drop within the same staff member
+      if (itemType === 'observation' && item.sourceStaffName) {
+        const sourceStaffMember = staff.find(s => s.name === item.sourceStaffName);
+        const isSourceBreak = sourceStaffMember?.break === item.sourceHour;
+        
+        if (isSourceBreak) {
+          // Break can only be dropped within the same staff member
+          return item.sourceStaffName === staffMember.name;
+        }
+      }
+      
+      return true;
+    },
     drop: (item, monitor) => {
       if (editingCell) {
         setEditingCell(null);
@@ -57,7 +75,8 @@ const DragDropCell = ({
       }
     },
     collect: monitor => ({ isOver: !!monitor.isOver() && dragDropEnabled }),
-  }, [dragDropEnabled, editingCell, staffMember.name, hour, moveObservation, updateObservation, staffMember.break]);
+  }, [dragDropEnabled, editingCell, staffMember.name, hour, moveObservation, updateObservation, staff]);
+
 
   // Combine refs
   useEffect(() => {
@@ -230,13 +249,203 @@ const DragDropCell = ({
         whiteSpace: 'normal',
         wordWrap: 'break-word',
         overflowWrap: 'break-word',
-        userSelect: isEditing ? 'text' : 'none'
+        userSelect: isEditing ? 'text' : 'none',
+        verticalAlign: 'middle',  
+        display: 'table-cell', 
       }}
     >
       {!isEditing && observation}
     </td>
   );
 };
+
+// DragDropHeaderCell component for staff name headers
+const DragDropHeaderCell = ({
+  staffMember,
+  index,
+  totalObservations,
+  onUpdateName,
+  onSwapStaff,
+  dragDropEnabled,
+  staff,
+  styles,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localEditValue, setLocalEditValue] = useState('');
+  const headerRef = useRef(null);
+  const combinedRef = useRef(null);
+
+  const capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
+  const roleTag = staffMember.nurse ? ' (Nurse)' : staffMember.security ? ' (Sec)' : '';
+  const displayText = `${capitalizedStaffName}${roleTag} - ${totalObservations}`;
+
+  // Drag functionality
+  const [{ isDragging }, dragRef] = useDrag({
+    type: 'staffHeader',
+    item: { staffId: staffMember.id, staffName: staffMember.name },
+    canDrag: dragDropEnabled && !isEditing,
+    collect: monitor => ({ isDragging: !!monitor.isDragging() }),
+  }, [staffMember.id, staffMember.name, isEditing, dragDropEnabled]);
+
+  const [{ isOver }, dropRef] = useDrop({
+    accept: 'staffHeader',
+    canDrop: () => dragDropEnabled,
+    drop: (item) => {
+      if (item.staffId !== staffMember.id) {
+        onSwapStaff(item.staffId, staffMember.id);
+      }
+    },
+    collect: monitor => ({ isOver: !!monitor.isOver() && dragDropEnabled }),
+  }, [dragDropEnabled, staffMember.id, onSwapStaff]);
+
+  // Combine refs
+  useEffect(() => {
+    if (dragDropEnabled) {
+      dragRef(dropRef(combinedRef));
+    }
+  }, [dragDropEnabled, dragRef, dropRef]);
+
+  const handleClick = (e) => {
+    if (dragDropEnabled) return;
+    e.stopPropagation();
+    setIsEditing(true);
+    setLocalEditValue(staffMember.name);
+  };
+
+  const handleBeforeInput = (e) => {
+    const currentText = e.target.textContent || '';
+    if (currentText.length >= 10 && e.inputType === 'insertText') {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  const handleInput = (e) => {
+    const text = (e.target.textContent || '').slice(0, 10);
+    setLocalEditValue(text);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      finishEditing();
+      return;
+    }
+    
+    if (e.key === 'Escape') {
+      setIsEditing(false);
+      setLocalEditValue('');
+      return;
+    }
+    
+    // Allow all navigation and deletion keys
+    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+    if (allowedKeys.includes(e.key)) {
+      return;
+    }
+    
+    // Check length for other keys
+    const currentLength = headerRef.current ? headerRef.current.textContent.length : 0;
+    if (currentLength >= 10 && e.key.length === 1) {
+      e.preventDefault();
+    }
+  };
+
+  const handleBlur = () => {
+    finishEditing();
+  };
+
+  const finishEditing = () => {
+    if (!isEditing) return;
+    
+    const trimmedValue = localEditValue.trim();
+    if (trimmedValue && trimmedValue !== staffMember.name) {
+      onUpdateName(staffMember.id, trimmedValue);
+    }
+    
+    setIsEditing(false);
+    setLocalEditValue('');
+  };
+
+  // Set initial content and cursor position when entering edit mode
+  useEffect(() => {
+    if (isEditing && headerRef.current) {
+      // Set the initial text content
+      headerRef.current.textContent = localEditValue;
+      
+      // Focus and place cursor at end
+      headerRef.current.focus();
+      const range = document.createRange();
+      const sel = window.getSelection();
+      
+      if (headerRef.current.childNodes.length > 0) {
+        const textNode = headerRef.current.firstChild;
+        const position = textNode ? textNode.length : 0;
+        range.setStart(textNode || headerRef.current, position);
+        range.setEnd(textNode || headerRef.current, position);
+      } else {
+        range.selectNodeContents(headerRef.current);
+        range.collapse(false);
+      }
+      
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }, [isEditing]);
+
+  // Sync local state when isEditing changes
+  useEffect(() => {
+    if (!isEditing) {
+      setLocalEditValue('');
+    }
+  }, [isEditing]);
+
+  if (dragDropEnabled) {
+    const cellStyle = isDragging ? styles.draggingCell : isOver ? styles.hoveringCell : '';
+    return (
+      <th
+        ref={combinedRef}
+        className={cellStyle}
+        style={{
+          cursor: 'grab',
+          opacity: isDragging ? 0.5 : 1,
+        }}
+      >
+        {displayText}
+      </th>
+    );
+  }
+
+  // Editable mode (similar to DragDropCell)
+  return (
+    <th
+      ref={isEditing ? headerRef : combinedRef}
+      onClick={handleClick}
+      onBeforeInput={isEditing ? handleBeforeInput : undefined}
+      onInput={isEditing ? handleInput : undefined}
+      onKeyDown={isEditing ? handleKeyDown : undefined}
+      onBlur={isEditing ? handleBlur : undefined}
+      contentEditable={isEditing}
+      suppressContentEditableWarning={true}
+      style={{
+        cursor: isEditing ? 'text' : 'pointer',
+        outline: 'none',
+        outlineOffset: '-2px',
+        whiteSpace: 'normal',
+        wordWrap: 'break-word',
+        overflowWrap: 'break-word',
+        userSelect: isEditing ? 'text' : 'none',
+        verticalAlign: 'middle',
+        display: 'table-cell',
+      }}
+    >
+      {!isEditing && displayText}
+    </th>
+  );
+};
+
+
+
 
 function AllocationCreation({ 
   staff, 
@@ -251,7 +460,11 @@ function AllocationCreation({
   canUndo,
   canRedo,
   currentIndex,
-  historyLength
+  historyLength,
+  isTransposed,          
+  setIsTransposed,
+  timeRange,
+  setTimeRange
 }) {
   
   const [colorCodingEnabled, setColorCodingEnabled] = useState(false);
@@ -303,6 +516,10 @@ function AllocationCreation({
     0: '#FFE5E5', 1: '#E5F3FF', 2: '#FFF4E5', 3: '#E5FFE5', 4: '#F5E5FF',
     5: '#FFE5F5', 6: '#E5FFFF', 7: '#FFF5E5', 8: '#FFE5EB', 9: '#E5F5E5',
   };
+
+  const handleTimeRangeToggle = () => {
+  setTimeRange(prev => prev === 'day' ? 'night' : 'day');
+};
 
   const getObservationColor = (observationName) => {
     if (!colorCodingEnabled || !observationName || observationName === '-') {
@@ -446,7 +663,7 @@ function AllocationCreation({
         const priorityA = getPriority(a);
         const priorityB = getPriority(b);
         if (priorityA !== priorityB) return priorityA - priorityB;
-        return a.name.localeCompare(b.name);
+        return
       });
   }, [staff]);
 
@@ -502,76 +719,179 @@ function AllocationCreation({
     );
   };
 
-  return (
-    <>
-      <div className={styles.draggableObsContainer}>
-        <div className={styles.undoRedoWrapper}>
-          <UndoRedoButtons
-            canUndo={canUndo}
-            canRedo={canRedo}
-            onUndo={undo}
-            onRedo={redo}
-            currentIndex={currentIndex}
-            historyLength={historyLength}
-          />
-        </div>
+  // Handler to update staff member name
+const handleUpdateStaffName = (staffId, newName) => {
+  setStaff(currentStaff => {
+    return currentStaff.map(member => {
+      if (member.id === staffId) {
+        return { ...member, name: newName };
+      }
+      return member;
+    });
+  });
+};
 
-        <div className={styles.centeredItems}>
-          <div>
-            <DragDropToggle 
-              dragDropEnabled={dragDropEnabled}
-              setDragDropEnabled={setDragDropEnabled}
-            />
-          </div>
-
-          <div>
-            <ColorToggleButton 
-              colorCodingEnabled={colorCodingEnabled}
-              setColorCodingEnabled={setColorCodingEnabled}
-              observations={observations}
-              observationColors={observationColors}
-            />
-          </div>
-          
-          <div>
-            <DraggableXCell value="X" />
-          </div>
-
-          {observations.map((observation, index) => (
-            <div key={index}>
-              <DraggableObservationCell observation={observation} />
-            </div>
-          ))}
-        </div>
-      </div>
+// Handler to swap two staff members' names
+const handleSwapStaff = (staffId1, staffId2) => {
+  setStaff(currentStaff => {
+    const staff1Index = currentStaff.findIndex(s => s.id === staffId1);
+    const staff2Index = currentStaff.findIndex(s => s.id === staffId2);
     
-      <div className={styles.tableContainer}>
-        <table ref={localTableRef} className={styles.allocationTable}>
-          <thead>
-            <tr>
-              <th>Time</th>
+    if (staff1Index === -1 || staff2Index === -1) return currentStaff;
+    
+    const newStaff = [...currentStaff];
+    
+    // Simply swap the names
+    const tempName = newStaff[staff1Index].name;
+    newStaff[staff1Index] = { ...newStaff[staff1Index], name: newStaff[staff2Index].name };
+    newStaff[staff2Index] = { ...newStaff[staff2Index], name: tempName };
+    
+    return newStaff;
+  });
+};
+
+const renderTable = () => {
+  // Always use hours 8-19 for logic
+  const hours = Array.from({ length: 12 }, (_, i) => 8 + i); // 8-19
+  
+  // Function to convert hour for display
+  const getDisplayHour = (hour) => {
+    if (timeRange === 'day') {
+      return hour; // Show as-is: 8-19
+    } else {
+      // Convert 8-19 to display as 20-7
+      // 8→20, 9→21, 10→22, 11→23, 12→0, 13→1, 14→2, 15→3, 16→4, 17→5, 18→6, 19→7
+      const nightHour = (hour + 12) % 24;
+      return nightHour;
+    }
+  };
+  
+  const timeLabel = 'Time';
+  
+  if (!isTransposed) {
+    // Original table: Time as rows, Staff as columns
+    return (
+      <>
+        <thead>
+          <tr>
+            <th 
+              onClick={handleTimeRangeToggle}
+              style={{ 
+                cursor: 'pointer',
+              }}
+              title="Click to toggle between Day (8-19) and Night (20-7) display"
+            >
+              {timeLabel}
+            </th>
+            {sortedStaff.map((staffMember, index) => {
+              const totalObservations = countValidObservations(staffMember.observations, observations);
+              return (
+                <DragDropHeaderCell
+                  key={staffMember.id}
+                  staffMember={staffMember}
+                  index={index}
+                  totalObservations={totalObservations}
+                  onUpdateName={handleUpdateStaffName}
+                  onSwapStaff={handleSwapStaff}
+                  dragDropEnabled={dragDropEnabled}
+                  staff={staff}
+                  styles={styles}
+                />
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {hours.map(hour => (
+            <tr key={hour}>
+              <td 
+                className={`${styles.hourCell} ${
+                  selectedStartHour === hour ? styles.selectedHour 
+                  : selectedStartHour && hour >= selectedStartHour ? styles.affectedHour : ''
+                }`}
+                onClick={() => setSelectedStartHour(selectedStartHour === hour ? null : hour)}
+                style={{ cursor: 'pointer' }}
+              >
+                {getDisplayHour(hour)}:00
+              </td>
               {sortedStaff.map(staffMember => {
-                const totalObservations = countValidObservations(staffMember.observations, observations);
-                const capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
-                const roleTag = staffMember.nurse ? ' (Nurse)' : staffMember.security ? ' (Sec)' : '';
-                return <th key={staffMember.id}>{capitalizedStaffName}{roleTag} - {totalObservations}</th>;
+                let observation = staffMember.observations[hour] === 'Generals' ? 'Gen' : staffMember.observations[hour] || '-';
+                let originalObservation = staffMember.observations[hour] || '-';
+                return (
+                  <DragDropCell
+                    key={`${staffMember.id}-${hour}`}
+                    staffMember={staffMember}
+                    hour={hour}
+                    observation={staffMember.break === hour ? <strong className={styles.break}>Break</strong> : observation}
+                    originalObservation={originalObservation} 
+                    moveObservation={moveObservation}
+                    updateObservation={updateObservation}
+                    editingCell={editingCell}
+                    setEditingCell={setEditingCell}
+                    editValue={editValue}
+                    setEditValue={setEditValue}
+                    dragDropEnabled={dragDropEnabled}
+                    staff={staff}
+                    styles={styles}
+                    getObservationColor={getObservationColor}
+                  />
+                );
               })}
             </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: 12 }, (_, i) => 8 + i).map(hour => (
-              <tr key={hour}>
-                <td 
-                  className={`${styles.hourCell} ${
-                    selectedStartHour === hour ? styles.selectedHour 
-                    : selectedStartHour && hour >= selectedStartHour ? styles.affectedHour : ''
-                  }`}
-                  onClick={() => setSelectedStartHour(selectedStartHour === hour ? null : hour)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {hour}:00
-                </td>
-                {sortedStaff.map(staffMember => {
+          ))}
+        </tbody>
+      </>
+    );
+  } else {
+    // Transposed table: Staff as rows, Time as columns
+    return (
+      <>
+        <thead>
+          <tr>
+            <th
+              onClick={handleTimeRangeToggle}
+              style={{ 
+                cursor: 'pointer',
+                backgroundColor: timeRange === 'night' ? '#3498db' : 'transparent',
+                color: timeRange === 'night' ? 'white' : 'inherit'
+              }}
+              title="Click to toggle between Day (8-19) and Night (20-7) display"
+            >
+              {timeLabel}
+            </th>
+            {hours.map(hour => (
+              <th 
+                key={hour}
+                className={`${
+                  selectedStartHour === hour ? styles.selectedHour 
+                  : selectedStartHour && hour >= selectedStartHour ? styles.affectedHour : ''
+                }`}
+                onClick={() => setSelectedStartHour(selectedStartHour === hour ? null : hour)}
+                style={{ cursor: 'pointer' }}
+              >
+                {getDisplayHour(hour)}:00
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sortedStaff.map((staffMember, index) => {
+            const totalObservations = countValidObservations(staffMember.observations, observations);
+            
+            return (
+              <tr key={staffMember.id}>
+                {/* Use DragDropHeaderCell for the first cell in transposed view */}
+                <DragDropHeaderCell
+                  staffMember={staffMember}
+                  index={index}
+                  totalObservations={totalObservations}
+                  onUpdateName={handleUpdateStaffName}
+                  onSwapStaff={handleSwapStaff}
+                  dragDropEnabled={dragDropEnabled}
+                  staff={staff}
+                  styles={styles}
+                />
+                {hours.map(hour => {
                   let observation = staffMember.observations[hour] === 'Generals' ? 'Gen' : staffMember.observations[hour] || '-';
                   let originalObservation = staffMember.observations[hour] || '-';
                   return (
@@ -595,12 +915,72 @@ function AllocationCreation({
                   );
                 })}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            );
+          })}
+        </tbody>
+      </>
+    );
+  }
+};
+
+// COMPLETE RETURN STATEMENT
+return (
+  <>
+    <div className={styles.draggableObsContainer}>
+      <div className={styles.undoRedoWrapper}>
+        <UndoRedoButtons
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={undo}
+          onRedo={redo}
+          currentIndex={currentIndex}
+          historyLength={historyLength}
+        />
       </div>
-    </>
-  );
+
+      <div className={styles.centeredItems}>
+        <div>
+          <DragDropToggle 
+            dragDropEnabled={dragDropEnabled}
+            setDragDropEnabled={setDragDropEnabled}
+          />
+        </div>
+
+        <div>
+          <ColorToggleButton 
+            colorCodingEnabled={colorCodingEnabled}
+            setColorCodingEnabled={setColorCodingEnabled}
+            observations={observations}
+            observationColors={observationColors}
+          />
+        </div>
+        
+        <div>
+          <DraggableXCell value="X" />
+        </div>
+
+        {observations.map((observation, index) => (
+          <div key={index}>
+            <DraggableObservationCell observation={observation} />
+          </div>
+        ))}
+      </div>
+
+      {/* Settings button - pushed to the right */}
+      <SettingsButton 
+        isTransposed={isTransposed}
+        setIsTransposed={setIsTransposed}
+      />
+    </div>
+  
+    <div className={styles.tableContainer}>
+      <table ref={localTableRef} className={styles.allocationTable}>
+        {renderTable()}
+      </table>
+    </div>
+  </>
+);
+
 }
 
 export default AllocationCreation;

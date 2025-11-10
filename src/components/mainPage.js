@@ -30,6 +30,8 @@ function MainPage({
   // Start at welcome page if there's cached data, otherwise go straight to patient input
   const [currentPage, setCurrentPage] = useState(hasCachedData ? "welcome" : "patient");
   const [selectedStartHour, setSelectedStartHour] = useState(null);
+  const [isTransposed, setIsTransposed] = useState(false);
+  const [timeRange, setTimeRange] = useState('day'); // 'day' = 8-19, 'night' = 20-7
 
   const handleNewAllocation = () => {
     if (window.confirm('This will delete your previous allocation. Are you sure?')) {
@@ -174,6 +176,10 @@ const handleContinue = () => {
                 canRedo={canRedo}
                 currentIndex={currentIndex}
                 historyLength={historyLength}
+                isTransposed={isTransposed}          
+                setIsTransposed={setIsTransposed}
+                timeRange={timeRange}
+                setTimeRange={setTimeRange}
               />
             </DndProvider>
           )}

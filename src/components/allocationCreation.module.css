@@ -108,12 +108,13 @@
 .allocationTable th, .hourCell, table td {
   border: 0.1rem solid black;
   text-align: center;
-  padding: 0.6rem 0.2rem 0 0.2rem;
+  padding: 0.4rem 0.2rem; /* Balanced padding instead of 0.6rem 0.2rem 0 0.2rem */
   width: 12rem;
   height: 3rem;
   white-space: normal; /* Allows text to wrap */
   overflow-wrap: break-word; /* Allows the words to break and wrap */
   word-break: break-word; /* Ensures that long words will break at any character */
+  vertical-align: middle; /* Add this line */
 }
 
 /* ✨ Fix drag flickering - prevent pointer events on table structure ✨ */
@@ -130,8 +131,8 @@
 }
 
 .allocationTable td {
-  vertical-align: top; /* Change from center/middle to top */
-  padding-top: 0.6rem; /* Ensure consistent top padding */
+  vertical-align: middle; /* Center content vertically */
+  padding: 0.4rem 0.2rem; /* Balanced padding */
 }
 
 table td:not(.hourCell):hover {
@@ -190,6 +191,13 @@ table td:not(.hourCell):hover {
 /* Prevent contenteditable from adding its own styling */
 .allocationTable td[contenteditable="true"] {
   outline: none;
+  min-height: 3rem;
+  vertical-align: middle;
+}
+
+.allocationTable td[contenteditable="true"]:empty:before {
+  content: '\200b'; /* Zero-width space */
+  display: inline-block;
 }
 
 .AmPmToggle {
