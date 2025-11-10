@@ -1586,87 +1586,86 @@ const handleAllocate = async () => {
       // 🔒 NEW: DETAILED ANONYMIZATION LOGGING
       // ═══════════════════════════════════════
       console.log('\n🔒 ═══════════════════════════════════════');
-      console.log('🔒 ANONYMIZATION PROCESS');
-      console.log('🔒 ═══════════════════════════════════════');
-      
-      const anonymizer = new DataAnonymizer();
-      
-      // Log original data structure
-      console.log('\n📊 ORIGINAL DATA STRUCTURE:');
-      console.log('Staff count:', staff.length);
-      console.log('Observations count:', observations.length);
-      
-      console.log('\n👤 First staff member BEFORE anonymization:');
-      console.log('  Name:', staff[0].name);
-      console.log('  ID:', staff[0].id);
-      console.log('  Break:', staff[0].break, '(type:', typeof staff[0].break, ')');
-      console.log('  Observations type:', typeof staff[0].observations);
-      console.log('  Observations keys:', Object.keys(staff[0].observations || {}));
-      console.log('  Hour 8 value:', staff[0].observations?.[8]);
-      console.log('  Full observations:', JSON.stringify(staff[0].observations, null, 2));
-      
-      // Map your data format to Railway's expected format
-      const railwayObservations = observations.map(obs => ({
-        id: obs.id,
-        name: obs.name,
-        observationType: obs.observationType,
-        StaffNeeded: obs.staff
-      }));
-      
-      // Anonymize data
-      console.log('\n🔒 Calling anonymizer.anonymizeStaff...');
-      const anonymizedStaff = anonymizer.anonymizeStaff(staff);
-      
-      console.log('\n🔒 Calling anonymizer.anonymizeObservations...');
-      const anonymizedObservations = anonymizer.anonymizeObservations(railwayObservations);
-      
-      // Log anonymized data structure
-      console.log('\n📊 ANONYMIZED DATA STRUCTURE:');
-      console.log('Anonymized staff count:', anonymizedStaff.length);
-      console.log('Anonymized observations count:', anonymizedObservations.length);
-      
-      console.log('\n👤 First staff member AFTER anonymization:');
-      console.log('  Name:', anonymizedStaff[0].name);
-      console.log('  ID:', anonymizedStaff[0].id);
-      console.log('  Break:', anonymizedStaff[0].break, '(type:', typeof anonymizedStaff[0].break, ')');
-      console.log('  Observations type:', typeof anonymizedStaff[0].observations);
-      console.log('  Observations is array:', Array.isArray(anonymizedStaff[0].observations));
-      console.log('  Observations keys:', Object.keys(anonymizedStaff[0].observations || {}));
-      console.log('  Hour 8 value:', anonymizedStaff[0].observations?.[8]);
-      console.log('  Full observations:', JSON.stringify(anonymizedStaff[0].observations, null, 2));
-      
-      // Log the mapping created by anonymizer
-      console.log('\n🗺️ ANONYMIZER MAPPINGS:');
-      console.log('Staff name mapping (first 3):');
-      staff.slice(0, 3).forEach((s, i) => {
-        console.log(`  "${s.name}" → "staff_${s.id}"`);
-      });
-      
-      console.log('\nObservation name mapping:');
-      anonymizer.observationMap.forEach((anonymized, original) => {
-        console.log(`  "${original}" → "${anonymized}"`);
-      });
-      
-      console.log('\nReverse observation mapping:');
-      anonymizer.reverseObservationMap.forEach((original, anonymized) => {
-        console.log(`  "${anonymized}" → "${original}"`);
-      });
-      
-      // Log full anonymized data samples
-      console.log('\n📦 ANONYMIZED DATA SAMPLES:');
-      console.log('───────────────────────────────────────');
-      console.log('First anonymized staff:');
-      console.log(JSON.stringify(anonymizedStaff[0], null, 2));
-      console.log('───────────────────────────────────────');
-      console.log('Anonymized observations:');
-      console.log(JSON.stringify(anonymizedObservations, null, 2));
-      console.log('───────────────────────────────────────');
-      
-      const requestData = {
-        staff: anonymizedStaff,
-        observations: anonymizedObservations,
-        startHour: start
-      };
+console.log('🔒 ANONYMIZATION PROCESS');
+console.log('🔒 ═══════════════════════════════════════');
+
+const anonymizer = new DataAnonymizer();
+
+// Log original data structure
+console.log('\n📊 ORIGINAL DATA STRUCTURE:');
+console.log('Staff count:', staff.length);
+console.log('Observations count:', observations.length);
+
+console.log('\n👤 First staff member BEFORE anonymization:');
+console.log('  Name:', staff[0].name);
+console.log('  ID:', staff[0].id);
+console.log('  Break:', staff[0].break, '(type:', typeof staff[0].break, ')');
+console.log('  Observations type:', typeof staff[0].observations);
+console.log('  Observations keys:', Object.keys(staff[0].observations || {}));
+console.log('  Hour 8 value:', staff[0].observations?.[8]);
+
+// Map your data format to Railway's expected format
+const railwayObservations = observations.map(obs => ({
+  id: obs.id,
+  name: obs.name,
+  observationType: obs.observationType,
+  StaffNeeded: obs.staff
+}));
+
+// Anonymize data
+console.log('\n🔒 Calling anonymizer.anonymizeStaff...');
+const anonymizedStaff = anonymizer.anonymizeStaff(staff);
+
+console.log('\n🔒 Calling anonymizer.anonymizeObservations...');
+const anonymizedObservations = anonymizer.anonymizeObservations(railwayObservations);
+
+// Log anonymized data structure
+console.log('\n📊 ANONYMIZED DATA STRUCTURE:');
+console.log('Anonymized staff count:', anonymizedStaff.length);
+console.log('Anonymized observations count:', anonymizedObservations.length);
+
+console.log('\n👤 First staff member AFTER anonymization:');
+console.log('  Name:', anonymizedStaff[0].name);
+console.log('  ID:', anonymizedStaff[0].id);
+console.log('  Break:', anonymizedStaff[0].break, '(type:', typeof anonymizedStaff[0].break, ')');
+console.log('  Hour 8 value:', anonymizedStaff[0].observations?.[8]);
+
+// Log the mapping created by anonymizer - ✅ CORRECT PROPERTY NAMES
+console.log('\n🗺️ ANONYMIZER MAPPINGS:');
+console.log('Staff name mapping (first 3):');
+staff.slice(0, 3).forEach((s, i) => {
+  console.log(`  "${s.name}" → "staff_${s.id}"`);
+});
+
+console.log('\nObservation name mapping:');
+console.log('  Map size:', anonymizer.observationNameMap.size);  // ✅ CORRECT
+if (anonymizer.observationNameMap.size > 0) {
+  anonymizer.observationNameMap.forEach((anonymized, original) => {  // ✅ CORRECT
+    console.log(`  "${original}" → "${anonymized}"`);
+  });
+} else {
+  console.warn('⚠️ No observation mappings created!');
+}
+
+console.log('\nReverse observation mapping:');
+console.log('  Map size:', anonymizer.reverseObservationMap.size);
+anonymizer.reverseObservationMap.forEach((original, anonymized) => {
+  console.log(`  "${anonymized}" → "${original}"`);
+});
+
+// Verify mappings
+if (anonymizer.observationNameMap.size === 0) {  // ✅ CORRECT
+  throw new Error('⚠️ No observation mappings were created! Check staff observations.');
+}
+
+console.log('\n✅ Mappings verified successfully');
+
+// Continue with API call...
+const requestData = {
+  staff: anonymizedStaff,
+  observations: anonymizedObservations,
+  startHour: start
+};
       
       // Log request size
       const requestSize = JSON.stringify(requestData).length;
