@@ -1,4 +1,4 @@
-import React, {useRef, useEffect, useState, useMemo} from 'react';
+import React, {useRef, useEffect, useState, useMemo, useCallback} from 'react';
 import styles from './allocationCreation.module.css';
 import { useDrag, useDrop } from 'react-dnd';
 import DragDropToggle from './helperComponents/DragAndDropToggle';
@@ -194,14 +194,14 @@ const DragDropCell = ({
       sel.removeAllRanges();
       sel.addRange(range);
     }
-  }, [isEditing]); // Only run when isEditing changes
+  }, [isEditing, localEditValue]); // Only run when isEditing changes
 
   // Sync local state when editingCell changes
   useEffect(() => {
     if (!isEditing) {
       setLocalEditValue('');
     }
-  }, [isEditing]);
+  }, [isEditing, localEditValue]);
 
   // Break cells
   if (isBreak) {
@@ -391,7 +391,7 @@ const DragDropHeaderCell = ({
       sel.removeAllRanges();
       sel.addRange(range);
     }
-  }, [isEditing]);
+  }, [isEditing, localEditValue]);
 
   // Sync local state when isEditing changes
   useEffect(() => {
@@ -474,6 +474,55 @@ function AllocationCreation({
   
   const localTableRef = useRef(null);
 
+  const updateObservation = useCallback((staffName, hour, newObservation) => {
+    setStaff(prevStaff => {
+      const updatedStaff = prevStaff.map(staffMember => {
+        if (staffMember.name === staffName) {
+          if (staffMember.break === hour) {
+            return staffMember;
+          }
+          
+          // Handle hour 8 - update observations StaffNeeded
+          if (hour === 8) {
+            const oldObservation = staffMember.observations[8];
+            
+            // If changing from a valid observation, increment its StaffNeeded
+            if (oldObservation && oldObservation !== "-") {
+              setObservations(currentObservations => 
+                currentObservations.map(obs => {
+                  if (obs.name === oldObservation && obs.StaffNeeded < obs.staff) {
+                    return { ...obs, StaffNeeded: obs.StaffNeeded + 1 };
+                  }
+                  return obs;
+                })
+              );
+            }
+            
+            // If changing to a valid observation, decrement its StaffNeeded
+            if (newObservation && newObservation !== "-") {
+              setObservations(currentObservations => 
+                currentObservations.map(obs => {
+                  if (obs.name === newObservation && obs.StaffNeeded > 0) {
+                    return { ...obs, StaffNeeded: obs.StaffNeeded - 1 };
+                  }
+                  return obs;
+                })
+              );
+            }
+          }
+          
+          return {
+            ...staffMember,
+            observations: { ...staffMember.observations, [hour]: newObservation }
+          };
+        }
+        return staffMember;
+      });
+      
+      return updatedStaff;
+    });
+  }, [setObservations, setStaff]);
+
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.ctrlKey && (e.key === 'd' || e.key === 'D')) {
@@ -493,7 +542,7 @@ function AllocationCreation({
       setEditingCell(null);
       setEditValue('');
     }
-  }, [dragDropEnabled]);
+  }, [dragDropEnabled, editingCell, editValue, updateObservation]);
 
   useEffect(() => {
     if (localTableRef.current) {
@@ -601,55 +650,6 @@ function AllocationCreation({
     });
   };
 
-  const updateObservation = (staffName, hour, newObservation) => {
-  setStaff(prevStaff => {
-    const updatedStaff = prevStaff.map(staffMember => {
-      if (staffMember.name === staffName) {
-        if (staffMember.break === hour) {
-          return staffMember;
-        }
-        
-        // Handle hour 8 - update observations StaffNeeded
-        if (hour === 8) {
-          const oldObservation = staffMember.observations[8];
-          
-          // If changing from a valid observation, increment its StaffNeeded
-          if (oldObservation && oldObservation !== "-") {
-            setObservations(currentObservations => 
-              currentObservations.map(obs => {
-                if (obs.name === oldObservation && obs.StaffNeeded < obs.staff) {
-                  return { ...obs, StaffNeeded: obs.StaffNeeded + 1 };
-                }
-                return obs;
-              })
-            );
-          }
-          
-          // If changing to a valid observation, decrement its StaffNeeded
-          if (newObservation && newObservation !== "-") {
-            setObservations(currentObservations => 
-              currentObservations.map(obs => {
-                if (obs.name === newObservation && obs.StaffNeeded > 0) {
-                  return { ...obs, StaffNeeded: obs.StaffNeeded - 1 };
-                }
-                return obs;
-              })
-            );
-          }
-        }
-        
-        return {
-          ...staffMember,
-          observations: { ...staffMember.observations, [hour]: newObservation }
-        };
-      }
-      return staffMember;
-    });
-    
-    return updatedStaff;
-  });
-};
-
   // Memoize sorted staff
   const sortedStaff = useMemo(() => {
     return [...staff]
@@ -663,7 +663,7 @@ function AllocationCreation({
         const priorityA = getPriority(a);
         const priorityB = getPriority(b);
         if (priorityA !== priorityB) return priorityA - priorityB;
-        return
+        return (a?.name || '').localeCompare(b?.name || '');
       });
   }, [staff]);
 

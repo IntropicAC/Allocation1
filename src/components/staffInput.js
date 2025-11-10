@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect} from "react";
+import React, { useState, useRef } from "react";
 import styles from "./staffInput.module.css";
 
 function StaffInput({ staff, setStaff, observations, setObservations }) {
@@ -301,11 +301,6 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
       </option>
     );
   }
-
-  useEffect(()=>{
-    console.log("Staff",staff)
-    console.log("Observation:", observations)
-  },[staff])
 
   const rainbowNames = ["Alex1","Charlotte2","Adna3","Aliah4"]
 

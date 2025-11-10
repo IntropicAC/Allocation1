@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
-import styles from "./mainPage.module.css";
+import React, { useState, useRef } from "react";
 import StaffInput from "./staffInput";
 import PatientInput from "./patientInput";
 import NavigationButtons from "./navigationButtons";
@@ -127,9 +126,9 @@ const handleContinue = () => {
     <div className="hero">
       <nav>
         <ul>
-          <li><a href="#">Home</a></li>
-          <li><a href="#">About</a></li>
-          <li><a href="#">Contact</a></li>
+          <li><button type="button">Home</button></li>
+          <li><button type="button">About</button></li>
+          <li><button type="button">Contact</button></li>
         </ul>
       </nav>
 

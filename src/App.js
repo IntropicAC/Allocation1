@@ -1,13 +1,10 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import MainPage from './components/mainPage';
-import LoginForm from './components/loginForm';
 import useLocalStorage from './hooks/useLocalStorage';
 import { useUndoRedo, useUndoRedoShortcuts } from './helperFunctions/UndoRedoManager';
 
 function App() {
   const [observations, setObservations, clearObservations] = useLocalStorage('observations', [], '1.0');
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  
   // Track if AllocationCreation has been initialized
   const [isAllocationReady, setIsAllocationReady] = useState(false);
 
@@ -69,10 +66,6 @@ useEffect(() => {
   console.log('  - currentIndex:', currentIndex);
   console.log('  - historyLength:', historyLength);
 }, [staff, currentIndex, historyLength]);
-
-  const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
-  };
 
   // Function to clear all cached data
   const clearAllData = () => {

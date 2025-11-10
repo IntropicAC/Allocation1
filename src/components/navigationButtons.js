@@ -1,6 +1,6 @@
 //navigationButtons.js
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styles from "./navigationButtons.module.css";
 import { useReactToPrint } from "react-to-print";
 import DataAnonymizer from './services/dataAnonymizer';
@@ -644,23 +644,6 @@ if (varietyBonus > 0) {
 
   function randomSortEqualScores(a, b) {
     return Math.random() - 0.5;
-  }
-
-  function calculateAvailabilityForEachObservation(observations, staff, hour) {
-    let availabilityCounts = {};
-
-    observations.forEach((observation) => {
-      availabilityCounts[observation.name] = staff.filter((staffMember) =>
-        checkAssignmentConditions(
-          staffMember,
-          hour,
-          observation,
-          calculateMaxObservations(observations, staff)
-        )
-      ).length;
-    });
-
-    return availabilityCounts;
   }
 
   function sortStaffByScore(
