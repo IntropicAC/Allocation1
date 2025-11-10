@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./navigationButtons.module.css";
 import { useReactToPrint } from "react-to-print";
-
-//import { allocateObservations } from "./allocationCode";
-//import { createTable } from "./allocationCode";
+import DataAnonymizer from './services/dataAnonymizer';
 
 function NavigationButtons({
   onBack,
@@ -1517,31 +1515,44 @@ const handleAllocate = async () => {
       }
     });
     
-    try {
-    // ✨ CREATE ANONYMIZER
-    const anonymizer = new DataAnonymizer();
-    console.log('BEFORE ANONYMIZATION:', staff[0].name, staff[0].observations[9]);
-    // ✨ ANONYMIZE DATA BEFORE SENDING
-    console.log('🔒 Anonymizing data...');
-    const anonymizedStaff = anonymizer.anonymizeStaff(staff);
-    const anonymizedObservations = anonymizer.anonymizeObservations(railwayObservations);
-
-    console.log('AFTER ANONYMIZATION:', anonymizedStaff[0].name, anonymizedStaff[0].observations[9]);
-    
-    console.log('📤 SENDING ANONYMIZED DATA TO RAILWAY');
-    console.log('───────────────────────────────────────');
-    console.log('📋 ANONYMIZED STAFF SAMPLE:');
-    console.log(JSON.stringify(anonymizedStaff[0], null, 2)); // Show first one as example
-    console.log('───────────────────────────────────────');
-    console.log('📋 ANONYMIZED OBSERVATIONS:');
-    console.log(JSON.stringify(anonymizedObservations, null, 2));
-    console.log('───────────────────────────────────────');
-    
-    const requestData = {
-      staff: anonymizedStaff,           // ✨ Send anonymized
-      observations: anonymizedObservations, // ✨ Send anonymized
-      startHour: start
-    };
+   try {
+  // ✨ CREATE ANONYMIZER
+  const anonymizer = new DataAnonymizer();
+  
+  // 🧪 TESTING: BEFORE
+  console.log('\n🧪 ANONYMIZATION TEST:');
+  console.log('BEFORE ANONYMIZATION:', staff[0].name, staff[0].observations[8]);
+  
+  // Map your data format to Railway's expected format FIRST
+  const railwayObservations = observations.map(obs => ({
+    id: obs.id,
+    name: obs.name,
+    observationType: obs.observationType,
+    StaffNeeded: obs.staff
+  }));
+  
+  // ✨ ANONYMIZE DATA BEFORE SENDING
+  console.log('🔒 Anonymizing data...');
+  const anonymizedStaff = anonymizer.anonymizeStaff(staff);
+  const anonymizedObservations = anonymizer.anonymizeObservations(railwayObservations);
+  
+  // 🧪 TESTING: AFTER
+  console.log('AFTER ANONYMIZATION:', anonymizedStaff[0].name, anonymizedStaff[0].observations[8]);
+  
+  console.log('📤 SENDING ANONYMIZED DATA TO RAILWAY');
+  console.log('───────────────────────────────────────');
+  console.log('📋 ANONYMIZED STAFF SAMPLE:');
+  console.log(JSON.stringify(anonymizedStaff[0], null, 2));
+  console.log('───────────────────────────────────────');
+  console.log('📋 ANONYMIZED OBSERVATIONS:');
+  console.log(JSON.stringify(anonymizedObservations, null, 2));
+  console.log('───────────────────────────────────────');
+  
+  const requestData = {
+    staff: anonymizedStaff,           // ✨ Send anonymized
+    observations: anonymizedObservations, // ✨ Send anonymized
+    startHour: start
+  };
       
       // Log request size
       const requestSize = JSON.stringify(requestData).length;
