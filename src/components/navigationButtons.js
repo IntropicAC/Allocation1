@@ -1752,9 +1752,6 @@ const requestData = {
           console.log(`\n  ─── Staff ${idx + 1}: "${member.name}" ───`);
           
           const staffKey = String(member.id);
-
-
-          console.log(`  Looking for anonymous ID: "${anonymousId}"`);
           
           const anonymizedSchedule = result.schedules?.[staffKey];
 
@@ -1764,7 +1761,6 @@ const requestData = {
             return member;
           }
           
-          console.log(`  ✓ Found schedule for ${anonymousId}`);
           console.log(`  Schedule type: ${typeof anonymizedSchedule}`);
           console.log(`  Schedule is array: ${Array.isArray(anonymizedSchedule)}`);
           console.log(`  Schedule keys: [${Object.keys(anonymizedSchedule).join(', ')}]`);
