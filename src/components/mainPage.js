@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import styles from "./mainPage.module.css";
 import StaffInput from "./staffInput";
 import PatientInput from "./patientInput";
 import NavigationButtons from "./navigationButtons";
@@ -123,17 +124,17 @@ const handleContinue = () => {
   };
 
   return (
-    <div className="hero">
-      <nav>
-        <ul>
-          <li><button type="button">Home</button></li>
-          <li><button type="button">About</button></li>
-          <li><button type="button">Contact</button></li>
+    <div className={styles.hero}>
+      <nav className={styles.navBar}>
+        <ul className={styles.navList}>
+          <li className={styles.navItem}><button className={styles.navButton} type="button">Home</button></li>
+          <li className={styles.navItem}><button className={styles.navButton} type="button">About</button></li>
+          <li className={styles.navItem}><button className={styles.navButton} type="button">Contact</button></li>
         </ul>
       </nav>
 
-      <main id="content-area">
-        <div className="content-wrapper">
+      <main id="content-area" className={styles.mainContent}>
+        <div className={styles.contentWrapper}>
           {currentPage === "welcome" && (
             <WelcomePage
               onNewAllocation={handleNewAllocation}
@@ -204,8 +205,8 @@ const handleContinue = () => {
         )}
       </main>
 
-      <footer>
-        <p>&copy; Alex 2025</p>
+      <footer className={styles.footer}>
+        <p className={styles.footerText}>&copy; Alex 2025</p>
       </footer>
     </div>
   );
