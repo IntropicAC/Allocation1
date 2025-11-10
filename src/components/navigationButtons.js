@@ -342,17 +342,11 @@ function calculateStaffScore(
 
   if (!isSecurity && !isNurse) {
     // Baseline score
-    addPoints((maxObs - staffMember.numObservations + 1) * 5, "non-security baseline - strong workload balance");
+    addPoints(maxObs - staffMember.numObservations + 1, "non-security baseline (maxObs - numObservations)");
+    
     const workloadGap = maxObs - staffMember.numObservations;
     addPoints(workloadGap * 10, "strong workload balance incentive");
     
-    if (hour >= 9 && isActualObservation(prev1) ) {
-      addPoints(-30, "penalty for 1 consecutive hours with observations");
-    }
-    
-    if (hour >= 11 && isActualObservation(prev1) && isActualObservation(prev2)) {
-      addPoints(-20, "penalty for 2 consecutive hours with observations");
-    }
     // FIXED: Consecutive busy hour penalties - only count actual observations as "busy"
     if (hour >= 11 && isActualObservation(prev1) && isActualObservation(prev2)) {
       addPoints(-20, "penalty for 2 consecutive hours with observations");
@@ -369,40 +363,16 @@ function calculateStaffScore(
     if (hour >= 14 && isActualObservation(prev1) && isActualObservation(prev2) && isActualObservation(prev3) && isActualObservation(prev4) && isActualObservation(prev5)) {
       addPoints(-50, "penalty for 5 consecutive hours with observations");
     }
-
-// Even distribution checks - additive penalties for repeating (only actual observations)
-
-if (!isActualObservation(prev1)) {
-  addPoints(30, "bonus for free hour in the previous hour");
-}
-
-if (hour >= 10 && !isActualObservation(prev1) && !isActualObservation(prev2)) {
-  addPoints(30, "bonus for 2 consecutive free hours");
-}
-
-if (hour >= 11 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3)) {
-  addPoints(30, "bonus for 3 consecutive free hours");
-}
-
-if (hour >= 12 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3) && !isActualObservation(prev4)) {
-  addPoints(30, "bonus for 4 consecutive free hours");
-}
-
-if (hour >= 13 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3) && !isActualObservation(prev4) && !isActualObservation(prev5)) {
-  addPoints(30, "bonus for 5 consecutive free hours");
-}
-
-if (hour >= 14 && !isActualObservation(prev1) && !isActualObservation(prev2) && !isActualObservation(prev3) && !isActualObservation(prev4) && !isActualObservation(prev5) && !isActualObservation(prev6)) {
-  addPoints(30, "bonus for 6 consecutive free hours");
-}
     
+   
+
 // CUMULATIVE SCORING - Check each past hour individually
 let repetitionPenalty = 0;
 let varietyBonus = 0;
 
 const prevHours = [prev1, prev2, prev3, prev4, prev5, prev6, prev7, prev8, prev9];
-const penaltyValues = [30, 30, 30, 20, 20, 10, 10, 10, 10]; // Decreasing weight for older hours
-const bonusValues = [30, 30, 30, 20, 20, 10, 10, 10, 10];
+const penaltyValues = [50, 45, 40, 35, 30, 25, 20, 15, 10]; // Decreasing weight for older hours
+const bonusValues = [50, 45, 40, 35, 30, 25, 20, 15, 10];
 
 for (let i = 0; i < prevHours.length; i++) {
   if (hour >= (9 + i) && isActualObservation(prevHours[i])) {
@@ -424,7 +394,7 @@ if (repetitionPenalty < 0) {
 if (varietyBonus > 0) {
   addPoints(varietyBonus, `cumulative variety bonus: ${varietyBonus} points for having different observations recently`);
 }
-
+   
   }
 
   // Security staff logic - optimized
