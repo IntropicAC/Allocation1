@@ -5,6 +5,7 @@ import styles from "./navigationButtons.module.css";
 import { useReactToPrint } from "react-to-print";
 import DataAnonymizer from './services/dataAnonymizer';
 
+
 function NavigationButtons({
   onBack,
   onNext,
