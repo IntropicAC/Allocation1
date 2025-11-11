@@ -11,7 +11,7 @@ import TutorialModal from "./helperComponents/tutorialModal";
 import assignGenerals from "../videos/Assigning_generals_cropped.mp4";
 import creating_staff from "../videos/creating_staff_cropped.mp4";
 import ObsLimitHour8 from "../videos/creating_staff_obsLimit_and_hour_8.mp4"
-import allocationOneAddingObs from "../videos/Adding_observations_to_cells_1_cropped.mp4"
+
 
 // Patient page tutorial
 const patientTutorial = [
@@ -68,7 +68,7 @@ const staffTutorial = [
 const allocationTutorial = [
   {
     title: "Step 3: Build Allocation",
-    gifSrc: allocationOneAddingObs,
+    gifSrc: "/gifs/transpose-time.gif",
     alt: "Adding staff to cells",
     description: (
       <ul>
