@@ -1,0 +1,253 @@
+/* components/TutorialModal.module.css */
+
+/* ─────────────────────────────────────────────
+   OVERLAY & CONTAINER
+   ───────────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 16, 19, 0.78);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.25s ease-in;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modalContent {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    0 2px 10px rgba(0, 0, 0, 0.08);
+  width: min(900px, 92vw);
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ─────────────────────────────────────────────
+   HEADER
+   ───────────────────────────────────────────── */
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  background:
+    linear-gradient(180deg, #f8fbff 0%, #ffffff 60%),
+    #fff;
+  border-bottom: 1px solid #e9eef5;
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: #23304a;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #6b7280;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.08s ease;
+}
+.closeButton:hover { background: #f3f4f6; color: #111827; }
+.closeButton:active { transform: scale(0.96); }
+.closeButton:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* ─────────────────────────────────────────────
+   BODY
+   ───────────────────────────────────────────── */
+.modalBody {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Vertical stack: media on top, text below */
+.tutorialStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  align-items: center;
+  text-align: left;
+}
+
+/* Media wrapper */
+.media {
+  width: 100%;
+  max-width: 860px;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* keeps rounded corners with video */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+/* Image & video */
+.mediaImg,
+.mediaVideo {
+  width: 100%;
+  height: auto;
+  max-height: 420px;          /* keep things elegant; adjust if needed */
+  object-fit: contain;        /* show full media; no crop */
+  display: block;
+  background: #000;           /* hides letterbox glow */
+}
+
+/* Placeholder */
+.mediaPlaceholder {
+  color: #8a94a6;
+  font-size: 14px;
+  padding: 24px;
+}
+
+/* Text block */
+.text {
+  width: 100%;
+  max-width: 860px;
+  display: block;
+}
+
+/* Tutorial typography */
+.description {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: #374151;
+  margin: 0;
+  white-space: normal;        /* supports JSX lists/blocks cleanly */
+}
+
+/* Lists inside description */
+.description ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.25rem;
+}
+.description li {
+  margin: 0.25rem 0;
+}
+
+/* Optional callouts you can use inside description */
+.description .tip,
+.description .note,
+.description .warn {
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0.6rem 0 0;
+  border: 1px solid;
+  font-size: 14.5px;
+}
+.description .tip  { background: #f0fdf4; border-color: #86efac; color: #065f46; }
+.description .note { background: #eff6ff; border-color: #93c5fd; color: #1e3a8a; }
+.description .warn { background: #fff7ed; border-color: #fdba74; color: #7c2d12; }
+
+/* Keep the old grid selector harmless if referenced somewhere */
+.tutorialGrid { display: contents; }
+
+/* ─────────────────────────────────────────────
+   FOOTER (dots + nav)
+   ───────────────────────────────────────────── */
+.modalFooter {
+  padding: 14px 16px;
+  border-top: 1px solid #e9eef5;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+}
+
+/* Left: checkbox */
+.leftSide { display: flex; align-items: center; }
+.checkboxWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #111827;
+  user-select: none;
+}
+.checkboxWrap input {
+  width: 16px; height: 16px; cursor: pointer;
+}
+
+/* Center: dots */
+.centerSide { display: flex; justify-content: center; }
+.dots { display: inline-flex; gap: 10px; }
+.dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #d1d5db; border: none; padding: 0; cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.dot:hover { transform: scale(1.15); background: #a3bffa; }
+.dot:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+.dotActive {
+  background: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+/* Right: nav buttons */
+.rightSide { display: flex; gap: 8px; justify-content: flex-end; }
+
+.navButton {
+  background: #ffffff;
+  border: 1.6px solid #111827;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+}
+.navButton:hover { background: #111827; color: #fff; }
+.navButton:active { transform: translateY(1px); }
+.navButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.doneButton {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+}
+.doneButton:hover { background: #1e40af; }
+.doneButton:active { transform: translateY(1px); }
+
+/* ─────────────────────────────────────────────
+   ACCESSIBILITY & MOTION
+   ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .modalOverlay { animation: none; }
+  .modalContent { animation: none; }
+}

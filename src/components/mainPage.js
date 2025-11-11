@@ -7,6 +7,91 @@ import AllocationCreation from "./allocationCreation";
 import WelcomePage from "./WelcomePage";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import TutorialModal from "./helperComponents/tutorialModal";
+import assignGenerals from "../videos/Assigning_generals_cropped.mp4";
+import creating_staff from "../videos/creating_staff_cropped.mp4";
+import ObsLimitHour8 from "../videos/creating_staff_obsLimit_and_hour_8.mp4"
+import allocationOneAddingObs from "../videos/Adding_observations_to_cells_1_cropped.mp4"
+
+// Patient page tutorial
+const patientTutorial = [
+  {
+    title: "Step 1: Add Patients",
+    gifSrc: assignGenerals,
+    alt: "Adding patients",
+    description: (
+      <ul>
+        <strong>In this section you will add observations to be completed:</strong>
+        <li>Enter each patient’s name (max 3 characters).</li>
+        <li>Select the "observation type" for the correct number of staff required.</li>
+        <li>For intermittent checks (4x Hourly or “Generals”), choose it in the drop-down.</li>
+        <li>Edit or remove before continuing.</li>
+      </ul>
+    ),
+  },
+];
+
+// Staff page tutorial
+const staffTutorial = [
+  {
+    title: "Step 2: Add Staff",
+    gifSrc: creating_staff,
+    alt: "Adding staff",
+    description: (
+      <ul>
+        <strong>In this section you will add staff members:</strong>
+        <li>Enter the staff members name.</li>
+        <li>Select there break time (if left as "Break", no break will be assigned).</li>
+        <li>Select the role. Healthcare Assistant, nurse or security</li>
+        <li>Click “Add staff member” (add up to 20 staff members).</li>
+      </ul>
+    ),
+  },
+  {
+    title: "Staff roles",
+    gifSrc: ObsLimitHour8,
+    alt: "Staff roles",
+    description: (
+      <ul>
+        <strong>Assigning roles and first hour of observations:</strong>
+        <li>Initial observaton refers to the first hour of the shift in which staff are assigned (8:00 (day)or 20:00 o'clock(night)).</li>
+        <li>Roles such as nurse and security will have a pop up, this allows you to select how many observation in total they recieve.</li>
+        <li>Break, role and intial Observation can all be changed even once a staff member has been added.</li>
+        <br></br>
+        <li>Helpful tip! adding all the staff then assinging break, roles and Initial observations is faster.</li>
+      </ul>
+    ),
+  }
+];
+
+// Allocation page tutorial
+const allocationTutorial = [
+  {
+    title: "Step 3: Build Allocation",
+    gifSrc: allocationOneAddingObs,
+    alt: "Adding staff to cells",
+    description: (
+      <ul>
+        <strong>Adding jobs and observations:</strong>
+        <li>Adding </li>
+        <li>Roles such as nurse and security will have a pop up, this allows you to select how many observation in total they recieve.</li>
+        <li>Break, role and intial Observation can all be changed even once a staff member has been added.</li>
+        <br></br>
+        <li>Helpful tip! adding all the staff then assinging break, roles and Initial observations is faster.</li>
+      </ul>
+    )
+  },
+  {
+    title: "Pro tip: Settings",
+    gifSrc: "/gifs/transpose-time.gif",
+    alt: "Transpose and time range",
+    description:
+      "Open ⚙ Settings to transpose the table or switch day/night time ranges.",
+  },
+];
+
+const tutorialsEnabled = false; // 👈 Set to true when ready
+
 
 function MainPage({ 
   observations, 
@@ -32,10 +117,68 @@ function MainPage({
   const [selectedStartHour, setSelectedStartHour] = useState(null);
   const [isTransposed, setIsTransposed] = useState(false);
   const [timeRange, setTimeRange] = useState('day'); // 'day' = 8-19, 'night' = 20-7
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [activeTutorialPages, setActiveTutorialPages] = useState(null);
+  const [activeTutorialKey, setActiveTutorialKey] = useState(null);
+  const [colorCodingEnabled, setColorCodingEnabled] = useState(false);
+  const [dragDropEnabled, setDragDropEnabled] = useState(false);
+
+  const T_KEYS = {
+  patient: 'tutorialDismissed:patient:v1',
+  staff: 'tutorialDismissed:staff:v1',
+  allocation: 'tutorialDismissed:allocation:v1',
+};
+
+// session flags so each section shows once per “new allocation”
+const S_FLAGS = {
+  patient: 'tutorialPending:patient',
+  staff: 'tutorialPending:staff',
+  allocation: 'tutorialPending:allocation',
+};
+
+  React.useEffect(() => {
+  if (!tutorialsEnabled) return; // 👈 Skip everything if disabled
+
+  let lsKey = null;
+  let pages = null;
+  let sFlag = null;
+
+  if (currentPage === "patient") {
+    lsKey = T_KEYS.patient;
+    pages = patientTutorial;
+    sFlag = S_FLAGS.patient;
+  } else if (currentPage === "staff") {
+    lsKey = T_KEYS.staff;
+    pages = staffTutorial;
+    sFlag = S_FLAGS.staff;
+  } else if (currentPage === "allocation") {
+    lsKey = T_KEYS.allocation;
+    pages = allocationTutorial;
+    sFlag = S_FLAGS.allocation;
+  }
+
+  if (!lsKey || !pages) return;
+
+  const dismissed = localStorage.getItem(lsKey) === "1";
+  const pending = sessionStorage.getItem(sFlag) === "1";
+
+  if (!dismissed && pending) {
+    setActiveTutorialPages(pages);
+    setActiveTutorialKey(lsKey);
+    setIsTutorialOpen(true);
+    sessionStorage.removeItem(sFlag);
+  }
+}, [currentPage]);
+
+
 
   const handleNewAllocation = () => {
     if (window.confirm('This will delete your previous allocation. Are you sure?')) {
       clearAllData();
+      sessionStorage.setItem(S_FLAGS.patient, '1');
+      sessionStorage.setItem(S_FLAGS.staff, '1');
+      sessionStorage.setItem(S_FLAGS.allocation, '1');
+
       setCurrentPage("patient");
     }
   };
@@ -180,9 +323,22 @@ const handleContinue = () => {
                 setIsTransposed={setIsTransposed}
                 timeRange={timeRange}
                 setTimeRange={setTimeRange}
+                colorCodingEnabled={colorCodingEnabled}
+                setColorCodingEnabled={setColorCodingEnabled}
+                dragDropEnabled={dragDropEnabled}
+                setDragDropEnabled={setDragDropEnabled}
+
               />
             </DndProvider>
           )}
+          (<TutorialModal
+            isOpen={isTutorialOpen}
+            onClose={() => setIsTutorialOpen(false)}
+            pages={activeTutorialPages || []}
+            localStorageKey={activeTutorialKey || 'tutorialDismissed:default'}
+          />)
+
+
         </div>
 
         {currentPage !== "welcome" && (
@@ -208,6 +364,7 @@ const handleContinue = () => {
       <footer className={styles.footer}>
         <p className={styles.footerText}>&copy; Alex 2025</p>
       </footer>
+      
     </div>
   );
 }

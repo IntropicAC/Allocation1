@@ -89,31 +89,35 @@ const DragDropCell = ({
   const colorToUse = isBreak ? 'transparent' : getObservationColor(originalObservation);
 
   const handleCellClick = (e) => {
-    if (isBreak || dragDropEnabled) return;
-    
-    e.stopPropagation();
-    
-    const cellId = `${staffMember.name}-${hour}`;
-    
-    // Save any other cell that was being edited
-    if (editingCell && editingCell !== cellId) {
-      const [currentStaffName, currentHour] = editingCell.split('-');
-      const currentStaffMember = staff.find(s => s.name === currentStaffName);
-      const originalValue = currentStaffMember?.observations[parseInt(currentHour)] || '-';
-      const normalizedEdit = editValue === '' ? '-' : editValue;
-      
-      if (originalValue !== normalizedEdit) {
-        updateObservation(currentStaffName, parseInt(currentHour), normalizedEdit);
-      }
+  if (isBreak || dragDropEnabled) return;
+
+  e.stopPropagation();
+
+  const cellId = `${staffMember.name}-${hour}`;
+
+  // If we're already editing this cell, do nothing
+  if (editingCell === cellId) return;
+
+  // Save any other cell that was being edited
+  if (editingCell && editingCell !== cellId) {
+    const [currentStaffName, currentHour] = editingCell.split('-');
+    const currentStaffMember = staff.find(s => s.name === currentStaffName);
+    const originalValue = currentStaffMember?.observations[parseInt(currentHour)] || '-';
+    const normalizedEdit = editValue === '' ? '-' : editValue;
+
+    if (originalValue !== normalizedEdit) {
+      updateObservation(currentStaffName, parseInt(currentHour), normalizedEdit);
     }
-    
-    // Start editing this cell
-    const actualObservation = staffMember.observations[hour] || '-';
-    const initialValue = actualObservation === "-" ? "" : actualObservation;
-    setEditingCell(cellId);
-    setEditValue(initialValue);
-    setLocalEditValue(initialValue);
-  };
+  }
+
+  // Start editing this cell
+  const actualObservation = staffMember.observations[hour] || '-';
+  const initialValue = actualObservation === "-" ? "" : actualObservation;
+  setEditingCell(cellId);
+  setEditValue(initialValue);
+  setLocalEditValue(initialValue);
+};
+
 
   const handleBeforeInput = (e) => {
     // Prevent input if at max length
@@ -464,13 +468,17 @@ function AllocationCreation({
   isTransposed,          
   setIsTransposed,
   timeRange,
-  setTimeRange
+  setTimeRange,
+  colorCodingEnabled,
+  setColorCodingEnabled,
+  dragDropEnabled,
+  setDragDropEnabled,
 }) {
   
-  const [colorCodingEnabled, setColorCodingEnabled] = useState(false);
+  
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
-  const [dragDropEnabled, setDragDropEnabled] = useState(false);
+  
   
   const localTableRef = useRef(null);
 

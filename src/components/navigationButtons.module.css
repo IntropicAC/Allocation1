@@ -170,20 +170,6 @@
   margin-top: 8px;
 }
 
-.progressBar {
-  width: 100%;
-  height: 4px;
-  background: #e0e0e0;
-  border-radius: 2px;
-  margin-top: 16px;
-  overflow: hidden;
-}
-
-.progressBarFill {
-  height: 100%;
-  background: linear-gradient(90deg, #3498db, #2ecc71);
-  animation: progress 9s ease-in-out infinite;
-}
 
 @keyframes progress {
   0% { width: 0%; }

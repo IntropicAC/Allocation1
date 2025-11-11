@@ -62,7 +62,7 @@
   position: -webkit-sticky; /* For Safari */
   position: sticky;
   top: 0;
-  z-index: 10000;
+  z-index: 20;
   border-top: solid black 0.2rem;
   border-bottom: solid black 0.2rem;
 }
