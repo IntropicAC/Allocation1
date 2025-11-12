@@ -19,6 +19,9 @@ class DataAnonymizer {
       Object.entries(member.observations).forEach(([hour, obsName]) => {
         if (obsName === '-' || obsName === 'X' || obsName === 'Break' || obsName === 'break') {
           anonymizedObservations[hour] = obsName;
+        } else if (obsName.toLowerCase() === 'generals') {
+          // Keep Generals unchanged
+          anonymizedObservations[hour] = obsName;
         } else {
           const obsId = this.getOrCreateObservationId(obsName);
           anonymizedObservations[hour] = obsId;
@@ -36,6 +39,14 @@ class DataAnonymizer {
 
   anonymizeObservations(observationsArray) {
     return observationsArray.map((obs) => {
+      // Keep Generals unchanged
+      if (obs.name.toLowerCase() === 'generals') {
+        return {
+          ...obs,
+          observationType: `type_${obs.id}`,
+        };
+      }
+
       const anonymousId = this.getOrCreateObservationId(obs.name);
 
       return {
@@ -47,6 +58,11 @@ class DataAnonymizer {
   }
 
   getOrCreateObservationId(originalName) {
+    // Don't anonymize Generals
+    if (originalName.toLowerCase() === 'generals') {
+      return originalName;
+    }
+
     if (!this.observationNameMap.has(originalName)) {
       const anonymousId = `obs_${this.observationNameMap.size + 1}`;
       this.observationNameMap.set(originalName, anonymousId);
@@ -62,6 +78,9 @@ class DataAnonymizer {
       const deAnonymizedObservations = {};
       Object.entries(member.observations).forEach(([hour, obsId]) => {
         if (obsId === '-' || obsId === 'X' || obsId === 'Break' || obsId === 'break') {
+          deAnonymizedObservations[hour] = obsId;
+        } else if (obsId.toLowerCase() === 'generals') {
+          // Generals is already the original name
           deAnonymizedObservations[hour] = obsId;
         } else {
           deAnonymizedObservations[hour] = 
@@ -79,6 +98,14 @@ class DataAnonymizer {
 
   deAnonymizeObservations(anonymizedObservationsArray) {
     return anonymizedObservationsArray.map((obs) => {
+      // Generals is already the original name
+      if (obs.name.toLowerCase() === 'generals') {
+        return {
+          ...obs,
+          observationType: obs.observationType.replace('type_', ''),
+        };
+      }
+
       const originalName = this.reverseObservationMap.get(obs.name) || obs.name;
 
       return {
