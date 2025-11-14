@@ -37,6 +37,7 @@ const DragDropCell = ({
   customCellColor,
   customTextColor,
   customDecoration,
+  
 }) => {
   const isEditing = editingCell === `${staffMember.name}-${hour}`;
   const cellRef = useRef(null);
@@ -95,10 +96,48 @@ const DragDropCell = ({
   const colorToUse = isBreak ? 'transparent' : getObservationColor(originalObservation);
 
 const handleMouseDown = (e) => {
-  if (isBreak || dragDropEnabled) return;
+  // Allow selection for break cells, but not drag/drop
+  if (dragDropEnabled) return;
   
   if (e.button === 0) {
     const cellId = `${staffMember.name}-${hour}`;
+    
+    // Handle Ctrl+Click for individual cell selection (including break cells)
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      
+      // If we're editing, finish editing first
+      if (editingCell) {
+        const [currentStaffName, currentHour] = editingCell.split('-');
+        const currentStaffMember = staff.find(s => s.name === currentStaffName);
+        const originalValue = currentStaffMember?.observations[parseInt(currentHour)] || '-';
+        const normalizedEdit = editValue === '' ? '-' : editValue;
+
+        if (originalValue !== normalizedEdit) {
+          updateObservation(currentStaffName, parseInt(currentHour), normalizedEdit);
+        }
+        
+        setEditingCell(null);
+        setEditValue('');
+      }
+      
+      // Toggle this cell in the selection
+      setSelectedCells(prev => {
+        const newSelected = new Set(prev);
+        if (newSelected.has(cellId)) {
+          newSelected.delete(cellId);
+        } else {
+          newSelected.add(cellId);
+        }
+        return newSelected;
+      });
+      
+      return;
+    }
+    
+    // Don't allow editing break cells
+    if (isBreak) return;
+    
     let hasLeftCell = false;
     
     // If we're editing, only start multi-cell selection if mouse leaves this cell
@@ -137,6 +176,22 @@ const handleMouseDown = (e) => {
         // Only start selection if we've actually left the starting cell
         if (currentCellId && currentCellId !== cellId) {
           hasLeftCell = true;
+          
+          // Finish any active editing before starting selection
+          if (editingCell) {
+            const [currentStaffName, currentHour] = editingCell.split('-');
+            const currentStaffMember = staff.find(s => s.name === currentStaffName);
+            const originalValue = currentStaffMember?.observations[parseInt(currentHour)] || '-';
+            const normalizedEdit = editValue === '' ? '-' : editValue;
+
+            if (originalValue !== normalizedEdit) {
+              updateObservation(currentStaffName, parseInt(currentHour), normalizedEdit);
+            }
+            
+            setEditingCell(null);
+            setEditValue('');
+          }
+          
           onSelectionStart(staffMember.name, hour);
           document.removeEventListener('mousemove', handleMove);
         }
@@ -154,17 +209,17 @@ const handleMouseDown = (e) => {
 };
 
   const handleMouseEnter = () => {
-    if (isBreak || dragDropEnabled || isEditing) return;
+    if (dragDropEnabled || isEditing) return;
+    // Allow selection to pass through break cells
     onSelectionMove(staffMember.name, hour);
   };
 
   const handleMouseUp = () => {
-    if (isBreak || dragDropEnabled || isEditing) return;
+    if (dragDropEnabled || isEditing) return;
     onSelectionEnd();
   };
-
 const handleCellClick = (e) => {
-  if (isBreak || dragDropEnabled) return;
+  if (dragDropEnabled) return;
 
   e.stopPropagation();
 
@@ -177,6 +232,31 @@ const handleCellClick = (e) => {
   // If click is from formatting area, don't do anything
   if (isFromFormattingArea) {
     return; // EXIT EARLY - don't clear selection or change editing state
+  }
+
+  // If Ctrl/Cmd is held, don't clear selection or enter edit mode (handled by mouseDown)
+  if (e.ctrlKey || e.metaKey) {
+    return;
+  }
+
+  // For break cells, just select them (don't enter edit mode)
+  if (isBreak) {
+    setSelectedCells(new Set([cellId]));
+    // Clear any editing state
+    if (editingCell) {
+      const [currentStaffName, currentHour] = editingCell.split('-');
+      const currentStaffMember = staff.find(s => s.name === currentStaffName);
+      const originalValue = currentStaffMember?.observations[parseInt(currentHour)] || '-';
+      const normalizedEdit = editValue === '' ? '-' : editValue;
+
+      if (originalValue !== normalizedEdit) {
+        updateObservation(currentStaffName, parseInt(currentHour), normalizedEdit);
+      }
+      
+      setEditingCell(null);
+      setEditValue('');
+    }
+    return;
   }
 
   // Only clear selection if we're clicking to edit (not from formatting buttons)
@@ -260,27 +340,44 @@ const handleCellClick = (e) => {
   };
 
   useEffect(() => {
-    if (isEditing && cellRef.current) {
-      cellRef.current.textContent = localEditValue;
-      
-      cellRef.current.focus();
-      const range = document.createRange();
-      const sel = window.getSelection();
-      
-      if (cellRef.current.childNodes.length > 0) {
-        const textNode = cellRef.current.firstChild;
-        const position = textNode ? textNode.length : 0;
-        range.setStart(textNode || cellRef.current, position);
-        range.setEnd(textNode || cellRef.current, position);
-      } else {
-        range.selectNodeContents(cellRef.current);
-        range.collapse(false);
-      }
-      
-      sel.removeAllRanges();
-      sel.addRange(range);
+  if (isEditing && cellRef.current) {
+    // Store current cursor position BEFORE updating content
+    const sel = window.getSelection();
+    let cursorPosition = 0;
+    
+    if (sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      const preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(cellRef.current);
+      preCaretRange.setEnd(range.endContainer, range.endOffset);
+      cursorPosition = preCaretRange.toString().length;
     }
-  }, [isEditing, localEditValue]);
+    
+    // Only update textContent if it's different (prevents cursor jump on initial edit)
+    const currentText = cellRef.current.textContent || '';
+    if (currentText !== localEditValue) {
+      cellRef.current.textContent = localEditValue;
+    }
+    
+    // Restore cursor position
+    cellRef.current.focus();
+    const range = document.createRange();
+    const newSel = window.getSelection();
+    
+    if (cellRef.current.childNodes.length > 0) {
+      const textNode = cellRef.current.firstChild;
+      const position = Math.min(cursorPosition, textNode.length);
+      range.setStart(textNode, position);
+      range.setEnd(textNode, position);
+    } else {
+      range.selectNodeContents(cellRef.current);
+      range.collapse(false);
+    }
+    
+    newSel.removeAllRanges();
+    newSel.addRange(range);
+  }
+}, [isEditing, localEditValue]);
 
   useEffect(() => {
     if (!isEditing) {
@@ -288,11 +385,30 @@ const handleCellClick = (e) => {
     }
   }, [isEditing, localEditValue]);
 
+  // Render break cell with formatting support
   if (isBreak) {
     return (
-      <td ref={combinedRef} style={{ backgroundColor: 'transparent', cursor: 'default' }}>
-        <strong className={styles.break}>Break</strong>
-      </td>
+       <td 
+      ref={combinedRef}
+      data-cell-id={`${staffMember.name}-${hour}`}
+      onClick={handleCellClick}
+      onMouseDown={handleMouseDown}
+      onMouseEnter={handleMouseEnter}
+      onMouseUp={handleMouseUp}
+      style={{ 
+        backgroundColor: customCellColor !== null ? customCellColor : 'transparent',
+        backgroundImage: isSelected 
+          ? 'linear-gradient(rgba(59, 130, 246, 0.25), rgba(59, 130, 246, 0.25))' 
+          : 'none',
+        color: customTextColor !== null ? customTextColor : 'inherit',
+        textDecoration: customDecoration?.underline ? 'underline' : 'none',
+        cursor: 'pointer', // Changed from 'default' to show it's clickable
+        userSelect: 'none',
+        transition: 'background-color 0.15s, color 0.15s, background-image 0.15s',
+      }}
+    >
+      <strong className={styles.break}>Break</strong>
+    </td>
     );
   }
 
@@ -313,19 +429,9 @@ const handleCellClick = (e) => {
     );
   }
 
-console.log('🔷 DragDropCell render:', { 
-  customCellColor, 
-  customTextColor, 
-  staffName: staffMember.name, 
-  hour,
-  cellKey: `${staffMember.name}-${hour}`,
-  willUseColor: customCellColor !== null ? customCellColor : (isSelected ? '#bfdbfe' : colorToUse),
-  isSelected,
-  colorToUse
-});
-  // NEW: Updated editable mode with selection
+  // Regular editable cells
   return (
-  <td 
+    <td 
       ref={isEditing ? cellRef : combinedRef}
       data-cell-id={`${staffMember.name}-${hour}`}
       onClick={handleCellClick}
@@ -339,28 +445,27 @@ console.log('🔷 DragDropCell render:', {
       contentEditable={isEditing}
       suppressContentEditableWarning={true}
       style={{ 
-      backgroundColor: customCellColor !== null ? customCellColor : colorToUse,
-      // Add a semi-transparent overlay when selected
-      backgroundImage: isSelected 
-        ? 'linear-gradient(rgba(59, 130, 246, 0.25), rgba(59, 130, 246, 0.25))' 
-        : 'none',
-      color: customTextColor !== null ? customTextColor : 'inherit',
-      textDecoration: customDecoration?.underline ? 'underline' : 'none',
-      cursor: 'text',
-      outline: "none",
-      outlineOffset: '-2px',
-      whiteSpace: 'normal',
-      wordWrap: 'break-word',
-      overflowWrap: 'break-word',
-      userSelect: isEditing ? 'text' : 'none',
-      verticalAlign: 'middle',  
-      display: 'table-cell',
-      transition: 'background-color 0.15s, color 0.15s, background-image 0.15s',
-    }}
+        backgroundColor: customCellColor !== null ? customCellColor : colorToUse,
+        backgroundImage: isSelected 
+          ? 'linear-gradient(rgba(59, 130, 246, 0.25), rgba(59, 130, 246, 0.25))' 
+          : 'none',
+        color: customTextColor !== null ? customTextColor : 'inherit',
+        textDecoration: (customDecoration?.underline && observation !== '-') ? 'underline' : 'none',
+        cursor: 'text',
+        outline: "none",
+        outlineOffset: '-2px',
+        whiteSpace: 'normal',
+        wordWrap: 'break-word',
+        overflowWrap: 'break-word',
+        userSelect: isEditing ? 'text' : 'none',
+        verticalAlign: 'middle',  
+        display: 'table-cell',
+        transition: 'background-color 0.15s, color 0.15s, background-image 0.15s',
+      }}
     >
       {!isEditing && observation}
     </td>
-);
+  );
 };
 
 // DragDropHeaderCell component for staff name headers
@@ -642,11 +747,28 @@ function AllocationCreation({
   // NEW: Selection helper functions
   const getCellKey = (staffName, hour) => `${staffName}-${hour}`;
 
-  const handleSelectionStart = useCallback((staffName, hour) => {
-    setIsSelecting(true);
-    setSelectionStart({ staffName, hour });
-    setSelectedCells(new Set([getCellKey(staffName, hour)]));
-  }, []);
+ const handleSelectionStart = useCallback((staffName, hour) => {
+  // Finish any active editing before starting selection
+  if (editingCell) {
+    const [currentStaffName, currentHour] = editingCell.split('-');
+    const currentStaffMember = staff.find(s => s.name === currentStaffName);
+    if (currentStaffMember) {
+      const originalValue = currentStaffMember.observations[parseInt(currentHour)] || '-';
+      const normalizedEdit = editValue === '' ? '-' : editValue;
+
+      if (originalValue !== normalizedEdit) {
+        updateObservation(currentStaffName, parseInt(currentHour), normalizedEdit);
+      }
+    }
+    
+    setEditingCell(null);
+    setEditValue('');
+  }
+  
+  setIsSelecting(true);
+  setSelectionStart({ staffName, hour });
+  setSelectedCells(new Set([getCellKey(staffName, hour)]));
+}, [editingCell, editValue, staff, updateObservation]);
 
   const handleSelectionMove = useCallback((staffName, hour) => {
     if (!isSelecting || !selectionStart) return;
@@ -754,7 +876,7 @@ useEffect(() => {
       return;
     }
 
-    // Ignore special keys (Backspace and Delete are now handled in the other useEffect)
+    // Ignore special keys
     const ignoredKeys = ['Backspace', 'Delete', 'Enter', 'Escape', 'Tab', 
                         'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
                         'Home', 'End', 'PageUp', 'PageDown', 'Shift', 'Control', 
@@ -766,7 +888,7 @@ useEffect(() => {
 
     e.preventDefault();
 
-    // If it's a printable character, add it to all selected cells
+    // If it's a printable character, add it to all selected cells (except break cells)
     if (e.key.length === 1) {
       setStaff(prevStaff => {
         return prevStaff.map(staffMember => {
@@ -777,6 +899,7 @@ useEffect(() => {
             const [staffName, hourStr] = cellKey.split('-');
             const hour = parseInt(hourStr);
             
+            // Skip break cells
             if (staffName === staffMember.name && staffMember.break !== hour) {
               const oldValue = staffMember.observations[hour] || '-';
               const currentText = oldValue === '-' ? '' : oldValue;
@@ -834,7 +957,9 @@ useEffect(() => {
   window.addEventListener('keydown', handleKeyPress);
   return () => window.removeEventListener('keydown', handleKeyPress);
 }, [selectedCells, editingCell, dragDropEnabled, setStaff, setObservations]);
-// Replace the delete/backspace useEffect with this updated version:
+
+
+
 useEffect(() => {
   const handleKeyDown = (e) => {
     // Only handle if we have selected cells and not currently editing
@@ -845,7 +970,7 @@ useEffect(() => {
     if (e.key === 'Backspace') {
       e.preventDefault();
       
-      // Backspace: Remove one character at a time from all selected cells
+      // Backspace: Remove one character at a time from all selected cells (except breaks)
       setStaff(prevStaff => {
         return prevStaff.map(staffMember => {
           const updates = {};
@@ -855,6 +980,7 @@ useEffect(() => {
             const [staffName, hourStr] = cellKey.split('-');
             const hour = parseInt(hourStr);
             
+            // Skip break cells
             if (staffName === staffMember.name && staffMember.break !== hour) {
               const oldValue = staffMember.observations[hour] || '-';
               
@@ -904,17 +1030,17 @@ useEffect(() => {
     } else if (e.key === 'Delete') {
       e.preventDefault();
       
-      // Delete: Clear entire content of all selected cells
+      // Delete: Clear entire content of all selected cells (except breaks)
       setStaff(prevStaff => {
         const updatedStaff = prevStaff.map(staffMember => {
           const updates = {};
           let hasUpdates = false;
           
-          // Check which hours need updating for this staff member
           selectedCells.forEach(cellKey => {
             const [staffName, hourStr] = cellKey.split('-');
             const hour = parseInt(hourStr);
             
+            // Skip break cells
             if (staffName === staffMember.name && 
                 staffMember.break !== hour && 
                 staffMember.observations[hour] !== '-') {
@@ -956,7 +1082,6 @@ useEffect(() => {
   window.addEventListener('keydown', handleKeyDown);
   return () => window.removeEventListener('keydown', handleKeyDown);
 }, [selectedCells, editingCell, dragDropEnabled, setStaff, setObservations]);
-
 
 useEffect(() => {
   const handleClickOutside = (e) => {
