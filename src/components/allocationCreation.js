@@ -1175,8 +1175,8 @@ useEffect(() => {
 
 
   const observationColors = {
-    0: '#FFE5E5', 1: '#E5F3FF', 2: '#FFF4E5', 3: '#E5FFE5', 4: '#F5E5FF',
-    5: '#FFE5F5', 6: '#E5FFFF', 7: '#FFF5E5', 8: '#FFE5EB', 9: '#E5F5E5',
+    0: '#fdc3c3ff', 1: '#c5e2fcff', 2: '#ffe8c7ff', 3: '#cbfecbff', 4: '#e9ccfcff',
+    5: '#ffc7eaff', 6: '#c7f7f7ff', 7: '#ffeccdff', 8: '#ffc7d4ff', 9: '#ccfdccff',
   };
 
   const handleCellColorChange = useCallback((color) => {

@@ -1293,8 +1293,36 @@ const handleAllocate = async () => {
   console.log('Time:', new Date().toLocaleTimeString());
 
   setIsLoadingSolver(true);
+  // ═══════════════════════════════════════
+  // 🔍 DETERMINE START HOUR BASED ON HOUR 8 ASSIGNMENTS
+  // ═══════════════════════════════════════
+  console.log('\n⏰ ═══════════════════════════════════════');
+  console.log('⏰ DETERMINING START HOUR');
+  console.log('⏰ ═══════════════════════════════════════');
   
-  const start = selectedStartHour || 9;
+  // Create a set of valid observation names
+  const validObservationNames = new Set(observations.map(obs => obs.name));
+  console.log('  Valid observation names:', [...validObservationNames]);
+  
+  // Check if ANY staff member has ANY valid observation assigned at hour 8
+  const hasHour8Assignments = staff.some(member => {
+    const hour8Value = member.observations?.[8];
+    const hasValidObservation = hour8Value && 
+                                 hour8Value !== '-' && 
+                                 validObservationNames.has(hour8Value);
+    if (hasValidObservation) {
+      console.log(`  ✓ ${member.name} has valid hour 8 observation: "${hour8Value}"`);
+    }
+    return hasValidObservation;
+  });
+  
+  // Determine start hour based on hour 8 assignments
+  const start = hasHour8Assignments ? 9 : 8;
+  
+  console.log(`\n📊 Hour 8 assignment check:`);
+  console.log(`  - Any staff with valid hour 8 observations: ${hasHour8Assignments ? 'YES' : 'NO'}`);
+  console.log(`  - Solver will start from hour: ${start}`);
+  console.log('⏰ ═══════════════════════════════════════');
   
   // ═══════════════════════════════════════
   // 🔍 STEP 1: LOG OBSERVATIONS STATE
