@@ -161,41 +161,12 @@
   cursor: pointer;
 }
 
-/* Custom checkbox */
-input[type="checkbox"] {
-  appearance: none;
-  background-color: #f3f3f3;
-  border: 0.2rem solid #dcdcdc;
-  border-radius: 0.4rem;
-  display: inline-block;
-  position: relative;
-  height: 2rem;
-  width: 2rem;
-  transition: background-color 0.2s ease, border 0.2s ease;
-  cursor: pointer;
-}
-
-input[type="checkbox"]:checked {
-  background-color: #2a2abb;
-  border: 0.2rem solid black;
-}
-
-input[type="checkbox"]:checked:after {
-  content: '';
-  position: absolute;
-  left: 0.5rem;
-  width: 0.5rem;
-  height: 1.2rem;
-  border: solid white;
-  border-width: 0 0.3rem 0.3rem 0;
-  transform: rotate(45deg);
-}
 
 /* Staff Styles */
 .staffMember {
   background: white;
-  padding: 0.4rem;
-  margin: 0 0.5rem 0 0.5rem;
+  padding: 0rem;
+  margin: 0 0.3rem 0 0.3rem;
   border-radius: 0.8rem;
   box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.1);
   display: flex;

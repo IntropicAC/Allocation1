@@ -1,0 +1,122 @@
+.formattingToolbar {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid #d1d5db;
+}
+
+.buttonWrapper {
+  position: relative;
+}
+
+.formatButton {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  color: #1f2937;
+}
+
+.formatButton:hover:not(.disabled) {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.formatButton:active:not(.disabled) {
+  background-color: #e5e7eb;
+  transform: scale(0.95);
+}
+
+.formatButton.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.formatButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Color Picker Dropdown */
+.colorPicker {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 
+              0 4px 6px rgba(0, 0, 0, 0.05);
+  z-index: 10001;
+  padding: 8px;
+  animation: fadeIn 0.15s ease-out;
+  min-width: 220px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  grid-auto-flow: column; /* This makes it fill by COLUMN instead of row */
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.colorOption {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  transition: all 0.1s ease;
+  position: relative;
+}
+
+.colorOption:hover {
+  border-color: #3b82f6;
+  transform: scale(1.2);
+  z-index: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.colorPickerFooter {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+.clearButton {
+  width: 100%;
+  padding: 6px;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6b7280;
+  transition: all 0.15s ease;
+}
+
+.clearButton:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}

@@ -255,9 +255,6 @@ function StaffInput({ staff, setStaff, observations, setObservations }) {
 
         // Auto-adjust break if needed
         let updatedMember = { ...member };
-        if (member.break === "Break") {
-          updatedMember.break = 9;
-        }
 
         // Handle reassignment
         if (previousHour8Observation !== observationName) {
