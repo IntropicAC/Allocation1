@@ -345,12 +345,12 @@ const handleContinue = () => {
               />
             </DndProvider>
           )}
-          (<TutorialModal
+          <TutorialModal
             isOpen={isTutorialOpen}
             onClose={() => setIsTutorialOpen(false)}
             pages={activeTutorialPages || []}
             localStorageKey={activeTutorialKey || 'tutorialDismissed:default'}
-          />)
+          />
 
 
         </div>
