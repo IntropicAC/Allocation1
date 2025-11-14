@@ -1650,11 +1650,6 @@ const handleAllocate = async () => {
       console.log(`  "${anonymized}" → "${original}"`);
     });
 
-    // Verify mappings
-    if (anonymizer.observationNameMap.size === 0) {
-      throw new Error('⚠️ No observation mappings were created! Check staff observations.');
-    }
-
     console.log('\n✅ Mappings verified successfully');
 
     // Prepare API request

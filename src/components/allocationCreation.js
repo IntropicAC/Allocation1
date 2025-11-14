@@ -1156,21 +1156,23 @@ useEffect(() => {
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
   }, [isSelecting]);
 
-  useEffect(() => {
-    if (localTableRef.current) {
-      const container = localTableRef.current.parentElement;
-      const table = localTableRef.current;
-      const scaleX = container.clientWidth / table.scrollWidth;
-      const scaleY = container.clientHeight / table.scrollHeight;
-      const scale = Math.min(scaleX, scaleY, 1);
-      
-      table.style.zoom = scale;
-    }
-  }, [staff, observations]);
+  const staffCount = staff.length;
+const obsCount = observations.length;
 
-  useEffect(() => {
-    setTableRef(localTableRef.current);
-  }, [setTableRef]);
+useEffect(() => {
+  if (!localTableRef.current) return;
+  const container = localTableRef.current.parentElement;
+  const table = localTableRef.current;
+  const scaleX = container.clientWidth / table.scrollWidth;
+  const scaleY = container.clientHeight / table.scrollHeight;
+  const scale = Math.min(scaleX, scaleY, 1);
+  table.style.zoom = scale;
+}, [staffCount, obsCount]);
+
+ useEffect(() => {
+  setTableRef(localTableRef.current);
+}, []);
+
 
   const observationColors = {
     0: '#FFE5E5', 1: '#E5F3FF', 2: '#FFF4E5', 3: '#E5FFE5', 4: '#F5E5FF',
@@ -1178,34 +1180,23 @@ useEffect(() => {
   };
 
   const handleCellColorChange = useCallback((color) => {
-  console.log('=== handleCellColorChange START ===');
-  console.log('Color selected:', color);
-  console.log('Selected cells:', Array.from(selectedCells));
-  console.log('Current cellColors state BEFORE:', cellColors);
+  
   
   const newColors = { ...cellColors };
   selectedCells.forEach(cellKey => {
-    console.log('Processing cellKey:', cellKey);
     if (color === 'clear') {
       delete newColors[cellKey];
-      console.log('Deleted color for:', cellKey);
     } else {
       newColors[cellKey] = color;
-      console.log('Set color for:', cellKey, 'to:', color);
     }
   });
   
-  console.log('New cellColors state AFTER:', newColors);
+ 
   setCellColors(newColors);
-  console.log('setCellColors called');
+  
   setContextMenu({ visible: false, x: 0, y: 0 });
-  console.log('=== handleCellColorChange END ===');
 }, [selectedCells, cellColors]);
 
-// 2. Add useEffect to watch cellColors state changes:
-useEffect(() => {
-  console.log('📊 cellColors state changed:', cellColors);
-}, [cellColors]);
 
 // NEW: Handle text color
 const handleTextColorChange = useCallback((color) => {
@@ -1362,13 +1353,11 @@ const ContextMenu = () => {
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('🖱️ Context menu item clicked:', item);
+
               
               if (item.type === 'cell') {
-                console.log('Calling handleCellColorChange with:', item.color);
                 handleCellColorChange(item.color);
               } else {
-                console.log('Calling handleTextColorChange with:', item.color);
                 handleTextColorChange(item.color);
               }
             }}
