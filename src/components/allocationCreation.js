@@ -388,7 +388,8 @@ const handleCellClick = (e) => {
   // Render break cell with formatting support
   if (isBreak) {
     return (
-       <td 
+      
+    <td 
       ref={combinedRef}
       data-cell-id={`${staffMember.name}-${hour}`}
       onClick={handleCellClick}
@@ -402,12 +403,13 @@ const handleCellClick = (e) => {
           : 'none',
         color: customTextColor !== null ? customTextColor : 'inherit',
         textDecoration: customDecoration?.underline ? 'underline' : 'none',
-        cursor: 'pointer', // Changed from 'default' to show it's clickable
+        fontWeight: customDecoration?.bold === false ? 'normal' : 'bold',  
+        cursor: 'pointer',
         userSelect: 'none',
         transition: 'background-color 0.15s, color 0.15s, background-image 0.15s',
       }}
     >
-      <strong className={styles.break}>Break</strong>
+      Break
     </td>
     );
   }
@@ -451,6 +453,7 @@ const handleCellClick = (e) => {
           : 'none',
         color: customTextColor !== null ? customTextColor : 'inherit',
         textDecoration: (customDecoration?.underline && observation !== '-') ? 'underline' : 'none',
+        fontWeight: customDecoration?.bold ? 'bold' : 'normal',  // 👈 ADD THIS
         cursor: 'text',
         outline: "none",
         outlineOffset: '-2px',
@@ -680,6 +683,12 @@ function AllocationCreation({
   setColorCodingEnabled,
   dragDropEnabled,
   setDragDropEnabled,
+  cellColors,
+  setCellColors,
+  textColors,
+  setTextColors,
+  cellDecorations,
+  setCellDecorations,
 }) {
   
   const [editingCell, setEditingCell] = useState(null);
@@ -692,9 +701,7 @@ function AllocationCreation({
 
   
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
-  const [cellColors, setCellColors] = useState({}); // Store custom cell colors
-  const [textColors, setTextColors] = useState({}); // Store custom text colors
-  const [cellDecorations, setCellDecorations] = useState({}); // Store underline/bold/italic
+  
 
   const localTableRef = useRef(null);
 
@@ -770,46 +777,46 @@ function AllocationCreation({
   setSelectedCells(new Set([getCellKey(staffName, hour)]));
 }, [editingCell, editValue, staff, updateObservation]);
 
-  const handleSelectionMove = useCallback((staffName, hour) => {
-    if (!isSelecting || !selectionStart) return;
+ const handleSelectionMove = useCallback((staffName, hour) => {
+  if (!isSelecting || !selectionStart) return;
 
-    const sortedStaffList = [...staff]
-      .filter(s => s && s.observations && typeof s.observations === 'object')
-      .sort((a, b) => {
-        const getPriority = (staffMember) => {
-          if (staffMember.nurse === true) return 1;
-          if (staffMember.security === true) return 2;
-          return 3;
-        };
-        const priorityA = getPriority(a);
-        const priorityB = getPriority(b);
-        if (priorityA !== priorityB) return priorityA - priorityB;
-        return (a?.name || '').localeCompare(b?.name || '');
-      });
+  // Use the SAME sorting logic as sortedStaff
+  const sortedStaffList = [...staff]
+    .filter(s => s && s.observations && typeof s.observations === 'object')
+    .sort((a, b) => {
+      const getPriority = (staffMember) => {
+        if (staffMember.nurse === true) return 1;
+        if (staffMember.security === true) return 2;
+        return 3;
+      };
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      return priorityA - priorityB;
+      // ✅ Removed name comparison to match sortedStaff
+    });
 
-    const hours = Array.from({ length: 12 }, (_, i) => 8 + i);
+  const hours = Array.from({ length: 12 }, (_, i) => 8 + i);
 
-    const startStaffIndex = sortedStaffList.findIndex(s => s.name === selectionStart.staffName);
-    const endStaffIndex = sortedStaffList.findIndex(s => s.name === staffName);
-    const startHourIndex = hours.indexOf(selectionStart.hour);
-    const endHourIndex = hours.indexOf(hour);
+  const startStaffIndex = sortedStaffList.findIndex(s => s.name === selectionStart.staffName);
+  const endStaffIndex = sortedStaffList.findIndex(s => s.name === staffName);
+  const startHourIndex = hours.indexOf(selectionStart.hour);
+  const endHourIndex = hours.indexOf(hour);
 
-    if (startStaffIndex === -1 || endStaffIndex === -1 || startHourIndex === -1 || endHourIndex === -1) return;
+  if (startStaffIndex === -1 || endStaffIndex === -1 || startHourIndex === -1 || endHourIndex === -1) return;
 
-    const minStaffIndex = Math.min(startStaffIndex, endStaffIndex);
-    const maxStaffIndex = Math.max(startStaffIndex, endStaffIndex);
-    const minHourIndex = Math.min(startHourIndex, endHourIndex);
-    const maxHourIndex = Math.max(startHourIndex, endHourIndex);
+  const minStaffIndex = Math.min(startStaffIndex, endStaffIndex);
+  const maxStaffIndex = Math.max(startStaffIndex, endStaffIndex);
+  const minHourIndex = Math.min(startHourIndex, endHourIndex);
+  const maxHourIndex = Math.max(startHourIndex, endHourIndex);
 
-    const newSelected = new Set();
-    for (let si = minStaffIndex; si <= maxStaffIndex; si++) {
-      for (let hi = minHourIndex; hi <= maxHourIndex; hi++) {
-        newSelected.add(getCellKey(sortedStaffList[si].name, hours[hi]));
-      }
+  const newSelected = new Set();
+  for (let si = minStaffIndex; si <= maxStaffIndex; si++) {
+    for (let hi = minHourIndex; hi <= maxHourIndex; hi++) {
+      newSelected.add(getCellKey(sortedStaffList[si].name, hours[hi]));
     }
-    setSelectedCells(newSelected);
-  }, [isSelecting, selectionStart, staff]);
-
+  }
+  setSelectedCells(newSelected);
+}, [isSelecting, selectionStart, staff]);
   const handleSelectionEnd = useCallback(() => {
     setIsSelecting(false);
   }, []);
@@ -1231,6 +1238,29 @@ const handleFormatTextColor = useCallback((color) => {
   }
 }, [selectedCells, editingCell, handleTextColorChange, textColors]);
 
+// Add this after handleFormatUnderline
+const handleFormatBold = useCallback(() => {
+  if (selectedCells.size > 0) {
+    const newDecorations = { ...cellDecorations };
+    selectedCells.forEach(cellKey => {
+      if (!newDecorations[cellKey]) {
+        newDecorations[cellKey] = {};
+      }
+      // Toggle bold
+      newDecorations[cellKey].bold = !newDecorations[cellKey].bold;
+    });
+    setCellDecorations(newDecorations);
+  } else if (editingCell) {
+    const newDecorations = { ...cellDecorations };
+    if (!newDecorations[editingCell]) {
+      newDecorations[editingCell] = {};
+    }
+    // Toggle bold
+    newDecorations[editingCell].bold = !newDecorations[editingCell].bold;
+    setCellDecorations(newDecorations);
+  }
+}, [selectedCells, editingCell, cellDecorations, setCellDecorations]);
+
 const handleFormatUnderline = useCallback(() => {
   if (selectedCells.size > 0) {
     const newDecorations = { ...cellDecorations };
@@ -1461,20 +1491,20 @@ const ContextMenu = () => {
   };
 
   const sortedStaff = useMemo(() => {
-    return [...staff]
-      .filter(s => s && s.observations && typeof s.observations === 'object')
-      .sort((a, b) => {
-        const getPriority = (staffMember) => {
-          if (staffMember.nurse === true) return 1;
-          if (staffMember.security === true) return 2;
-          return 3;
-        };
-        const priorityA = getPriority(a);
-        const priorityB = getPriority(b);
-        if (priorityA !== priorityB) return priorityA - priorityB;
-        return (a?.name || '').localeCompare(b?.name || '');
-      });
-  }, [staff]);
+  return [...staff]
+    .filter(s => s && s.observations && typeof s.observations === 'object')
+    .sort((a, b) => {
+      const getPriority = (staffMember) => {
+        if (staffMember.nurse === true) return 1;
+        if (staffMember.security === true) return 2;
+        return 3;
+      };
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      return priorityA - priorityB;
+      // Removed the name comparison - staff will maintain their original order within each priority group
+    });
+}, [staff]);
 
   const DraggableObservationCell = ({ observation }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
@@ -1751,8 +1781,9 @@ const ContextMenu = () => {
     <FormattingButtons
       onTextColorChange={handleFormatTextColor}
       onUnderlineToggle={handleFormatUnderline}
+      onBoldToggle={handleFormatBold}  // 👈 ADD THIS
       onFillColorChange={handleFormatFill}
-      hasSelection={selectedCells.size > 0 || editingCell !== null}  // UPDATED
+      hasSelection={selectedCells.size > 0 || editingCell !== null}
     />
   </div>
 

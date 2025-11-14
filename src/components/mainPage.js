@@ -123,6 +123,10 @@ function MainPage({
   const [colorCodingEnabled, setColorCodingEnabled] = useState(false);
   const [dragDropEnabled, setDragDropEnabled] = useState(false);
 
+  const [cellColors, setCellColors] = useState({});
+  const [textColors, setTextColors] = useState({});
+  const [cellDecorations, setCellDecorations] = useState({});
+
   const T_KEYS = {
   patient: 'tutorialDismissed:patient:v1',
   staff: 'tutorialDismissed:staff:v1',
@@ -173,15 +177,20 @@ const S_FLAGS = {
 
 
   const handleNewAllocation = () => {
-    if (window.confirm('This will delete your previous allocation. Are you sure?')) {
-      clearAllData();
-      sessionStorage.setItem(S_FLAGS.patient, '1');
-      sessionStorage.setItem(S_FLAGS.staff, '1');
-      sessionStorage.setItem(S_FLAGS.allocation, '1');
+  if (window.confirm('This will delete your previous allocation. Are you sure?')) {
+    clearAllData();
+    // 👇 Clear formatting states
+    setCellColors({});
+    setTextColors({});
+    setCellDecorations({});
+    
+    sessionStorage.setItem(S_FLAGS.patient, '1');
+    sessionStorage.setItem(S_FLAGS.staff, '1');
+    sessionStorage.setItem(S_FLAGS.allocation, '1');
 
-      setCurrentPage("patient");
-    }
-  };
+    setCurrentPage("patient");
+  }
+};
 
 const handleContinue = () => {
   const hasCompleteData = observations.length > 0 && staff.length > 1;
@@ -327,7 +336,12 @@ const handleContinue = () => {
                 setColorCodingEnabled={setColorCodingEnabled}
                 dragDropEnabled={dragDropEnabled}
                 setDragDropEnabled={setDragDropEnabled}
-
+                cellColors={cellColors}
+                setCellColors={setCellColors}
+                textColors={textColors}
+                setTextColors={setTextColors}
+                cellDecorations={cellDecorations}
+                setCellDecorations={setCellDecorations}
               />
             </DndProvider>
           )}

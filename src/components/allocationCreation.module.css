@@ -274,6 +274,9 @@ table td:not(.hourCell):hover {
   background-color: #f0f0f0;
 }
 
+.break {
+  font-weight: bold;  /* Break cells are bold by default through CSS */
+}
 
 /* context window */
 
