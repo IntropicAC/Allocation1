@@ -1286,7 +1286,7 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
 };
 
 
-cconst handleAllocate = async () => {
+const handleAllocate = async () => {
   console.log('🚀🚀🚀 ═══════════════════════════════════════');
   console.log('🚀 HANDLE ALLOCATE CALLED');
   console.log('🚀🚀🚀 ═══════════════════════════════════════');
