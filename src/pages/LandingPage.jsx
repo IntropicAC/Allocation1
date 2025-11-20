@@ -30,7 +30,7 @@ function LandingPage({ onCreateAllocation }) {
         </button>
         <div className={styles.heroStats}>
           <div className={styles.statItem}>
-            <div className={styles.statNumber}>60</div>
+            <div className={styles.statNumber}>50</div>
             <div className={styles.statLabel}>Minutes Saved</div>
           </div>
           <div className={styles.statDivider}></div>
