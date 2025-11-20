@@ -1500,14 +1500,25 @@ const ContextMenu = () => {
   };
 
   const getObservationColor = (observationName) => {
-    if (!colorCodingEnabled || !observationName || observationName === '-') {
-      return 'transparent';
-    }
-    const firstWord = observationName.split(/[\s-]/)[0];
-    const index = observations.findIndex(obs => obs.name === firstWord);
-    if (index === -1) return 'transparent';
-    return observationColors[index % 10];
-  };
+  if (!colorCodingEnabled || !observationName || observationName === '-') {
+    return 'transparent';
+  }
+  
+  const firstWord = observationName.split(/[\s-]/)[0];
+  const deletedObs = observations[0]?.deletedObs || [];
+  const currentNames = observations.map(obs => obs.name);
+  
+  // Stable ordering: deleted first, then current (excluding deleted)
+  const orderedNames = [
+    ...deletedObs,
+    ...currentNames.filter(name => !deletedObs.includes(name))
+  ];
+  
+  const index = orderedNames.findIndex(name => name === firstWord);
+  if (index !== -1) return observationColors[index % 10];
+  
+  return 'transparent';
+};
 
   const countValidObservations = (staffObservations, observations) => {
     if (!staffObservations || typeof staffObservations !== 'object') {
