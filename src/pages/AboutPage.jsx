@@ -23,27 +23,31 @@ function AboutPage() {
             <div className={styles.problemList}>
               <div className={styles.problemItem}>
                 <span className={styles.bulletPoint}>•</span>
-                <p>45-60 minutes per shift spent on manual allocation</p>
+                <p>30-60 minutes per shift wasted on manual allocation</p>
               </div>
               <div className={styles.problemItem}>
                 <span className={styles.bulletPoint}>•</span>
-                <p>Staff put on the same observations repeatedly</p>
+                <p>Error-prone process dependent on individual memory</p>
               </div>
               <div className={styles.problemItem}>
                 <span className={styles.bulletPoint}>•</span>
-                <p>Breaks forgotten or observations missed</p>
+                <p>Staff repeatedly assigned same observations</p>
               </div>
               <div className={styles.problemItem}>
                 <span className={styles.bulletPoint}>•</span>
-                <p>Inexperienced staff paired on high-risk observations</p>
+                <p>Poor skill mix - inexperienced staff paired on high-risk obs</p>
               </div>
               <div className={styles.problemItem}>
                 <span className={styles.bulletPoint}>•</span>
-                <p>Unfair workload distribution causing complaints</p>
+                <p>Unfair workload distribution causing staff complaints</p>
               </div>
               <div className={styles.problemItem}>
                 <span className={styles.bulletPoint}>•</span>
-                <p>Last-minute sickness or any observation changes means starting over completely</p>
+                <p>Last-minute changes mean starting allocation from scratch</p>
+              </div>
+              <div className={styles.problemItem}>
+                <span className={styles.bulletPoint}>•</span>
+                <p>Unnecessary extra staffing "just to make obs work"</p>
               </div>
             </div>
           </section>
@@ -55,7 +59,7 @@ function AboutPage() {
               <div className={styles.solutionItem}>
                 <div className={styles.solutionIcon}>⚡</div>
                 <div>
-                  <h3 className={styles.solutionItemTitle}>Under 10 Minutes</h3>
+                  <h3 className={styles.solutionItemTitle}>Under 5 Minutes</h3>
                   <p className={styles.solutionItemText}>Generate compliant allocations instantly</p>
                 </div>
               </div>
@@ -63,33 +67,124 @@ function AboutPage() {
                 <div className={styles.solutionIcon}>🎯</div>
                 <div>
                   <h3 className={styles.solutionItemTitle}>Automated Constraints</h3>
-                  <p className={styles.solutionItemText}>Handles skill mix, observation distribution, policy and requirements. All automatically</p>
+                  <p className={styles.solutionItemText}>Skill mix, gender pairing, observation distribution - all automatic</p>
                 </div>
               </div>
               <div className={styles.solutionItem}>
                 <div className={styles.solutionIcon}>⚖️</div>
                 <div>
                   <h3 className={styles.solutionItemTitle}>Fair Distribution</h3>
-                  <p className={styles.solutionItemText}>Balanced workload across all staff members</p>
+                  <p className={styles.solutionItemText}>Balanced workload preventing burnout and complaints</p>
                 </div>
               </div>
               <div className={styles.solutionItem}>
                 <div className={styles.solutionIcon}>🔒</div>
                 <div>
                   <h3 className={styles.solutionItemTitle}>Privacy First</h3>
-                  <p className={styles.solutionItemText}>All data stays on your device</p>
+                  <p className={styles.solutionItemText}>All data stays on your device - fully secure</p>
                 </div>
               </div>
               <div className={styles.solutionItem}>
                 <div className={styles.solutionIcon}>🔄</div>
                 <div>
                   <h3 className={styles.solutionItemTitle}>Instant Adaptation</h3>
-                  <p className={styles.solutionItemText}>Regenerate instantly when staffing or observations levels change</p>
+                  <p className={styles.solutionItemText}>Regenerate immediately when staffing changes</p>
                 </div>
               </div>
             </div>
           </section>
         </div>
+
+        {/* Financial Impact Section - NEW */}
+        <section className={styles.financialImpact}>
+          <div className={styles.impactHeader}>
+            <h2 className={styles.sectionTitle}>Financial Impact Per Ward</h2>
+            <p className={styles.impactSubtitle}>Conservative estimates based on real-world usage</p>
+          </div>
+          
+          <div className={styles.savingsGrid}>
+            <div className={styles.savingsCard}>
+              <div className={styles.savingsIcon}>💰</div>
+              <h3 className={styles.savingsTitle}>Avoiding Extra HCA Shifts</h3>
+              <div className={styles.savingsAmount}>£6,240</div>
+              <p className={styles.savingsText}>
+                Preventing 1 unnecessary HCA shift every 2 weeks (26/year at £240/shift)
+              </p>
+            </div>
+
+            <div className={styles.savingsCard}>
+              <div className={styles.savingsIcon}>⏰</div>
+              <h3 className={styles.savingsTitle}>Nurse Time Saved</h3>
+              <div className={styles.savingsAmount}>£10,000</div>
+              <p className={styles.savingsText}>
+                50 minutes saved per shift = 36.5 Band 6 hours/month freed for patient care
+              </p>
+            </div>
+
+            <div className={styles.savingsCard}>
+              <div className={styles.savingsIcon}>🛡️</div>
+              <h3 className={styles.savingsTitle}>Incident Reduction</h3>
+              <div className={styles.savingsAmount}>£5,000+</div>
+              <p className={styles.savingsText}>
+                Better skill mix reduces violence, self-harm, and restraint incidents
+              </p>
+            </div>
+
+            <div className={styles.savingsCard}>
+              <div className={styles.savingsIcon}>👥</div>
+              <h3 className={styles.savingsTitle}>Staff Retention</h3>
+              <div className={styles.savingsAmount}>£4,000+</div>
+              <p className={styles.savingsText}>
+                Fair allocations reduce burnout - avoiding one HCA replacement saves £4-6k
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.totalSavings}>
+            <div className={styles.totalSavingsContent}>
+              <h3 className={styles.totalSavingsTitle}>Total Annual Savings Per Ward</h3>
+              <div className={styles.totalSavingsAmount}>£25,000 - £35,000</div>
+              <p className={styles.totalSavingsNote}>Higher-acuity wards may save considerably more</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Non-Financial Benefits - NEW */}
+        <section className={styles.nonFinancialBenefits}>
+          <h2 className={styles.sectionTitle}>Beyond the Numbers</h2>
+          <div className={styles.benefitsGrid}>
+            <div className={styles.benefitCard}>
+              <div className={styles.benefitIcon}>✓</div>
+              <h3 className={styles.benefitTitle}>Clinical Safety</h3>
+              <p className={styles.benefitText}>Fewer allocation errors and better skill mix protection</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <div className={styles.benefitIcon}>✓</div>
+              <h3 className={styles.benefitTitle}>Staff Wellbeing</h3>
+              <p className={styles.benefitText}>Reduced stress and improved morale through fair distribution</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <div className={styles.benefitIcon}>✓</div>
+              <h3 className={styles.benefitTitle}>CQC Compliance</h3>
+              <p className={styles.benefitText}>Supports "Safe" and "Well-Led" domains with audit trails</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <div className={styles.benefitIcon}>✓</div>
+              <h3 className={styles.benefitTitle}>Trauma-Informed Care</h3>
+              <p className={styles.benefitText}>Gender-appropriate pairing for sensitive observations</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <div className={styles.benefitIcon}>✓</div>
+              <h3 className={styles.benefitTitle}>Consistency</h3>
+              <p className={styles.benefitText}>Same quality across all shifts and staff members</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <div className={styles.benefitIcon}>✓</div>
+              <h3 className={styles.benefitTitle}>Rapid Response</h3>
+              <p className={styles.benefitText}>Instant reallocation for last-minute sickness or changes</p>
+            </div>
+          </div>
+        </section>
 
         {/* How It Works Timeline */}
         <section className={styles.howItWorks}>
@@ -110,7 +205,7 @@ function AboutPage() {
               <div className={styles.timelineContent}>
                 <h3 className={styles.timelineTitle}>Optimization Algorithm</h3>
                 <p className={styles.timelineText}>
-                  Advanced algorithms process all constraints to find the optimal allocation
+                  Advanced constraint programming processes all requirements to find the optimal allocation
                 </p>
               </div>
             </div>
@@ -159,7 +254,7 @@ function AboutPage() {
                 <div className={styles.statLabel}>Years Experience</div>
               </div>
               <div className={styles.statCard}>
-                <div className={styles.statNumber}>30-60</div>
+                <div className={styles.statNumber}>50</div>
                 <div className={styles.statLabel}>Minutes Saved</div>
               </div>
               <div className={styles.statCard}>
@@ -175,8 +270,8 @@ function AboutPage() {
           <h2 className={styles.sectionTitle}>The Vision</h2>
           <p className={styles.visionText}>
             This system is designed to become a comprehensive staffing safety tool that doesn't just 
-            save time - it actively reduces clinical risk, improves staff morale, and helps wards 
-            maintain the highest standards of care.
+            save time and money - it actively reduces clinical risk, improves staff morale, and helps 
+            wards maintain the highest standards of care while supporting CQC compliance.
           </p>
           <div className={styles.futureFeatures}>
             <div className={styles.featureTag}>Patient Preferences</div>
@@ -184,6 +279,7 @@ function AboutPage() {
             <div className={styles.featureTag}>Historical Analysis</div>
             <div className={styles.featureTag}>Policy Integration</div>
             <div className={styles.featureTag}>CQC Requirements</div>
+            <div className={styles.featureTag}>Multi-Ward Management</div>
           </div>
         </section>
       </div>

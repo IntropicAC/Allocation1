@@ -2,7 +2,7 @@
   width: 100%;
   min-height: 100vh;
   color: #1a1a1a;
-  background: #B0E0E6; /* Your powder blue background */
+  background: #B0E0E6;
 }
 
 .container {
@@ -56,7 +56,7 @@
   font-weight: 400;
 }
 
-/* Problem & Solution Grid - More Subtle */
+/* Problem & Solution Grid */
 .problemSolutionGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -94,7 +94,6 @@
   color: #1a1a1a;
 }
 
-/* Problem List - More Compact */
 .problemList {
   display: flex;
   flex-direction: column;
@@ -121,7 +120,6 @@
   margin: 0;
 }
 
-/* Solution List - More Compact */
 .solutionList {
   display: flex;
   flex-direction: column;
@@ -157,6 +155,153 @@
   font-size: 1.4rem;
   color: #2d2d2d;
   line-height: 1.5;
+  margin: 0;
+}
+
+/* Financial Impact Section - NEW */
+.financialImpact {
+  margin-bottom: 8rem;
+}
+
+.impactHeader {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.impactSubtitle {
+  font-size: 1.8rem;
+  color: #2d2d2d;
+  margin-top: 1rem;
+}
+
+.savingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3rem;
+  margin-bottom: 4rem;
+}
+
+.savingsCard {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  padding: 3rem;
+  border-radius: 1.2rem;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.savingsCard:hover {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+}
+
+.savingsIcon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.savingsTitle {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+
+.savingsAmount {
+  font-size: 4.5rem;
+  font-weight: 800;
+  color: #10b981;
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+
+.savingsText {
+  font-size: 1.5rem;
+  color: #2d2d2d;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.totalSavings {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  padding: 4rem;
+  border-radius: 1.6rem;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+}
+
+.totalSavingsContent {
+  color: white;
+}
+
+.totalSavingsTitle {
+  font-size: 2.4rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: white;
+}
+
+.totalSavingsAmount {
+  font-size: 6rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+
+.totalSavingsNote {
+  font-size: 1.6rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+/* Non-Financial Benefits Section - NEW */
+.nonFinancialBenefits {
+  margin-bottom: 8rem;
+}
+
+.benefitsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+}
+
+.benefitCard {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  padding: 2.5rem;
+  border-radius: 1.2rem;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.benefitCard:hover {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.benefitIcon {
+  font-size: 3rem;
+  color: #10b981;
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+.benefitTitle {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.8rem;
+}
+
+.benefitText {
+  font-size: 1.4rem;
+  color: #2d2d2d;
+  line-height: 1.6;
   margin: 0;
 }
 
@@ -368,8 +513,18 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .benefitsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 1024px) {
   .problemSolutionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .savingsGrid {
     grid-template-columns: 1fr;
   }
 
@@ -379,6 +534,10 @@
 
   .statsGrid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .benefitsGrid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -393,6 +552,14 @@
 
   .cardTitle {
     font-size: 2rem;
+  }
+
+  .savingsAmount {
+    font-size: 3.5rem;
+  }
+
+  .totalSavingsAmount {
+    font-size: 4.5rem;
   }
 
   .timeline::before {
