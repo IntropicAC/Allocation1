@@ -1508,7 +1508,7 @@ const handleAllocate = async () => {
   // 🔍 STEP 5: RUN applyDeletedObsOnce
   // ═══════════════════════════════════════
   console.log('\n🧹 Calling applyDeletedObsOnce...');
-  const didClean = applyDeletedObsOnce(staff, observations, 8);
+  const didClean = applyDeletedObsOnce(staff, observations, start);
   console.log('🧹 applyDeletedObsOnce returned:', didClean);
   
   // ═══════════════════════════════════════
