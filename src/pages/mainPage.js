@@ -10,7 +10,7 @@ import StaffInput from '../components/staffInput';
 import AllocationCreation from '../components/allocationCreation';
 import NavigationButtons from '../components/navigationButtons';
 import TutorialModal from '../components/helperComponents/tutorialModal';
-import ConfirmationModal from '../components/helperComponents/ConfirmationModal';
+
 
 // Import new page components
 import LandingPage from './LandingPage';
@@ -44,7 +44,6 @@ function MainPage(props) {
   const [currentPage, setCurrentPage] = useState("welcome");
   const [selectedStartHour, setSelectedStartHour] = useState(null);
   const [hasCachedData, setHasCachedData] = useState(false);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   const tableRef = useRef(null);
 
@@ -108,16 +107,6 @@ const setTableRef = (ref) => {
   setCurrentPage("patient");
 };
 
-// Add this new function right after handleNewAllocation
-const handleConfirmDelete = () => {
-  clearAllData();
-  setShowDeleteConfirmation(false);
-  setCurrentPage("patient");
-};
-
-const handleCancelDelete = () => {
-  setShowDeleteConfirmation(false);
-};
 
   const handleContinue = () => {
   // Smart navigation based on what data exists
