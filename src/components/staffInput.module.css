@@ -1,287 +1,483 @@
-/* AllocationInput.module.css */
-
 /* General Styles */
 * {
   box-sizing: border-box;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.staffText input[type="checkbox"] {
-  margin-left: 1rem; 
-}
-
-.staffText{
-  font-weight: bold;
-  font-size: 1.6rem;
-  border-radius: 5rem;
-}
-.h1{
+.h1 {
   text-align: center;
+  font-size: 2rem;
+  margin: 0 0 1rem 0;
+  color: #1a1a1a;
+  font-weight: 600;
 }
+
 .container {
   width: 100%;
-  border-radius: 0.8rem;
-  overflow-y: auto; /* Add vertical scrolling */
-  max-height: 52rem; /* Adjust based on your needs */
+  border-radius: 1rem;
+  overflow-y: auto;
+  max-height: 52rem;
   height: 100%;
 }
 
-.container::-webkit-scrollbar{
-  width: 1rem; /* width of the scrollbar */
-  height: 0.6rem; /* height for horizontal scrollbars if applicable */
-  opacity: 0.1;
+.container::-webkit-scrollbar {
+  width: 0.8rem;
+  height: 0.6rem;
 }
 
 .container::-webkit-scrollbar-track {
-  background-color: transparent; /* color of the track */
-  opacity: 0.1;
+  background-color: transparent;
 }
 
 .container::-webkit-scrollbar-thumb {
-  background-color: #adadad; /* color of the scroll thumb */
-  border-radius: 5rem;
-  opacity: 0.1;
+  background-color: #c0c0c0;
+  border-radius: 1rem;
+  transition: background-color 0.2s;
 }
 
 .container::-webkit-scrollbar-thumb:hover {
-  background-color: #696969; /* color when hovered over the thumb */
-  opacity: 0.1;
+  background-color: #a0a0a0;
 }
 
+/* Header Form - Add Staff - COMPACT SINGLE LINE */
 .form {
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: auto 1fr 1fr 1fr auto;
+  gap: 2rem;
   align-items: center;
   width: 100%;
-  padding-right: 5rem;
-  margin-bottom: 0.2rem;
-  border-radius: 0.8rem;
-  padding: 1rem;
-  background-color: white;
-  border-bottom: 0.1rem black solid;
-  position: -webkit-sticky; /* For Safari */
+  padding: 1.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 1rem 1rem 0 0;
+  background: white;
+  box-shadow: 0 0.2rem 0.4rem rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 20;
-  border-top: solid black 0.2rem;
-  border-bottom: solid black 0.2rem;
+  border-top: 0.2rem solid black;
+  border-bottom: 0.2rem solid black;
 }
 
-.spacer {
-  height: 6rem;
+.form header {
+  margin: 0;
 }
 
-.indexNumber {
-  margin-right: 16px; /* Adjust this value to increase/decrease the space */
-  border: black solid 0.1rem;
-  border-radius: 200rem;
-  padding: 0.5rem 1rem 0.5rem 1rem;
-  margin-right: 2rem;
-}
-
-.inputText, .select, .button{
-  padding: 0.7rem;
-  border: 0.1rem solid black;
-  border-radius: 0.8rem;
-  margin-left: 1rem;
-  font-size: 1.6rem;
-  text-transform: capitalize;
-}
-
-
-.inputText {
-  cursor: text; 
-}
-
-.staffName {
-  display: flex;/* or 'inline' depending on your layout */
-  vertical-align: middle; /* Adjust as needed: top, middle, bottom */
-  justify-content: center;
-  align-items: center;
-
-}
-
-.break {
-  padding: 0.4rem;
-  border-radius: 0.8rem;
-  font-size: 1.7rem;
-  cursor: pointer;
-  margin-left: 0.7rem;
-}
-
-.BreakText {
-  display: flex;
-  align-items: center; /* Aligns items vertically in the center */
-}
-
-.labelText {
-  margin-right: 0.4rem; /* Adjust as necessary for space */
+.form .h1 {
+  font-size: 1.8rem;
+  margin: 0;
   white-space: nowrap;
 }
 
-.security, .intialObservation {
-  font-weight: bold;
-  font-size: 1.6rem;
-  border-radius: 5rem;
-}
-
-.security {
-  display: inline-flex;
-  align-items: center;
-  font-weight: bold;
-  font-size: 1.6rem;  
-}
-
-.breakOption{
-  padding: 0.5rem;
-}
-.inputText:focus, .select:focus {
-  border-color: black;
-    outline: none;
-    box-shadow: 0 0 0.3rem ;
-}
-
-.indexAndName{
+/* Single line layout - everything horizontal */
+.staffText {
   display: flex;
   align-items: center;
+  gap: 0.8rem;
+  font-weight: 600;
+  font-size: 1.6rem;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.inputText,
+.select {
+  padding: 0.4rem 0.6rem;
+  border: 0.2rem solid #333;
+  border-radius: 0.6rem;
+  font-size: 1.7rem;
+  background: white;
+  transition: all 0.2s ease;
+  height: 3.8rem;
+  width: 100%;
+  line-height: 1.2;
+}
+
+.inputText::placeholder {
+  color: #999;
+  font-style: italic;
+  font-size: 1.5rem;
+}
+
+.inputText:focus,
+.select:focus {
+  border-color: black;
+  outline: none;
+  box-shadow: 0 0 0 0.3rem rgba(176, 224, 230, 0.5);
+  background: white;
+}
+
+.select {
+  cursor: pointer;
+  text-transform: capitalize;
 }
 
 .button {
-  background-color: hsl(0, 0%, 12%);
+  padding: 0.6rem 1.8rem;
+  background-color: #1a1a1a;
   color: white;
+  border: 0.2rem solid #1a1a1a;
+  border-radius: 0.6rem;
   cursor: pointer;
+  font-size: 1.7rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  height: 3.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .button:hover {
-  background-color: grey;
+  background-color: #333;
+  border-color: #333;
+  transform: translateY(-0.1rem);
+  box-shadow: 0 0.4rem 0.8rem rgba(0, 0, 0, 0.2);
 }
 
-
-.select { 
-  cursor: pointer;
+.button:active {
+  transform: translateY(0);
+  box-shadow: 0 0.2rem 0.4rem rgba(0, 0, 0, 0.2);
 }
 
+/* Staff Container */
+.staffContainer {
+  padding: 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
 
-/* Staff Styles */
+/* Individual Staff Member Card - Compact with less padding */
 .staffMember {
   background: white;
-  padding: 0rem;
-  margin: 0 0.3rem 0 0.3rem;
+  padding: 0.4rem 1rem 0.4rem 2rem;
   border-radius: 0.8rem;
-  box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.1);
+  display: grid;
+  grid-template-columns: 14rem 1fr 1fr 1fr auto;
+  align-items: center;
+  border: 0.1rem solid #969696;
+  gap: 1rem;
+}
+
+/* Index and Name - Fixed width container WITHOUT border */
+/* Change 14rem to your desired width (e.g., 12rem, 16rem, 18rem) */
+.indexAndName {
   display: flex;
-  justify-content: space-around;
   align-items: center;
-  border-bottom: black solid 0.01rem;
-  flex-wrap: nowrap; /* Add this line */
+  gap: 0.8rem;
+  margin: 0;
+  width: 14rem;
+  padding: 0;
 }
 
-.staffMember h2 {
-  font-weight: bold;
-  color: #333;
-  text-wrap: nowrap;
-  max-width: 3rem;
-  
-}
-
-.staffMember label:nth-of-type(1) {
-  padding: 1rem;
-  
-}
-
-.staffMember label:nth-of-type(2) {
+.indexNumber {
+  display: flex;
   align-items: center;
-  
+  justify-content: center;
+  min-width: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: #1a1a1a;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 1.3rem;
+  border: 0.2rem solid #1a1a1a;
+  flex-shrink: 0;
 }
 
-.staffMember span {
-  font-weight: bold;
-  font-size: 1.6rem;
+.staffName {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  flex: 1;
 }
 
-.BreakText,
-.intialObservation,
-.security,
-.xbutton{
-  display: inline-block;
+/* Break Time - with divider */
+.break {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.8rem;
+  background: white;
+  width: fit-content;
+  justify-self: center;
+  position: relative;
+  padding-left: 1.5rem;
 }
 
-.BreakText{
-  margin-left: 7rem;
+.break::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.05rem;
+  height: 70%;
+  background: grey;
 }
 
-.xButton {
-  display: inline-block;
-  background-color: #f44336; /* red color */
-  color: #ffffff; /* white text color */
-  font-weight: bold;
-  border-radius: 0.5rem; /* makes it slightly rounded */
-  border: solid black 0.1rem;
+.breakLabel {
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.break .select {
+  width: auto;
+  min-width: 7rem;
   padding: 0.3rem 0.5rem;
+  font-size: 1.5rem;
+  border: 0.1rem solid #999;
+  background: white;
+  height: 3rem;
+  line-height: 1.2;
+  transition: all 0.2s ease;
+  border-radius: 0.6rem;
+}
+
+.break .select:hover {
+  border: 0.15rem solid #333;
+}
+
+.break .select:focus {
+  border: 0.2rem solid black;
+  box-shadow: 0 0 0 0.3rem rgba(176, 224, 230, 0.5);
+}
+
+/* Role Container - with divider */
+.roleContainer {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.8rem;
+  background: white;
+  width: fit-content;
+  justify-self: start;
+  min-width: 13rem;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.roleContainer::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.05rem;
+  height: 70%;
+  background: grey;
+}
+
+.roleContainerLabel {
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.roleLabel {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.roleLabel .select {
+  width: auto;
+  min-width: 9rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 1.5rem;
+  border: 0.1rem solid #999;
+  background: white;
+  height: 3rem;
+  line-height: 1.2;
+  transition: all 0.2s ease;
+  border-radius: 0.6rem;
+}
+
+.roleLabel .select:hover {
+  border: 0.15rem solid #333;
+}
+
+.roleLabel .select:focus {
+  border: 0.2rem solid black;
+  box-shadow: 0 0 0 0.3rem rgba(176, 224, 230, 0.5);
+}
+
+.maxObsNumber {
+  width: auto;
+  min-width: 8rem;
+  height: 3rem;
+  padding: 0.3rem 0.5rem;
+  border: 0.1rem solid #999;
+  border-radius: 0.6rem;
+  background: white;
+  font-size: 1.5rem;
+  font-weight: 400;
+  text-align: left;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.3s; /* smooth transition for hover effects */
-  font-size: 1.5rem; /* size of the "X" character */
-  margin-right: 1rem;
-  
+  transition: all 0.2s ease;
+  color: #1a1a1a;
+  flex-shrink: 0;
+  line-height: 1.2;
+  appearance: auto;
+  -webkit-appearance: menulist;
+  -moz-appearance: menulist;
+}
+
+.maxObsNumber:hover {
+  border: 0.15rem solid #333;
+}
+
+.maxObsNumber:focus {
+  border: 0.2rem solid black;
+  outline: none;
+  box-shadow: 0 0 0 0.3rem rgba(176, 224, 230, 0.5);
+  background: white;
+}
+
+/* Initial Observation */
+.intialObservation {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.8rem;
+  background: white;
+  width: fit-content;
+  justify-self: center;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.intialObservation::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.05rem;
+  height: 70%;
+  background: grey;
+}
+
+.initialObsLabel {
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.intialObservation .select {
+  width: auto;
+  min-width: 13rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 1.5rem;
+  border: 0.1rem solid #999;
+  background: white;
+  height: 3rem;
+  line-height: 1.2;
+  transition: all 0.2s ease;
+  border-radius: 0.6rem;
+}
+
+.intialObservation .select:hover {
+  border: 0.15rem solid #333;
+}
+
+.intialObservation .select:focus {
+  border: 0.2rem solid black;
+  box-shadow: 0 0 0 0.3rem rgba(176, 224, 230, 0.5);
+}
+
+/* X Button - with divider */
+.xButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: #dc3545;
+  color: white;
+  font-weight: 700;
+  border-radius: 0.6rem;
+  border: 0.2rem solid #1a1a1a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  position: relative;
+  margin-left: 1rem;
+}
+
+.xButton::before {
+ content: '';
+  position: absolute;
+  left: -0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.05rem;
+  height: 70%;
+  background: grey;
 }
 
 .xButton:hover {
-  background-color: #d32f2f; /* slightly darker red for hover effect */
-  transform: scale(1.1); /* slightly enlarge the button on hover */
+  background-color: #dc3545;
+  transform: scale(1.1);
+}
+
+.xButton:active {
+  transform: scale(0.95);
 }
 
 .xButton:focus {
-  outline: none; /* remove default focus outline */
-  box-shadow: 0 0 0.3rem #f44336; /* adds a shadow when focused, matching your input focus style */
+  outline: none;
+  box-shadow: 0 0 0 0.3rem rgba(220, 53, 69, 0.3);
 }
 
-.securityContainer {
-  display: inline-flex;       
-  align-items: center;        
-  gap: 0rem;                
-}
-
-.securityNumber {
-  font-size: 1.6rem;
-  padding: 0.7rem;
-  border: 0.1rem solid black;
-  border-radius: 0.8rem;
-  transition: all 0.2s ease;
-}
-
-
-/*------------Fun addition-------------------*/
+/* Rainbow Animation */
 @keyframes animateRainbow {
   from {
-      filter: hue-rotate(0deg);
+    filter: hue-rotate(0deg);
   }
   to {
-      filter: hue-rotate(360deg);
+    filter: hue-rotate(360deg);
   }
 }
 
 .rainbow-text {
   animation: animateRainbow 5s linear infinite;
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.roleContainer {
-  display: inline-flex;       
-  align-items: center;        
-  gap: 0.5rem;                
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  .staffMember {
+    grid-template-columns: 0.8fr auto 0.8fr auto 1fr auto 1fr auto auto;
+    gap: 1rem;
+  }
 }
 
-.roleLabel {
-  font-weight: bold;
-  font-size: 1.6rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.maxObsNumber {
-  font-size: 1.6rem;
-  padding: 0.7rem;
-  border: 0.1rem solid black;
-  border-radius: 0.8rem;
-  transition: all 0.2s ease;
+@media (max-width: 1200px) {
+  .form {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .staffMember {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .divider {
+    display: none;
+  }
 }

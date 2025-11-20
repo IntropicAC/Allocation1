@@ -1,0 +1,337 @@
+.contactPage {
+  width: 100%;
+  color: #1a1a1a;
+  background: transparent;
+  position: relative;
+}
+
+.contactPage::before {
+  content: '';
+  position: absolute;
+  top: 25%;
+  left: 10%;
+  width: 40rem;
+  height: 40rem;
+  background: radial-gradient(circle, rgba(176, 224, 230, 0.05) 0%, transparent 65%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.contactPage::after {
+  content: '';
+  position: absolute;
+  bottom: 25%;
+  right: 10%;
+  width: 45rem;
+  height: 45rem;
+  background: radial-gradient(circle, rgba(176, 224, 230, 0.06) 0%, transparent 65%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.container {
+  max-width: 120rem;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+}
+
+/* Hero Section */
+.hero {
+  text-align: center;
+  padding: 4rem 0 6rem 0;
+  background: linear-gradient(135deg, rgba(176, 224, 230, 0.12) 0%, rgba(176, 224, 230, 0.05) 100%);
+  position: relative;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(176, 224, 230, 0.4) 50%, transparent 100%);
+}
+
+.pageTitle {
+  font-size: 5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #1a1a1a;
+}
+
+.intro {
+  font-size: 2.2rem;
+  color: #555;
+  max-width: 70rem;
+  margin: 0 auto;
+}
+
+/* Contact Grid */
+.contactGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  margin-bottom: 6rem;
+}
+
+/* Info Section */
+.infoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.sectionTitle {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #1a1a1a;
+}
+
+.infoCard {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 1rem;
+  border: 2px solid #e0e0e0;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.infoCard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #B0E0E6 0%, #87CEEB 100%);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.3s ease;
+}
+
+.infoCard:hover::before {
+  transform: scaleY(1);
+}
+
+.infoCard:hover {
+  border-color: #B0E0E6;
+  box-shadow: 0 6px 16px rgba(176, 224, 230, 0.25);
+}
+
+.infoIcon {
+  font-size: 3rem;
+  min-width: 4rem;
+}
+
+.infoContent {
+  flex: 1;
+}
+
+.infoTitle {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  color: #1a1a1a;
+}
+
+.infoText {
+  font-size: 1.5rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+/* Form Section */
+.formSection {
+  background: white;
+  padding: 3rem;
+  border-radius: 1.2rem;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.formSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #B0E0E6 0%, #87CEEB 100%);
+  border-radius: 1.2rem 1.2rem 0 0;
+}
+
+.contactForm {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  position: relative; /* ADD THIS */
+  z-index: 1; /* ADD THIS */
+}
+
+.label {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  cursor: pointer; /* ADD THIS - makes it clear the label is clickable */
+  user-select: none; /* ADD THIS - prevents text selection */
+}
+
+.input,
+.select,
+.textarea {
+  padding: 1.2rem 1.5rem;
+  font-size: 1.6rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 0.6rem;
+  transition: all 0.3s ease;
+  font-family: Arial, sans-serif;
+  color: #1a1a1a;
+  background-color: white;
+  width: 100%; /* ADD THIS - ensures full width */
+  box-sizing: border-box; /* ADD THIS - includes padding in width calculation */
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #B0E0E6;
+  box-shadow: 0 0 0 3px rgba(176, 224, 230, 0.2);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 12rem;
+}
+
+.submitButton {
+  background-color: #1a1a1a;
+  color: white;
+  border: none;
+  padding: 1.5rem 3rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.submitButton:hover {
+  background-color: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Success Message */
+.successMessage {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.successIcon {
+  font-size: 6rem;
+  color: #4caf50;
+  margin-bottom: 2rem;
+}
+
+.successTitle {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+
+.successText {
+  font-size: 1.8rem;
+  color: #555;
+}
+
+/* Additional Info */
+.additionalInfo {
+  background: white;
+  padding: 4rem 3rem;
+  border-radius: 1.2rem;
+  text-align: center;
+  position: relative;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-top: 2rem;
+}
+
+.additionalInfo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #B0E0E6 0%, #87CEEB 100%);
+  border-radius: 1.2rem 1.2rem 0 0;
+}
+
+.additionalInfo .sectionTitle {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 1.5rem;
+}
+
+.additionalInfo .text {
+  position: relative;
+  z-index: 1;
+}
+
+.text {
+  font-size: 1.7rem;
+  line-height: 1.7;
+  color: #555;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .contactGrid {
+    grid-template-columns: 1fr;
+    gap: 4rem;
+  }
+
+  .formSection {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .pageTitle {
+    font-size: 3.8rem;
+  }
+
+  .intro {
+    font-size: 1.8rem;
+  }
+
+  .sectionTitle {
+    font-size: 2.6rem;
+  }
+
+  .formSection {
+    padding: 2rem;
+  }
+
+  .infoCard {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}

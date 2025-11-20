@@ -1,5 +1,6 @@
 :global(html) {
   font-size: 10px;
+  overscroll-behavior: none;
 }
 
 :global(*) {
@@ -16,6 +17,7 @@
   background-size: cover;
   background-position: center;
   min-height: 100vh;
+  overscroll-behavior: none;
 }
 
 .hero {
@@ -23,10 +25,11 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  overscroll-behavior: none;
 }
 
 .navBar {
-  background-color: #1f1f1f;
+  background-color: #333333;
   z-index: 10;
   position: relative;
   height: 4rem;
@@ -61,6 +64,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
+  border-radius: 0.5rem;
 }
 
 .navButton:hover {
@@ -70,6 +74,7 @@
 
 .mainContent {
   display: flex;
+  flex-direction: column;  /* Stack items vertically */
   justify-content: space-between;
   align-items: flex-start;
   height: 58rem;
@@ -77,16 +82,17 @@
   border-right: black solid 0.2rem;
   border-left: black solid 0.2rem;
   border-radius: 0.8rem;
-  flex-direction: column;
   box-shadow: inset -9px 9px 13px #4646466b,
               inset 9px -9px 13px #4646466b;
-  background: rgba(255, 255, 255, 0.35);
 }
 
 .contentWrapper {
-  flex: 1;
-  overflow: auto;
+  flex: 1;  /* Takes all available space */
+  overflow: hidden;  /* Changed from auto */
   width: 100%;
+  animation: fadeIn 0.3s ease-in;
+  display: flex;
+  flex-direction: column;  /* Add this */
 }
 
 .footer {
@@ -103,7 +109,7 @@
   font-size: 1.2rem;
   height: 5rem;
   color: white;
-  background-color: #1F1F1F;
+  background-color: #333333;
   width: 100%;
 }
 
@@ -113,4 +119,135 @@
 
 :global(.sourceHighlight) {
   background-color: rgba(172, 83, 101, 0.5);
+}
+
+/* Active navigation state */
+.activeNav {
+  background-color: #B0E0E6 !important;
+  color: hsl(0, 0%, 12%) !important;
+  font-weight: 600;
+}
+
+/* Full-width content for marketing pages (no container) */
+.fullWidthContent {
+  width: 100%;
+  flex: 1;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/* Page transition animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .navBar {
+    width: 98%;
+    padding-bottom: 4rem;
+  }
+
+  .navItem {
+    margin-right: 2.5rem;
+  }
+
+  .navButton {
+    padding: 0.8rem 1.5rem;
+    font-size: 1.8rem;
+  }
+
+  .mainContent {
+    margin: 4rem 8rem 10rem 8rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .navBar {
+    width: 100%;
+    border-radius: 0;
+    height: auto;
+    padding-bottom: 3rem;
+  }
+
+  .navList {
+    margin-right: 2rem;
+  }
+
+  .navItem {
+    margin-right: 2rem;
+  }
+
+  .navButton {
+    padding: 0.8rem 1.2rem;
+    font-size: 1.6rem;
+  }
+
+  .mainContent {
+    margin: 3rem 4rem 8rem 4rem;
+    height: auto;
+    min-height: 50rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .navBar {
+    padding-bottom: 2rem;
+  }
+
+  .navList {
+    justify-content: center;
+    margin-right: 0;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .navItem {
+    margin-right: 0;
+  }
+
+  .navButton {
+    padding: 0.8rem 1.5rem;
+    font-size: 1.5rem;
+  }
+
+  .mainContent {
+    margin: 2rem 2rem 6rem 2rem;
+    height: auto;
+    min-height: 45rem;
+  }
+
+  .footerText {
+    font-size: 1rem;
+    height: 4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navList {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .navButton {
+    padding: 0.6rem 1rem;
+    font-size: 1.4rem;
+  }
+
+  .mainContent {
+    margin: 1.5rem 1rem 4rem 1rem;
+  }
+
+  .footerText {
+    font-size: 0.9rem;
+    height: 3.5rem;
+    padding: 0.5rem;
+  }
 }

@@ -1,48 +1,37 @@
-import React, { useState } from 'react';
+import React from 'react';
+import styles from './ConfirmationModal.module.css';
 
-const ConfirmationModal = ({ question, onConfirm, onCancel }) => {
-  const [showModal, setShowModal] = useState(true);
+function ConfirmationModal({ isOpen, onConfirm, onCancel, title, message }) {
+  if (!isOpen) return null;
 
-  const handleConfirm = () => {
-    onConfirm();
-    setShowModal(false);
-  };
-
-  const handleCancel = () => {
-    onCancel();
-    setShowModal(false);
-  };
-
-  return showModal ? (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 9999,
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: '#fff',
-          padding: '20px',
-          borderRadius: '5px',
-        }}
-      >
-        <h3>{question}</h3>
-        <div>
-          <button onClick={handleConfirm}>Yes</button>
-          <button onClick={handleCancel}>No</button>
+  return (
+    <div className={styles.modalOverlay} onClick={onCancel}>
+      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>{title}</h2>
+        </div>
+        
+        <div className={styles.modalBody}>
+          <p className={styles.modalMessage}>{message}</p>
+        </div>
+        
+        <div className={styles.modalFooter}>
+          <button 
+            className={styles.cancelButton}
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button 
+            className={styles.confirmButton}
+            onClick={onConfirm}
+          >
+            Delete & Create New
+          </button>
         </div>
       </div>
     </div>
-  ) : null;
-};
+  );
+}
 
 export default ConfirmationModal;

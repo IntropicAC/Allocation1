@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import MainPage from './components/mainPage';
+import MainPage from './pages/mainPage';
 import useLocalStorage from './hooks/useLocalStorage';
 import { useUndoRedo, useUndoRedoShortcuts } from './helperFunctions/UndoRedoManager';
 
@@ -68,17 +68,17 @@ useEffect(() => {
 }, [staff, currentIndex, historyLength]);
 
   // Function to clear all cached data
-  const clearAllData = () => {
-    console.log('🗑️ Clearing all data...');
-    clearObservations();
-    localStorage.removeItem('staff');
-    clearHistory();
-    setIsAllocationReady(false);
-    
-    // Reset to empty array when clearing
-    resetHistory([]);
-    console.log('✅ All data cleared');
-  };
+ const clearAllData = () => {
+  console.log('🗑️ Clearing all data...');
+  clearObservations();
+  localStorage.removeItem('staff');
+  clearHistory();
+  setIsAllocationReady(false);
+  
+  // Reset to empty array when clearing
+  resetHistory([]);
+  console.log('✅ All data cleared');
+};
 
   // Reset history when starting a new allocation
   const startNewAllocation = useCallback(() => {

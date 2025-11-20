@@ -239,9 +239,16 @@ const handleCellClick = (e) => {
     return;
   }
 
-  // For break cells, just select them (don't enter edit mode)
+  // For break cells, toggle selection
   if (isBreak) {
-    setSelectedCells(new Set([cellId]));
+    // If this cell is currently selected, deselect it
+    if (selectedCells.has(cellId)) {
+      setSelectedCells(new Set());
+    } else {
+      // Otherwise, select it
+      setSelectedCells(new Set([cellId]));
+    }
+    
     // Clear any editing state
     if (editingCell) {
       const [currentStaffName, currentHour] = editingCell.split('-');
@@ -286,7 +293,6 @@ const handleCellClick = (e) => {
   setEditValue(initialValue);
   setLocalEditValue(initialValue);
 };
-
   const handleBeforeInput = (e) => {
     const currentText = e.target.textContent || '';
     if (currentText.length >= 14 && e.inputType === 'insertText') {
@@ -481,6 +487,7 @@ const DragDropHeaderCell = ({
   dragDropEnabled,
   staff,
   styles,
+  setStaff
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localEditValue, setLocalEditValue] = useState('');
@@ -488,8 +495,15 @@ const DragDropHeaderCell = ({
   const combinedRef = useRef(null);
 
   const capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
-  const roleTag = staffMember.nurse ? ' (Nurse)' : staffMember.security ? ' (Sec)' : '';
-  const displayText = `${capitalizedStaffName}${roleTag} - ${totalObservations}`;
+const getRoleTag = () => {
+  if (staffMember.nurse) return ' (Nurse)';
+  if (staffMember.role === 'Onward') return ' (Onward)';
+  if (staffMember.role === 'Response') return ' (Resp)';
+  if (staffMember.security) return ' (Sec)';
+  return '';
+};
+const roleTag = getRoleTag();
+const displayText = `${capitalizedStaffName}${roleTag} - ${totalObservations}`;
 
   // Drag functionality
   const [{ isDragging }, dragRef] = useDrag({
@@ -518,66 +532,146 @@ const DragDropHeaderCell = ({
   }, [dragDropEnabled, dragRef, dropRef]);
 
   const handleClick = (e) => {
-    if (dragDropEnabled) return;
-    e.stopPropagation();
-    setIsEditing(true);
-    setLocalEditValue(staffMember.name);
-  };
+  if (dragDropEnabled) return;
+  e.stopPropagation();
+  setIsEditing(true);
+  // Include the role tag in the editable text
+  const fullText = `${staffMember.name}${roleTag}`;
+  setLocalEditValue(fullText);
+};
 
   const handleBeforeInput = (e) => {
-    const currentText = e.target.textContent || '';
-    if (currentText.length >= 10 && e.inputType === 'insertText') {
-      e.preventDefault();
-      return false;
-    }
-  };
+  const currentText = e.target.textContent || '';
+  if (currentText.length >= 25 && e.inputType === 'insertText') {
+    e.preventDefault();
+    return false;
+  }
+};
 
   const handleInput = (e) => {
-    const text = (e.target.textContent || '').slice(0, 10);
-    setLocalEditValue(text);
-  };
+  const text = (e.target.textContent || '').slice(0, 25); // Increased limit for name + tag
+  setLocalEditValue(text);
+};
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      finishEditing();
-      return;
-    }
-    
-    if (e.key === 'Escape') {
-      setIsEditing(false);
-      setLocalEditValue('');
-      return;
-    }
-    
-    // Allow all navigation and deletion keys
-    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
-    if (allowedKeys.includes(e.key)) {
-      return;
-    }
-    
-    // Check length for other keys
-    const currentLength = headerRef.current ? headerRef.current.textContent.length : 0;
-    if (currentLength >= 10 && e.key.length === 1) {
-      e.preventDefault();
-    }
-  };
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    finishEditing();
+    return;
+  }
+  
+  if (e.key === 'Escape') {
+    setIsEditing(false);
+    setLocalEditValue('');
+    return;
+  }
+  
+  // Allow all navigation and deletion keys
+  const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+  if (allowedKeys.includes(e.key)) {
+    return;
+  }
+  
+  // Check length for other keys
+  const currentLength = headerRef.current ? headerRef.current.textContent.length : 0;
+  if (currentLength >= 25 && e.key.length === 1) {
+    e.preventDefault();
+  }
+};
 
   const handleBlur = () => {
     finishEditing();
   };
 
-  const finishEditing = () => {
-    if (!isEditing) return;
-    
-    const trimmedValue = localEditValue.trim();
-    if (trimmedValue && trimmedValue !== staffMember.name) {
-      onUpdateName(staffMember.id, trimmedValue);
+ const finishEditing = () => {
+  if (!isEditing) return;
+  
+  const trimmedValue = localEditValue.trim();
+  
+  // Parse the edited text to extract name and potential role change
+  let newName = trimmedValue;
+  let newRole = null; // null means user wants to remove role tag
+  let foundRoleTag = false;
+  
+  // Check if user included a role tag
+  const rolePatterns = [
+    { regex: /\s*\(Nurse\)\s*$/i, role: 'Nurse' },
+    { regex: /\s*\(Onward\)\s*$/i, role: 'Onward' },
+    { regex: /\s*\(Resp\)\s*$/i, role: 'Response' },
+    { regex: /\s*\(Response\)\s*$/i, role: 'Response' },
+    { regex: /\s*\(Sec\)\s*$/i, role: 'Security' },
+    { regex: /\s*\(Security\)\s*$/i, role: 'Security' },
+    { regex: /\s*\(HCA\)\s*$/i, role: 'HCA' },
+    { regex: /\s*\(SHCA\)\s*$/i, role: 'SHCA' },
+    { regex: /\s*\(Bank\/Agency\)\s*$/i, role: 'Bank/Agency' },
+    { regex: /\s*\(New Starter\)\s*$/i, role: 'New Starter' },
+  ];
+  
+  for (const pattern of rolePatterns) {
+    if (pattern.regex.test(trimmedValue)) {
+      newRole = pattern.role;
+      newName = trimmedValue.replace(pattern.regex, '').trim();
+      foundRoleTag = true;
+      break;
     }
-    
-    setIsEditing(false);
-    setLocalEditValue('');
-  };
+  }
+  
+  // If no role tag found, default to HCA (user removed the tag)
+  if (!foundRoleTag) {
+    newRole = 'HCA';
+    newName = trimmedValue; // The whole text is the name
+  }
+  
+  if (newName && (newName !== staffMember.name || newRole !== staffMember.role)) {
+    // If role changed, update staff with role change
+    if (newRole !== staffMember.role) {
+      const roleToSkillLevel = {
+        "Nurse": 1,
+        "SHCA": 2,
+        "HCA": 3,
+        "Bank/Agency": 4,
+        "New Starter": 5,
+        "Security": 3,
+        "Onward": 3,
+        "Response": 3
+      };
+      
+      setStaff(currentStaff => 
+        currentStaff.map((member) => {
+          if (member.id === staffMember.id) {
+            let updates = {
+              ...member,
+              name: newName,
+              role: newRole,
+              skillLevel: roleToSkillLevel[newRole] || 3,
+              security: false,
+              nurse: false,
+              securityObs: null,
+              nurseObs: null,
+            };
+            
+            if (["Security", "Onward", "Response"].includes(newRole)) {
+              updates.security = true;
+              updates.securityObs = member.securityObs || 0;
+            } else if (newRole === "Nurse") {
+              updates.nurse = true;
+              updates.nurseObs = member.nurseObs || 0;
+            }
+            
+            return updates;
+          }
+          return member;
+        })
+      );
+    } else {
+      // Just update the name
+      onUpdateName(staffMember.id, newName);
+    }
+  }
+  
+  setIsEditing(false);
+  setLocalEditValue('');
+};
 
   // Set initial content and cursor position when entering edit mode
   useEffect(() => {
@@ -777,8 +871,13 @@ function AllocationCreation({
   setSelectedCells(new Set([getCellKey(staffName, hour)]));
 }, [editingCell, editValue, staff, updateObservation]);
 
- const handleSelectionMove = useCallback((staffName, hour) => {
+const handleSelectionMove = useCallback((staffName, hour) => {
   if (!isSelecting || !selectionStart) return;
+
+  // Safety check: ensure staff is valid
+  if (!staff || !Array.isArray(staff) || staff.length === 0) {
+    return;
+  }
 
   // Use the SAME sorting logic as sortedStaff
   const sortedStaffList = [...staff]
@@ -792,17 +891,23 @@ function AllocationCreation({
       const priorityA = getPriority(a);
       const priorityB = getPriority(b);
       return priorityA - priorityB;
-      // ✅ Removed name comparison to match sortedStaff
     });
+
+  // Safety check: ensure we have valid sorted staff
+  if (!sortedStaffList || sortedStaffList.length === 0) {
+    return;
+  }
 
   const hours = Array.from({ length: 12 }, (_, i) => 8 + i);
 
-  const startStaffIndex = sortedStaffList.findIndex(s => s.name === selectionStart.staffName);
-  const endStaffIndex = sortedStaffList.findIndex(s => s.name === staffName);
+  const startStaffIndex = sortedStaffList.findIndex(s => s && s.name === selectionStart.staffName);
+  const endStaffIndex = sortedStaffList.findIndex(s => s && s.name === staffName);
   const startHourIndex = hours.indexOf(selectionStart.hour);
   const endHourIndex = hours.indexOf(hour);
 
-  if (startStaffIndex === -1 || endStaffIndex === -1 || startHourIndex === -1 || endHourIndex === -1) return;
+  if (startStaffIndex === -1 || endStaffIndex === -1 || startHourIndex === -1 || endHourIndex === -1) {
+    return;
+  }
 
   const minStaffIndex = Math.min(startStaffIndex, endStaffIndex);
   const maxStaffIndex = Math.max(startStaffIndex, endStaffIndex);
@@ -811,15 +916,18 @@ function AllocationCreation({
 
   const newSelected = new Set();
   for (let si = minStaffIndex; si <= maxStaffIndex; si++) {
-    for (let hi = minHourIndex; hi <= maxHourIndex; hi++) {
-      newSelected.add(getCellKey(sortedStaffList[si].name, hours[hi]));
+    if (sortedStaffList[si] && sortedStaffList[si].name) {
+      for (let hi = minHourIndex; hi <= maxHourIndex; hi++) {
+        newSelected.add(getCellKey(sortedStaffList[si].name, hours[hi]));
+      }
     }
   }
   setSelectedCells(newSelected);
 }, [isSelecting, selectionStart, staff]);
-  const handleSelectionEnd = useCallback(() => {
-    setIsSelecting(false);
-  }, []);
+
+const handleSelectionEnd = useCallback(() => {
+  setIsSelecting(false);
+}, []);
 
   const isCellSelected = useCallback((staffName, hour) => {
     return selectedCells.has(getCellKey(staffName, hour));
@@ -1159,15 +1267,6 @@ useEffect(() => {
   const staffCount = staff.length;
 const obsCount = observations.length;
 
-useEffect(() => {
-  if (!localTableRef.current) return;
-  const container = localTableRef.current.parentElement;
-  const table = localTableRef.current;
-  const scaleX = container.clientWidth / table.scrollWidth;
-  const scaleY = container.clientHeight / table.scrollHeight;
-  const scale = Math.min(scaleX, scaleY, 1);
-  table.style.zoom = scale;
-}, [staffCount, obsCount]);
 
  useEffect(() => {
   setTableRef(localTableRef.current);
@@ -1485,13 +1584,14 @@ const ContextMenu = () => {
     .sort((a, b) => {
       const getPriority = (staffMember) => {
         if (staffMember.nurse === true) return 1;
-        if (staffMember.security === true) return 2;
-        return 3;
+        if (staffMember.role === 'Security') return 2;
+        if (staffMember.role === 'Onward') return 3;
+        if (staffMember.role === 'Response') return 4;
+        return 5;
       };
       const priorityA = getPriority(a);
       const priorityB = getPriority(b);
       return priorityA - priorityB;
-      // Removed the name comparison - staff will maintain their original order within each priority group
     });
 }, [staff]);
 
@@ -1614,6 +1714,7 @@ const ContextMenu = () => {
                     dragDropEnabled={dragDropEnabled}
                     staff={staff}
                     styles={styles}
+                    setStaff={setStaff}
                   />
                 );
               })}
@@ -1713,6 +1814,7 @@ const ContextMenu = () => {
                     dragDropEnabled={dragDropEnabled}
                     staff={staff}
                     styles={styles}
+                    setStaff={setStaff}
                   />
                   {hours.map(hour => {
                     let observation = staffMember.observations[hour] === 'Generals' ? 'Gen' : staffMember.observations[hour] || '-';
@@ -1756,68 +1858,69 @@ const ContextMenu = () => {
   };
 
   return (
-    <>
-      <div className={styles.draggableObsContainer}>
-  <div className={styles.undoRedoWrapper}>
-    <UndoRedoButtons
-      canUndo={canUndo}
-      canRedo={canRedo}
-      onUndo={undo}
-      onRedo={redo}
-      currentIndex={currentIndex}
-      historyLength={historyLength}
-    />
-    <FormattingButtons
-      onTextColorChange={handleFormatTextColor}
-      onUnderlineToggle={handleFormatUnderline}
-      onBoldToggle={handleFormatBold}  // 👈 ADD THIS
-      onFillColorChange={handleFormatFill}
-      hasSelection={selectedCells.size > 0 || editingCell !== null}
-    />
-  </div>
-
-        <div className={styles.centeredItems}>
-          <div>
-            <DragDropToggle 
-              dragDropEnabled={dragDropEnabled}
-              setDragDropEnabled={setDragDropEnabled}
-            />
-          </div>
-
-          <div>
-            <ColorToggleButton 
-              colorCodingEnabled={colorCodingEnabled}
-              setColorCodingEnabled={setColorCodingEnabled}
-              observations={observations}
-              observationColors={observationColors}
-            />
-          </div>
-          
-          <div>
-            <DraggableXCell value="X" />
-          </div>
-
-          {observations.map((observation, index) => (
-            <div key={index}>
-              <DraggableObservationCell observation={observation} />
-            </div>
-          ))}
-        </div>
-
-        <SettingsButton 
-          isTransposed={isTransposed}
-          setIsTransposed={setIsTransposed}
+  <div className={styles.pageWrapper}>
+    <div className={`${styles.draggableObsContainer} ${styles.toolbar}`}>
+      <div className={styles.undoRedoWrapper}>
+        <UndoRedoButtons
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={undo}
+          onRedo={redo}
+          currentIndex={currentIndex}
+          historyLength={historyLength}
+        />
+        <FormattingButtons
+          onTextColorChange={handleFormatTextColor}
+          onUnderlineToggle={handleFormatUnderline}
+          onBoldToggle={handleFormatBold}
+          onFillColorChange={handleFormatFill}
+          hasSelection={selectedCells.size > 0 || editingCell !== null}
         />
       </div>
-    
-      <div className={styles.tableContainer}>
-        <table ref={localTableRef} className={styles.allocationTable}>
-          {renderTable()}
-        </table>
+
+      <div className={styles.centeredItems}>
+        <div>
+          <DragDropToggle 
+            dragDropEnabled={dragDropEnabled}
+            setDragDropEnabled={setDragDropEnabled}
+          />
+        </div>
+
+        <div>
+          <ColorToggleButton 
+            colorCodingEnabled={colorCodingEnabled}
+            setColorCodingEnabled={setColorCodingEnabled}
+            observations={observations}
+            observationColors={observationColors}
+          />
+        </div>
+        
+        <div>
+          <DraggableXCell value="X" />
+        </div>
+
+        {observations.map((observation, index) => (
+          <div key={index}>
+            <DraggableObservationCell observation={observation} />
+          </div>
+        ))}
       </div>
-      <ContextMenu />
-    </>
-  );
+
+      <SettingsButton 
+        isTransposed={isTransposed}
+        setIsTransposed={setIsTransposed}
+      />
+    </div>
+  
+    <div className={styles.tableContainer}>
+      <table ref={localTableRef} className={styles.allocationTable}>
+        {renderTable()}
+      </table>
+    </div>
+    
+    <ContextMenu />
+  </div>
+);
 }
 
 export default AllocationCreation;

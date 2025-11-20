@@ -1,29 +1,34 @@
 /*allocationCreation.module.css*/
 
 *{
-  
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Page wrapper for flex layout */
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;  /* Changed from height: 100vh */
+  overflow: hidden;
+}
+
+/* Toolbar items that shouldn't shrink */
+.toolbar {
+  flex-shrink: 0;
+}
 
 .tableContainer {
-  max-height: 47rem;
-  height: 100vh;
+  flex: 1; /* Takes up all remaining space */
   width: 100%;
-  /* For Firefox */
   border: solid black 0.1rem;
-  position: relative; /* Ensures the container can handle absolute positioning inside it */
-  overflow: auto; /* Enables scrolling */
-  /* Use the modern approach to attempt overlay scrollbars */
-  overflow: overlay;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
+  position: relative;
+  overflow: auto;
+  min-height: 0; /* Important for flex child with overflow */
 }
+
 .draggableObsContainer {
   display: flex;
   height: 5rem;
@@ -34,7 +39,7 @@
   border-left: 0.1rem solid black;
   border-radius: 0.8rem 0.8rem 0 0;
   align-items: center;
-  justify-content: flex-start; /* Changed from center to flex-start */
+  justify-content: flex-start;
   flex-direction: row;
   gap: 10px;
   padding: 10px;
@@ -42,7 +47,7 @@
 
 .draggableObsContainer > div {
   display: flex;
-  align-items: center;  /* Center each child vertically */
+  align-items: center;
 }
 
 /* ✨ Undo/Redo wrapper - stays on the left ✨ */
@@ -50,7 +55,7 @@
   display: flex;
   align-items: center;
   padding-left: 0.5rem;
-  flex-shrink: 0; /* Prevents it from shrinking */
+  flex-shrink: 0;
 }
 
 /* ✨ NEW: Wrapper for centered items (Color Toggle, X, Observations) ✨ */
@@ -58,63 +63,63 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1; /* Takes up remaining space */
-  justify-content: center; /* Centers the items within this wrapper */
+  flex: 1;
+  justify-content: center;
 }
 
 .obsCells {
   justify-content: center;
   align-items: center;
   border: black solid 0.1rem;
-  padding: 0.5rem 1rem;
+  padding: 0.8rem 1.5rem;
   margin: 1rem;
   border-radius: 0.7rem;
-  font-size: 1.72rem;
+  font-size: 1.7rem;
   background-color: white;
   cursor: grab;
 }
+
 .obsCells:hover{
   background-color: rgb(214, 214, 214);
 }
 
 .tableContainer::-webkit-scrollbar {
-  width: 1rem; /* Width of the scrollbar */
-  height: 0.7rem; /* Height for horizontal scrollbars if applicable */
+  width: 1rem;
+  height: 0.7rem;
 }
 
 .tableContainer::-webkit-scrollbar-track {
-  background-color: transparent; /* Color of the track */
+  background-color: transparent;
 }
 
 .tableContainer::-webkit-scrollbar-thumb {
-  background-color: rgb(119, 119, 119); /* Semi-transparent thumb */
+  background-color: rgb(119, 119, 119);
   border-radius: 5rem;
-  
 }
 
 .tableContainer::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(72, 72, 72); /* Semi-transparent thumb on hover */
+  background-color: rgb(72, 72, 72);
 }
 
 .allocationTable {
   width: 100%;
+  height: 100%;
   border-collapse: collapse;
   font-family: Arial;
   background-color: white;
-  font-size: 1.72rem;
-  height: 100%;
+  font-size: 1.6rem;
 }
 
 .allocationTable th, .hourCell, table td {
   border: 0.1rem solid black;
   text-align: center;
-  padding: 0.4rem 0.2rem; /* Balanced padding instead of 0.6rem 0.2rem 0 0.2rem */
+  padding: 0.3rem 0.2rem;
   width: 12rem;
   height: 3rem;
-  white-space: normal; /* Allows text to wrap */
-  overflow-wrap: break-word; /* Allows the words to break and wrap */
-  word-break: break-word; /* Ensures that long words will break at any character */
-  vertical-align: middle; /* Add this line */
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  vertical-align: middle;
 }
 
 /* ✨ Fix drag flickering - prevent pointer events on table structure ✨ */
@@ -127,12 +132,12 @@
 .allocationTable td,
 .allocationTable th {
   pointer-events: auto;
-  user-select: none; /* Prevent text selection during drag */
+  user-select: none;
 }
 
 .allocationTable td {
-  vertical-align: middle; /* Center content vertically */
-  padding: 0.4rem 0.2rem; /* Balanced padding */
+  vertical-align: middle;
+  padding: 0.3rem 0.2rem;
 }
 
 table td:not(.hourCell):hover {
@@ -141,32 +146,31 @@ table td:not(.hourCell):hover {
 
 /* Add these styles to your stylesheet */
 .draggingCell {
-  background-color: rgb(172, 172, 172); /* background for the cell being dragged */
-  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2), /* Inner shadow for depth */
+  background-color: rgb(172, 172, 172);
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2),
               inset 0 -3px 8px rgba(0, 0, 0, 0.2);
-  opacity: 0.8; /* Make it slightly transparent during drag */
+  opacity: 0.8;
   cursor: grabbing !important;
 }
 
 .hoveringCell {
   border: 1rem;
-  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2), /* Inner shadow for depth */
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2),
               inset 0 -3px 8px rgba(0, 0, 0, 0.2);
 }
 
-
 .dragHandle {
-  cursor: grab; /* Change to 'grabbing' when actually dragging */
+  cursor: grab;
   opacity: 0.5;
 }
 
 .cell:hover .dragHandle {
-  opacity: 1; /* Make drag handle fully visible on hover */
+  opacity: 1;
 }
 
 .cell:hover {
-  box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.2); /* Highlight cell on hover */
-  background-color: #f0f0f0; /* Light background color on hover */
+  box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.2);
+  background-color: #f0f0f0;
   outline: none;
 }
 
@@ -196,7 +200,7 @@ table td:not(.hourCell):hover {
 }
 
 .allocationTable td[contenteditable="true"]:empty:before {
-  content: '\200b'; /* Zero-width space */
+  content: '\200b';
   display: inline-block;
 }
 
@@ -229,28 +233,29 @@ table td:not(.hourCell):hover {
 
   .allocationTable {
     min-height: 100vh;
-    
   }
 
   .tableContainer *{
     margin: 0;
     padding: 0;
   }
+  
   .allocationTable, .allocationTable tr, .allocationTable td, .allocationTable th {
-    font-size: 2rem;/* Alternative property for newer browsers */
-    
+    font-size: 2rem;
   }
 
   .allocationTable td, .allocationTable th {
-    word-wrap: break-word; /* Allow long words to break and wrap */ 
-    white-space: normal; /* Ensure whitespace is handled normally, allowing wrapping */
+    word-wrap: break-word;
+    white-space: normal;
   }
+  
   .allocationTable td{
-  text-overflow: ellipsis;
-  max-height: 3rem;
+    text-overflow: ellipsis;
+    max-height: 3rem;
   }
+  
   .break {
-    font-size: 13pt; /* Example: Reduce font size for printing */
+    font-size: 13pt;
   }
 }
 
@@ -275,11 +280,8 @@ table td:not(.hourCell):hover {
 }
 
 .break {
-  font-weight: bold;  /* Break cells are bold by default through CSS */
+  font-weight: bold;
 }
-
-/* context window */
-
 
 /* Context Menu Styles */
 .contextMenu {

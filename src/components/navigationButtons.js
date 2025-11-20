@@ -19,7 +19,8 @@ function NavigationButtons({
   hasCachedData,
   isAllocationReady,
   setIsAllocationReady,
-  resetHistory
+  resetHistory,
+  hasUnfinishedForm
 }) {
   
   useEffect(() => {
@@ -1892,53 +1893,61 @@ const handleAllocate = async () => {
 
 
 
-  const handleNext = () => {
-  if (currentPage === "patient" && observations.length < 1) {
-    alert("At least 1 observation is required");
-    return;
-  }
-
-  if (currentPage === "staff" && staff.length < 2) {
-    alert("At least 2 staff members are required");
-    return;
-  }
-
-  if (currentPage === "staff") {
-    console.log("=== NAVIGATING TO ALLOCATION ===");
-    console.log("Staff:", staff.map(s => ({ name: s.name, initialized: s.initialized })));
-    
-    // Check if any staff need initialization (shouldn't happen with new approach)
-    const needsInitialization = staff.some(member => !member.initialized);
-    if (needsInitialization) {
-      console.warn("⚠️ Some staff not initialized - this shouldn't happen!");
-      setStaff([...staff]);
+const handleNext = () => {
+    // Check for unfinished form FIRST
+    if (hasUnfinishedForm && (currentPage === "patient" || currentPage === "staff")) {
+      const confirmLeave = window.confirm(
+        "You have an unfinished assignment. Do you wish to continue?"
+      );
+      if (!confirmLeave) {
+        return; // Stay on the page
+      }
     }
-    
-    // ✨ Initialize undo/redo tracking ONLY THE FIRST TIME
-    if (!isAllocationReady && staff.length > 0) {
-      console.log('🟢 Starting undo/redo tracking for AllocationCreation (first time only)');
-      resetHistory(staff); // Only called ONCE
-      setIsAllocationReady(true);
-    } else if (isAllocationReady) {
-      console.log('ℹ️ Undo/redo already active, not resetting');
+
+    if (currentPage === "patient" && observations.length < 1) {
+      alert("At least 1 observation is required");
+      return;
     }
-    
-    setTimeout(() => {
+
+    if (currentPage === "staff" && staff.length < 2) {
+      alert("At least 2 staff members are required");
+      return;
+    }
+
+    if (currentPage === "staff") {
+      console.log("=== NAVIGATING TO ALLOCATION ===");
+      console.log("Staff:", staff.map(s => ({ name: s.name, initialized: s.initialized })));
+      
+      const needsInitialization = staff.some(member => !member.initialized);
+      if (needsInitialization) {
+        console.warn("⚠️ Some staff not initialized - this shouldn't happen!");
+        setStaff([...staff]);
+      }
+      
+      if (!isAllocationReady && staff.length > 0) {
+        console.log('🟢 Starting undo/redo tracking for AllocationCreation (first time only)');
+        resetHistory(staff);
+        setIsAllocationReady(true);
+      } else if (isAllocationReady) {
+        console.log('ℹ️ Undo/redo already active, not resetting');
+      }
+      
+      setTimeout(() => {
+        onNext();
+      }, 100);
+    } else {
       onNext();
-    }, 100);
-  } else {
-    onNext();
-  }
-};
+    }
+  };
 
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopyClick = () => {
-    copyTable();
+    copyTable(); // ✅ Use the prop directly
     setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000); // Reset after 3 seconds
+    setTimeout(() => setIsCopied(false), 2000);
   };
-
+  
   const handleAutoGenerate = () => {
     handleAllocate();
   };
