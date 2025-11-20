@@ -1082,21 +1082,15 @@ function resetStaff(staff, observations, startHour = 9) {
     staffMember.obsCounts = {};
     staffMember.lastReceived = {};
     
-    // Handle hours before startHour - only clear DELETED (non-current) observations
-    for (let hour = 7; hour < startHour; hour++) {
-      const currentValue = staffMember.observations[hour];
-      // Only clear if it's a DELETED observation that's not current
-      if (observationsToClean.has(currentValue)) {
-        staffMember.observations[hour] = "-";
-      }
-      // Otherwise leave it unchanged (includes current observations)
-    }
+    // ✅ FIX: NEVER TOUCH ANYTHING BEFORE startHour
+    // All hours before startHour are completely preserved regardless of deleted status
+    // (No loop needed here - just skip these hours entirely)
     
-    // Reset observations in the scheduling window (startHour to 19)
+    // Reset observations ONLY in the scheduling window (startHour to 19)
     for (let hour = startHour; hour <= 19; hour++) {
       const currentValue = staffMember.observations[hour];
 
-      // CRITICAL: Preserve user-assigned hour 8 if startHour <= 8
+      // ✅ PRESERVED: Special handling for hour 8 if within scheduling window
       if (hour === 8 && startHour <= 8) {
         const hour8Value = staffMember.observations[8];
         // Only preserve if it's a CURRENT observation (not deleted)
@@ -1106,11 +1100,11 @@ function resetStaff(staff, observations, startHour = 9) {
         }
       }
       
-      // Check if this value should be cleared
+      // Check if this value should be cleared in the scheduling window
       // Clear if: (1) it's a current observation OR (2) it's a deleted non-current observation
       if (currentObservationNames.has(currentValue) || observationsToClean.has(currentValue)) {
         // Clear this observation
-       staffMember.observations[hour] = "-";
+        staffMember.observations[hour] = "-";
       }
       // Otherwise, keep the value (user-entered custom values, Break, X, etc.)
       else {
@@ -1132,7 +1126,6 @@ function resetStaff(staff, observations, startHour = 9) {
 }
 
 
-// Run ONCE before the simulation. Mutates `staff` and `observations` in place.
 function applyDeletedObsOnce(staff, observations, startHour = 7) {
   // Collect deleted labels
   const toDelete = new Set(
@@ -1158,18 +1151,26 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
   // For counting valid obs later
   const validNames = new Set(observations.map(o => o.name));
 
-  // 1) Remove any timetable values that match deletedObs (but not current observations)
+  // ✅ FIX: Only remove deleted observations from the scheduling window (startHour to 19)
+  // NEVER touch anything before startHour - those are preserved regardless
   staff.forEach(member => {
     const obsMap = member.observations || {};
+    
+    // Only process hours from startHour onwards
     for (let h = startHour; h <= 19; h++) {
       const val = obsMap[h];
+      
+      // ✅ CRITICAL: Preserve user-assigned hour 8 if it's a VALID observation
       if (h === 8 && val && val !== "-" && validNames.has(val)) {
-          continue;
-        }
+        continue;
+      }
+      
+      // Remove if it's in the toActuallyDelete set
       if (toActuallyDelete.has(val)) {
         obsMap[h] = "-";
       }
     }
+    
     // Recount actual assignments (only current/valid obs names)
     member.numObservations = Object.keys(obsMap).reduce(
       (acc, h) => acc + (validNames.has(obsMap[h]) ? 1 : 0),
