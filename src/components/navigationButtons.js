@@ -1081,17 +1081,10 @@ function resetStaff(staff, observations, startHour = 9) {
     staffMember.lastObservation = staffMember.observations[8];
     staffMember.obsCounts = {};
     staffMember.lastReceived = {};
-    
-    // Handle hours before startHour - only clear DELETED (non-current) observations
-    for (let hour = 7; hour < startHour; hour++) {
-      const currentValue = staffMember.observations[hour];
-      // Only clear if it's a DELETED observation that's not current
-      if (observationsToClean.has(currentValue)) {
-        staffMember.observations[hour] = "-";
-      }
-      // Otherwise leave it unchanged (includes current observations)
-    }
-    
+
+    // ✅ PRESERVE ALL OBSERVATIONS BEFORE startHour
+    // Do not modify any hours before startHour - they should remain untouched
+
     // Reset observations in the scheduling window (startHour to 19)
     for (let hour = startHour; hour <= 19; hour++) {
       const currentValue = staffMember.observations[hour];
@@ -1105,7 +1098,7 @@ function resetStaff(staff, observations, startHour = 9) {
           continue;
         }
       }
-      
+
       // Check if this value should be cleared
       // Clear if: (1) it's a current observation OR (2) it's a deleted non-current observation
       if (currentObservationNames.has(currentValue) || observationsToClean.has(currentValue)) {
