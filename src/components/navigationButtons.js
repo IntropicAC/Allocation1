@@ -1640,12 +1640,13 @@ const handleAllocate = async () => {
     console.log('  Hour 8 value:', staff[0].observations?.[8]);
 
     // Map your data format to Railway's expected format
-    const railwayObservations = observations.map(obs => ({
-      id: obs.id,
-      name: obs.name,
-      observationType: obs.observationType,
-      StaffNeeded: obs.staff
-    }));
+   const railwayObservations = observations.map(obs => ({
+  id: obs.id,
+  name: obs.name,
+  observationType: obs.observationType,
+  staff: obs.staff,           
+  StaffNeeded: obs.staff      
+}));
 
     // Anonymize data
     console.log('\n🔒 Calling anonymizer.anonymizeStaff...');
