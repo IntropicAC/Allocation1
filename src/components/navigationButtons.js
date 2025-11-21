@@ -1682,36 +1682,36 @@ while (attempt < maxAttempts) {
   await new Promise(resolve => setTimeout(resolve, 1000));
   attempt++;
   
-  console.log(`⏳ Checking status... (${attempt}s elapsed)`);
+  console.log(` Checking status... (${attempt}s elapsed)`);
   
   try {
     const pollUrl = `${endpoint}/${jobId}`;
-    console.log(`🔍 Full polling URL: ${pollUrl}`);
+    console.log(` Full polling URL: ${pollUrl}`);
     
     const statusResponse = await fetch(pollUrl);
-    console.log(`📊 Response received - Status: ${statusResponse.status}`);
-    console.log(`📊 Response OK: ${statusResponse.ok}`);
-    console.log(`📊 Response headers:`, [...statusResponse.headers.entries()]);
+    console.log(` Response received - Status: ${statusResponse.status}`);
+    console.log(` Response OK: ${statusResponse.ok}`);
+    console.log(` Response headers:`, [...statusResponse.headers.entries()]);
     
     // Try to get response body
     const responseText = await statusResponse.text();
-    console.log(`📊 Response body (raw): ${responseText.substring(0, 200)}`);
+    console.log(` Response body (raw): ${responseText.substring(0, 200)}`);
     
     // Try to parse as JSON
     let statusData;
     try {
       statusData = JSON.parse(responseText);
-      console.log(`📊 Parsed JSON successfully:`, statusData);
+      console.log(` Parsed JSON successfully:`, statusData);
     } catch (parseError) {
-      console.error(`❌ JSON parse failed:`, parseError);
-      console.error(`❌ Raw text was:`, responseText);
+      console.error(` JSON parse failed:`, parseError);
+      console.error(` Raw text was:`, responseText);
       throw new Error(`Invalid JSON from server: ${responseText.substring(0, 100)}`);
     }
     
     if (statusResponse.status === 200) {
       // Job complete!
       result = statusData;
-      console.log(`✅ Solve complete after ${attempt} seconds!`);
+      console.log(` Solve complete after ${attempt} seconds!`);
       break;
       
     } else if (statusResponse.status === 202) {
@@ -1720,22 +1720,22 @@ while (attempt < maxAttempts) {
       console.log(`  ${progress} (${statusData.elapsed_seconds || attempt}s)`);
       
     } else if (statusResponse.status === 404) {
-      console.error(`❌ 404 - Job not found`);
+      console.error(` 404 - Job not found`);
       throw new Error('Job not found - it may have expired');
       
     } else {
-      console.error(`❌ Unexpected status: ${statusResponse.status}`);
+      console.error(` Unexpected status: ${statusResponse.status}`);
       throw new Error(`Polling failed: ${statusData.error || 'Unknown error'}`);
     }
     
   } catch (pollError) {
-    console.error(`❌ ═══════════════════════════════════════`);
-    console.error(`❌ POLLING ERROR AT ATTEMPT ${attempt}`);
-    console.error(`❌ ═══════════════════════════════════════`);
-    console.error(`❌ Error type: ${pollError.constructor.name}`);
-    console.error(`❌ Error message: ${pollError.message}`);
-    console.error(`❌ Error stack:`, pollError.stack);
-    console.error(`❌ ═══════════════════════════════════════`);
+    console.error(` ═══════════════════════════════════════`);
+    console.error(` POLLING ERROR AT ATTEMPT ${attempt}`);
+    console.error(` ═══════════════════════════════════════`);
+    console.error(` Error type: ${pollError.constructor.name}`);
+    console.error(` Error message: ${pollError.message}`);
+    console.error(` Error stack:`, pollError.stack);
+    console.error(` ═══════════════════════════════════════`);
     throw pollError;  // Re-throw to outer catch
   }
 }
