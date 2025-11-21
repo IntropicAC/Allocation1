@@ -1667,57 +1667,84 @@ const handleAllocate = async () => {
     console.log(`⏱️ Request took: ${Date.now() - startTime}ms`);
     
     // ═══════════════════════════════════════
-    // 🆕 STEP 2: POLL FOR RESULTS
-    // ═══════════════════════════════════════
-    console.log('\n⏳ ═══════════════════════════════════════');
-    console.log('⏳ POLLING FOR RESULTS');
-    console.log('⏳ ═══════════════════════════════════════');
+// 🆕 STEP 2: POLL FOR RESULTS
+// ═══════════════════════════════════════
+console.log('\n⏳ ═══════════════════════════════════════');
+console.log('⏳ POLLING FOR RESULTS');
+console.log('⏳ ═══════════════════════════════════════');
+
+const maxAttempts = 60;  // 60 seconds max
+let result = null;
+let attempt = 0;
+
+while (attempt < maxAttempts) {
+  // Wait 1 second between checks
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  attempt++;
+  
+  console.log(`⏳ Checking status... (${attempt}s elapsed)`);
+  
+  try {
+    const pollUrl = `${endpoint}/${jobId}`;
+    console.log(`🔍 Full polling URL: ${pollUrl}`);
     
-    const maxAttempts = 60;  // 60 seconds max
-    let result = null;
-    let attempt = 0;
+    const statusResponse = await fetch(pollUrl);
+    console.log(`📊 Response received - Status: ${statusResponse.status}`);
+    console.log(`📊 Response OK: ${statusResponse.ok}`);
+    console.log(`📊 Response headers:`, [...statusResponse.headers.entries()]);
     
-    while (attempt < maxAttempts) {
-      // Wait 1 second between checks
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      attempt++;
-      
-      console.log(`⏳ Checking status... (${attempt}s elapsed)`);
-      
-      try {
-        const statusResponse = await fetch(`${endpoint}/${jobId}`);
-        const statusData = await statusResponse.json();
-        
-        if (statusResponse.status === 200) {
-          // Job complete!
-          result = statusData;
-          console.log(`✅ Solve complete after ${attempt} seconds!`);
-          console.log('📊 Result:', JSON.stringify(result, null, 2).substring(0, 500));
-          break;
-          
-        } else if (statusResponse.status === 202) {
-          // Still processing
-          const progress = statusData.progress || 'Solving...';
-          console.log(`  ${progress} (${statusData.elapsed_seconds || attempt}s)`);
-          
-        } else if (statusResponse.status === 404) {
-          throw new Error('Job not found - it may have expired');
-          
-        } else {
-          throw new Error(`Polling failed: ${statusData.error || 'Unknown error'}`);
-        }
-        
-      } catch (pollError) {
-        console.error(`❌ Polling error:`, pollError);
-        throw pollError;
-      }
+    // Try to get response body
+    const responseText = await statusResponse.text();
+    console.log(`📊 Response body (raw): ${responseText.substring(0, 200)}`);
+    
+    // Try to parse as JSON
+    let statusData;
+    try {
+      statusData = JSON.parse(responseText);
+      console.log(`📊 Parsed JSON successfully:`, statusData);
+    } catch (parseError) {
+      console.error(`❌ JSON parse failed:`, parseError);
+      console.error(`❌ Raw text was:`, responseText);
+      throw new Error(`Invalid JSON from server: ${responseText.substring(0, 100)}`);
     }
     
-    if (!result) {
-      throw new Error(`Solver timed out after ${maxAttempts} seconds`);
+    if (statusResponse.status === 200) {
+      // Job complete!
+      result = statusData;
+      console.log(`✅ Solve complete after ${attempt} seconds!`);
+      break;
+      
+    } else if (statusResponse.status === 202) {
+      // Still processing
+      const progress = statusData.progress || 'Solving...';
+      console.log(`  ${progress} (${statusData.elapsed_seconds || attempt}s)`);
+      
+    } else if (statusResponse.status === 404) {
+      console.error(`❌ 404 - Job not found`);
+      throw new Error('Job not found - it may have expired');
+      
+    } else {
+      console.error(`❌ Unexpected status: ${statusResponse.status}`);
+      throw new Error(`Polling failed: ${statusData.error || 'Unknown error'}`);
     }
     
-    console.log('⏳ ═══════════════════════════════════════');
+  } catch (pollError) {
+    console.error(`❌ ═══════════════════════════════════════`);
+    console.error(`❌ POLLING ERROR AT ATTEMPT ${attempt}`);
+    console.error(`❌ ═══════════════════════════════════════`);
+    console.error(`❌ Error type: ${pollError.constructor.name}`);
+    console.error(`❌ Error message: ${pollError.message}`);
+    console.error(`❌ Error stack:`, pollError.stack);
+    console.error(`❌ ═══════════════════════════════════════`);
+    throw pollError;  // Re-throw to outer catch
+  }
+}
+
+if (!result) {
+  throw new Error(`Solver timed out after ${maxAttempts} seconds`);
+}
+
+console.log('⏳ ═══════════════════════════════════════');
     
     // ═══════════════════════════════════════
     // STEP 3: PROCESS RESULT (Keep your existing code)
