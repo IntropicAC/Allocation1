@@ -10,6 +10,9 @@ import FormattingButtons from './helperComponents/FormattingButtons';
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
+function stripZeroWidthSpace(text) {
+  return text.replace(/\u200B/g, '');
+}
 
 // Single DragDropCell component OUTSIDE of AllocationCreation
 
@@ -231,7 +234,7 @@ const handleCellClick = (e) => {
   
   // If click is from formatting area, don't do anything
   if (isFromFormattingArea) {
-    return; // EXIT EARLY - don't clear selection or change editing state
+    return;
   }
 
   // If Ctrl/Cmd is held, don't clear selection or enter edit mode (handled by mouseDown)
@@ -241,15 +244,12 @@ const handleCellClick = (e) => {
 
   // For break cells, toggle selection
   if (isBreak) {
-    // If this cell is currently selected, deselect it
     if (selectedCells.has(cellId)) {
       setSelectedCells(new Set());
     } else {
-      // Otherwise, select it
       setSelectedCells(new Set([cellId]));
     }
     
-    // Clear any editing state
     if (editingCell) {
       const [currentStaffName, currentHour] = editingCell.split('-');
       const currentStaffMember = staff.find(s => s.name === currentStaffName);
@@ -292,6 +292,31 @@ const handleCellClick = (e) => {
   setEditingCell(cellId);
   setEditValue(initialValue);
   setLocalEditValue(initialValue);
+  
+  // Fix cursor positioning for empty cells
+  setTimeout(() => {
+    if (cellRef.current) {
+      // If cell is empty, add a zero-width space as actual content
+      if (!cellRef.current.textContent || cellRef.current.textContent === '') {
+        cellRef.current.textContent = '\u200B';
+      }
+      
+      cellRef.current.focus();
+      
+      // Place cursor at the end
+      const range = document.createRange();
+      const sel = window.getSelection();
+      
+      if (cellRef.current.firstChild) {
+        const textNode = cellRef.current.firstChild;
+        const position = textNode.length;
+        range.setStart(textNode, position);
+        range.setEnd(textNode, position);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+  }, 0);
 };
   const handleBeforeInput = (e) => {
     const currentText = e.target.textContent || '';
@@ -302,10 +327,19 @@ const handleCellClick = (e) => {
   };
 
   const handleInput = (e) => {
-    const text = (e.target.textContent || '').slice(0, 14);
-    setLocalEditValue(text);
-    setEditValue(text);
-  };
+  // Strip zero-width space before processing
+  const text = stripZeroWidthSpace(e.target.textContent || '').slice(0, 14);
+  setLocalEditValue(text);
+  setEditValue(text);
+  
+  // Update the staff state immediately on every keystroke
+  const normalizedText = text === '' ? '-' : text;
+  const originalValue = staffMember.observations[hour] || '-';
+  
+  if (originalValue !== normalizedText) {
+    updateObservation(staffMember.name, hour, normalizedText);
+  }
+};
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -330,33 +364,39 @@ const handleCellClick = (e) => {
   };
 
   const finishEditing = () => {
-    if (!isEditing) return;
-    
-    const originalValue = staffMember.observations[hour] || '-';
-    const finalValue = localEditValue || editValue || '';
-    const normalizedEdit = finalValue === '' ? '-' : finalValue;
-    
-    if (originalValue !== normalizedEdit) {
-      updateObservation(staffMember.name, hour, normalizedEdit);
-    }
-    
-    setEditingCell(null);
-    setEditValue('');
-    setLocalEditValue('');
-  };
+  if (!isEditing) return;
+  
+  const originalValue = staffMember.observations[hour] || '-';
+  // Strip zero-width space from the final value
+  const finalValue = stripZeroWidthSpace(localEditValue || editValue || '');
+  const normalizedEdit = finalValue === '' ? '-' : finalValue;
+  
+  if (originalValue !== normalizedEdit) {
+    updateObservation(staffMember.name, hour, normalizedEdit);
+  }
+  
+  setEditingCell(null);
+  setEditValue('');
+  setLocalEditValue('');
+};
 
   useEffect(() => {
   if (isEditing && cellRef.current) {
     // Store current cursor position BEFORE updating content
     const sel = window.getSelection();
     let cursorPosition = 0;
+    let isInitialEdit = false;
     
-    if (sel.rangeCount > 0) {
+    // Check if we have a valid selection within our cell
+    if (sel.rangeCount > 0 && cellRef.current.contains(sel.focusNode)) {
       const range = sel.getRangeAt(0);
       const preCaretRange = range.cloneRange();
       preCaretRange.selectNodeContents(cellRef.current);
       preCaretRange.setEnd(range.endContainer, range.endOffset);
       cursorPosition = preCaretRange.toString().length;
+    } else {
+      // No valid selection in our cell yet = this is the initial edit
+      isInitialEdit = true;
     }
     
     // Only update textContent if it's different (prevents cursor jump on initial edit)
@@ -372,7 +412,10 @@ const handleCellClick = (e) => {
     
     if (cellRef.current.childNodes.length > 0) {
       const textNode = cellRef.current.firstChild;
-      const position = Math.min(cursorPosition, textNode.length);
+      // If initial edit, place at end; otherwise preserve existing position
+      const position = isInitialEdit 
+        ? textNode.length 
+        : Math.min(cursorPosition, textNode.length);
       range.setStart(textNode, position);
       range.setEnd(textNode, position);
     } else {
@@ -1499,12 +1542,22 @@ const ContextMenu = () => {
     setTimeRange(prev => prev === 'day' ? 'night' : 'day');
   };
 
-  const getObservationColor = (observationName) => {
+const getObservationColor = (observationName) => {
   if (!colorCodingEnabled || !observationName || observationName === '-') {
     return 'transparent';
   }
   
-  const firstWord = observationName.split(/[\s-]/)[0];
+  // Strip zero-width space and normalize
+  let cleanedName = stripZeroWidthSpace(observationName).trim();
+  
+  // Special handling for Generals abbreviations
+  const lowerCleaned = cleanedName.toLowerCase();
+  if (lowerCleaned === 'gen' || lowerCleaned === 'gens') {
+    cleanedName = 'Generals';
+  }
+  
+  const firstWord = cleanedName.split(/[\s-]/)[0].toLowerCase();
+  
   const deletedObs = observations[0]?.deletedObs || [];
   const currentNames = observations.map(obs => obs.name);
   
@@ -1514,12 +1567,15 @@ const ContextMenu = () => {
     ...currentNames.filter(name => !deletedObs.includes(name))
   ];
   
-  const index = orderedNames.findIndex(name => name === firstWord);
-  if (index !== -1) return observationColors[index % 10];
+  // Case-insensitive search
+  const index = orderedNames.findIndex(name => name.toLowerCase() === firstWord);
+  
+  if (index !== -1) {
+    return observationColors[index % 10];
+  }
   
   return 'transparent';
 };
-
   const countValidObservations = (staffObservations, observations) => {
     if (!staffObservations || typeof staffObservations !== 'object') {
       return 0;

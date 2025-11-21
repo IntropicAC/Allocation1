@@ -1712,29 +1712,29 @@ const handleAllocate = async () => {
     console.log(`⏰ Request start: ${new Date(requestStartTime).toLocaleTimeString()}`);
     
     const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestData)
-    });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(requestData)
+});
 
-    const requestDuration = Date.now() - requestStartTime;
-    console.log(`\n📥 Response received in ${requestDuration}ms`);
-    console.log(`📊 Response status: ${response.status} ${response.statusText}`);
+const resultText = await response.text();
+console.log(`📊 Response body length: ${resultText.length} characters`);
+console.log('📊 Response status:', response.status, response.statusText);
+console.log('📊 First 200 chars of response:', resultText.substring(0, 200));
 
-    const resultText = await response.text();
-    console.log(`📊 Response body length: ${resultText.length} characters`);
-    
-    let result;
-    try {
-      result = JSON.parse(resultText);
-      console.log('✅ Successfully parsed JSON response');
-    } catch (parseError) {
-      console.error('❌ Failed to parse JSON:', parseError);
-      console.log('Full response text:', resultText);
-      throw new Error(`Invalid JSON response: ${parseError.message}`);
-    }
+let result;
+try {
+  result = JSON.parse(resultText);
+  console.log('✅ Successfully parsed JSON response');
+} catch (parseError) {
+  console.error('❌ Failed to parse JSON:', parseError);
+  console.error('❌ Response status:', response.status);
+  console.error('❌ Full response text:', resultText);
+  
+  // Show the actual backend error to user
+  alert(`Backend Error (${response.status}):\n\n${resultText.substring(0, 500)}\n\n(Check console for full error)`);
+  throw new Error(`Invalid JSON response from server`);
+}
     
     // ═══════════════════════════════════════
     // 📥 DETAILED API RESPONSE LOGGING
