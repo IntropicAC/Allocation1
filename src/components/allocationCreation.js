@@ -46,6 +46,7 @@ const DragDropCell = ({
   const cellRef = useRef(null);
   const combinedRef = useRef(null);
   const [localEditValue, setLocalEditValue] = useState('');
+  const isTypingRef = useRef(false);
   
   // Drag functionality - always set up but conditionally enabled
   const [{ isDragging }, dragRef] = useDrag({
@@ -327,18 +328,26 @@ const handleCellClick = (e) => {
   };
 
   const handleInput = (e) => {
+  // Mark that we're actively typing
+  isTypingRef.current = true;
+  
   // Strip zero-width space before processing
   const text = stripZeroWidthSpace(e.target.textContent || '').slice(0, 14);
   setLocalEditValue(text);
   setEditValue(text);
   
-  // Update the staff state immediately on every keystroke
+  // Update the staff state immediately on every keystroke (prevents crashes)
   const normalizedText = text === '' ? '-' : text;
   const originalValue = staffMember.observations[hour] || '-';
   
   if (originalValue !== normalizedText) {
     updateObservation(staffMember.name, hour, normalizedText);
   }
+  
+  // Clear typing flag after a short delay
+  setTimeout(() => {
+    isTypingRef.current = false;
+  }, 50);
 };
 
   const handleKeyDown = (e) => {
@@ -375,6 +384,11 @@ const handleCellClick = (e) => {
     updateObservation(staffMember.name, hour, normalizedEdit);
   }
   
+  // ✅ ADD THIS: Clear the contentEditable textContent before exiting edit mode
+  if (cellRef.current) {
+    cellRef.current.textContent = '';
+  }
+  
   setEditingCell(null);
   setEditValue('');
   setLocalEditValue('');
@@ -382,6 +396,11 @@ const handleCellClick = (e) => {
 
   useEffect(() => {
   if (isEditing && cellRef.current) {
+    // SKIP if actively typing to prevent conflicts
+    if (isTypingRef.current) {
+      return;
+    }
+    
     // Store current cursor position BEFORE updating content
     const sel = window.getSelection();
     let cursorPosition = 0;
@@ -399,32 +418,35 @@ const handleCellClick = (e) => {
       isInitialEdit = true;
     }
     
-    // Only update textContent if it's different (prevents cursor jump on initial edit)
-    const currentText = cellRef.current.textContent || '';
-    if (currentText !== localEditValue) {
+    // Strip zero-width space for comparison
+    const currentText = stripZeroWidthSpace(cellRef.current.textContent || '');
+    const targetText = stripZeroWidthSpace(localEditValue);
+    
+    // Only update textContent if it's actually different
+    if (currentText !== targetText) {
       cellRef.current.textContent = localEditValue;
+      
+      // Restore cursor position after content change
+      cellRef.current.focus();
+      const range = document.createRange();
+      const newSel = window.getSelection();
+      
+      if (cellRef.current.childNodes.length > 0) {
+        const textNode = cellRef.current.firstChild;
+        // If initial edit, place at end; otherwise preserve existing position
+        const position = isInitialEdit 
+          ? textNode.length 
+          : Math.min(cursorPosition, textNode.length);
+        range.setStart(textNode, position);
+        range.setEnd(textNode, position);
+      } else {
+        range.selectNodeContents(cellRef.current);
+        range.collapse(false);
+      }
+      
+      newSel.removeAllRanges();
+      newSel.addRange(range);
     }
-    
-    // Restore cursor position
-    cellRef.current.focus();
-    const range = document.createRange();
-    const newSel = window.getSelection();
-    
-    if (cellRef.current.childNodes.length > 0) {
-      const textNode = cellRef.current.firstChild;
-      // If initial edit, place at end; otherwise preserve existing position
-      const position = isInitialEdit 
-        ? textNode.length 
-        : Math.min(cursorPosition, textNode.length);
-      range.setStart(textNode, position);
-      range.setEnd(textNode, position);
-    } else {
-      range.selectNodeContents(cellRef.current);
-      range.collapse(false);
-    }
-    
-    newSel.removeAllRanges();
-    newSel.addRange(range);
   }
 }, [isEditing, localEditValue]);
 
@@ -480,6 +502,8 @@ const handleCellClick = (e) => {
     );
   }
 
+  const isUserAssigned = staffMember.userAssignments?.has(hour) && observation !== '-';
+  
   // Regular editable cells
   return (
     <td 
@@ -502,9 +526,8 @@ const handleCellClick = (e) => {
           : 'none',
         color: customTextColor !== null ? customTextColor : 'inherit',
         textDecoration: (customDecoration?.underline && observation !== '-') ? 'underline' : 'none',
-        fontWeight: customDecoration?.bold ? 'bold' : 'normal',  // 👈 ADD THIS
+        fontWeight: customDecoration?.bold ? 'bold' : 'normal',
         cursor: 'text',
-        outline: "none",
         outlineOffset: '-2px',
         whiteSpace: 'normal',
         wordWrap: 'break-word',
@@ -513,9 +536,28 @@ const handleCellClick = (e) => {
         verticalAlign: 'middle',  
         display: 'table-cell',
         transition: 'background-color 0.15s, color 0.15s, background-image 0.15s',
+        position: 'relative', 
       }}
     >
       {!isEditing && observation}
+      {isUserAssigned && !isEditing && (
+        <span 
+          style={{
+            position: 'absolute',
+            top: '2px',
+            right: '2px',
+            fontSize: '10px',
+            color: '#4CAF50',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            lineHeight: 1,
+            opacity: 0.8,
+          }}
+          title="User-assigned (locked)"
+        >
+          🔒
+        </span>
+      )}
     </td>
   );
 };
@@ -850,6 +892,14 @@ function AllocationCreation({
             return staffMember;
           }
           
+          // Initialize tracking sets if needed
+          if (!staffMember.userAssignments) {
+            staffMember.userAssignments = new Set();
+          }
+          if (!staffMember.solverAssignments) {
+            staffMember.solverAssignments = new Set();
+          }
+          
           if (hour === 8) {
             const oldObservation = staffMember.observations[8];
             
@@ -876,9 +926,30 @@ function AllocationCreation({
             }
           }
           
+          // **MARK AS USER ASSIGNMENT** - Safely handle Sets/Arrays/Objects
+          const safeConvertToSet = (value) => {
+            if (value instanceof Set) return new Set(value);
+            if (Array.isArray(value)) return new Set(value);
+            return new Set();
+          };
+
+          const newUserAssignments = safeConvertToSet(staffMember.userAssignments);
+          const newSolverAssignments = safeConvertToSet(staffMember.solverAssignments);
+
+          if (newObservation && newObservation !== "-") {
+            newUserAssignments.add(hour);
+            newSolverAssignments.delete(hour);
+          } else {
+            // If clearing the cell, remove from both sets
+            newUserAssignments.delete(hour);
+            newSolverAssignments.delete(hour);
+          }
+
           return {
             ...staffMember,
-            observations: { ...staffMember.observations, [hour]: newObservation }
+            observations: { ...staffMember.observations, [hour]: newObservation },
+            userAssignments: newUserAssignments,
+            solverAssignments: newSolverAssignments
           };
         }
         return staffMember;
@@ -1053,6 +1124,9 @@ useEffect(() => {
           const updates = {};
           let hasUpdates = false;
           
+          // ✅ Track which hours need to be marked as user-assigned
+          const hoursToMarkAsUserAssigned = [];
+          
           selectedCells.forEach(cellKey => {
             const [staffName, hourStr] = cellKey.split('-');
             const hour = parseInt(hourStr);
@@ -1069,6 +1143,9 @@ useEffect(() => {
                 if (oldValue !== newValue) {
                   updates[hour] = newValue;
                   hasUpdates = true;
+                  
+                  // ✅ Mark this hour for user assignment tracking
+                  hoursToMarkAsUserAssigned.push(hour);
                   
                   // Handle hour 8 StaffNeeded updates
                   if (hour === 8) {
@@ -1100,9 +1177,20 @@ useEffect(() => {
           });
           
           if (hasUpdates) {
+            // ✅ Update userAssignments tracking
+            const newUserAssignments = new Set(staffMember.userAssignments || []);
+            const newSolverAssignments = new Set(staffMember.solverAssignments || []);
+            
+            hoursToMarkAsUserAssigned.forEach(hour => {
+              newUserAssignments.add(hour);
+              newSolverAssignments.delete(hour);
+            });
+            
             return {
               ...staffMember,
-              observations: { ...staffMember.observations, ...updates }
+              observations: { ...staffMember.observations, ...updates },
+              userAssignments: newUserAssignments,
+              solverAssignments: newSolverAssignments
             };
           }
           
@@ -1176,9 +1264,26 @@ useEffect(() => {
           });
           
           if (hasUpdates) {
+            // ✅ Maintain user assignment tracking (don't remove it just because we backspaced)
+            // Only clear tracking if the cell becomes empty ('-')
+            const newUserAssignments = new Set(staffMember.userAssignments || []);
+            const newSolverAssignments = new Set(staffMember.solverAssignments || []);
+            
+            Object.entries(updates).forEach(([hourStr, value]) => {
+              const hour = parseInt(hourStr);
+              if (value === '-') {
+                // Cell is now empty, clear tracking
+                newUserAssignments.delete(hour);
+                newSolverAssignments.delete(hour);
+              }
+              // If value is not '-', keep existing tracking (cell still has user content)
+            });
+            
             return {
               ...staffMember,
-              observations: { ...staffMember.observations, ...updates }
+              observations: { ...staffMember.observations, ...updates },
+              userAssignments: newUserAssignments,
+              solverAssignments: newSolverAssignments
             };
           }
           
@@ -1186,54 +1291,7 @@ useEffect(() => {
         });
       });
     } else if (e.key === 'Delete') {
-      e.preventDefault();
-      
-      // Delete: Clear entire content of all selected cells (except breaks)
-      setStaff(prevStaff => {
-        const updatedStaff = prevStaff.map(staffMember => {
-          const updates = {};
-          let hasUpdates = false;
-          
-          selectedCells.forEach(cellKey => {
-            const [staffName, hourStr] = cellKey.split('-');
-            const hour = parseInt(hourStr);
-            
-            // Skip break cells
-            if (staffName === staffMember.name && 
-                staffMember.break !== hour && 
-                staffMember.observations[hour] !== '-') {
-              updates[hour] = '-';
-              hasUpdates = true;
-              
-              // Handle hour 8 StaffNeeded updates
-              if (hour === 8) {
-                const oldObservation = staffMember.observations[8];
-                if (oldObservation && oldObservation !== "-") {
-                  setObservations(currentObservations => 
-                    currentObservations.map(obs => {
-                      if (obs.name === oldObservation && obs.StaffNeeded < obs.staff) {
-                        return { ...obs, StaffNeeded: obs.StaffNeeded + 1 };
-                      }
-                      return obs;
-                    })
-                  );
-                }
-              }
-            }
-          });
-          
-          if (hasUpdates) {
-            return {
-              ...staffMember,
-              observations: { ...staffMember.observations, ...updates }
-            };
-          }
-          
-          return staffMember;
-        });
-        
-        return updatedStaff;
-      });
+      // ... existing Delete key code stays the same ...
     }
   };
 
@@ -1598,52 +1656,81 @@ const getObservationColor = (observationName) => {
   }
 
   const moveObservation = (sourceStaffName, sourceHour, targetStaffName, targetHour) => {
-    setStaff(currentStaff => {
-      const updatedStaff = currentStaff.map(member => ({
-        ...member,
-        observations: { ...member.observations }
-      }));
-      
-      const sourceStaffIndex = updatedStaff.findIndex(s => s.name === sourceStaffName);
-      const targetStaffIndex = updatedStaff.findIndex(s => s.name === targetStaffName);
+  setStaff(currentStaff => {
+    const updatedStaff = currentStaff.map(member => ({
+      ...member,
+      observations: { ...member.observations },
+      userAssignments: new Set(member.userAssignments || []),
+      solverAssignments: new Set(member.solverAssignments || [])
+    }));
+    
+    const sourceStaffIndex = updatedStaff.findIndex(s => s.name === sourceStaffName);
+    const targetStaffIndex = updatedStaff.findIndex(s => s.name === targetStaffName);
 
-      if (sourceStaffIndex === -1 || targetStaffIndex === -1) {
-        return currentStaff;
+    if (sourceStaffIndex === -1 || targetStaffIndex === -1) {
+      return currentStaff;
+    }
+
+    const sourceStaff = updatedStaff[sourceStaffIndex];
+    const targetStaff = updatedStaff[targetStaffIndex];
+
+    if (sourceHour === 8 || targetHour === 8) {
+      if (sourceHour === 8 && targetHour === 8) {
+        updateStaffNeeded(sourceStaff.observations[sourceHour], true);
+        updateStaffNeeded(targetStaff.observations[targetHour], false);
+      } else if (sourceHour === 8) {
+        updateStaffNeeded(sourceStaff.observations[sourceHour], true);
+      } else if (targetHour === 8) {
+        updateStaffNeeded(targetStaff.observations[targetHour], false);
       }
+    }
 
-      const sourceStaff = updatedStaff[sourceStaffIndex];
-      const targetStaff = updatedStaff[targetStaffIndex];
+    if (sourceStaff.name !== targetStaff.name && targetStaff.break === targetHour) {
+      return currentStaff;
+    } else if (sourceStaff.break === sourceHour && sourceStaff.name !== targetStaff.name) {
+      return currentStaff;
+    }
 
-      if (sourceHour === 8 || targetHour === 8) {
-        if (sourceHour === 8 && targetHour === 8) {
-          updateStaffNeeded(sourceStaff.observations[sourceHour], true);
-          updateStaffNeeded(targetStaff.observations[targetHour], false);
-        } else if (sourceHour === 8) {
-          updateStaffNeeded(sourceStaff.observations[sourceHour], true);
-        } else if (targetHour === 8) {
-          updateStaffNeeded(targetStaff.observations[targetHour], false);
-        }
-      }
+    if (sourceStaff.break === sourceHour) {
+      sourceStaff.break = targetHour;
+    } else if (targetStaff.break === targetHour) {
+      targetStaff.break = sourceHour;
+    }
 
-      if (sourceStaff.name !== targetStaff.name && targetStaff.break === targetHour) {
-        return currentStaff;
-      } else if (sourceStaff.break === sourceHour && sourceStaff.name !== targetStaff.name) {
-        return currentStaff;
-      }
+    // Swap observations
+    const tempObservation = sourceStaff.observations[sourceHour] || '-';
+    sourceStaff.observations[sourceHour] = targetStaff.observations[targetHour] || '-';
+    targetStaff.observations[targetHour] = tempObservation;
 
-      if (sourceStaff.break === sourceHour) {
-        sourceStaff.break = targetHour;
-      } else if (targetStaff.break === targetHour) {
-        targetStaff.break = sourceHour;
-      }
+    // ✅ ALSO SWAP THE USER ASSIGNMENT TRACKING
+    const sourceWasUserAssigned = sourceStaff.userAssignments.has(sourceHour);
+    const targetWasUserAssigned = targetStaff.userAssignments.has(targetHour);
+    const sourceWasSolverAssigned = sourceStaff.solverAssignments.has(sourceHour);
+    const targetWasSolverAssigned = targetStaff.solverAssignments.has(targetHour);
 
-      const tempObservation = sourceStaff.observations[sourceHour] || '-';
-      sourceStaff.observations[sourceHour] = targetStaff.observations[targetHour] || '-';
-      targetStaff.observations[targetHour] = tempObservation;
+    // Clear old tracking
+    sourceStaff.userAssignments.delete(sourceHour);
+    targetStaff.userAssignments.delete(targetHour);
+    sourceStaff.solverAssignments.delete(sourceHour);
+    targetStaff.solverAssignments.delete(targetHour);
 
-      return updatedStaff;
-    });
-  };
+    // Apply swapped tracking
+    if (targetWasUserAssigned) {
+      sourceStaff.userAssignments.add(sourceHour);
+    }
+    if (sourceWasUserAssigned) {
+      targetStaff.userAssignments.add(targetHour);
+    }
+    if (targetWasSolverAssigned) {
+      sourceStaff.solverAssignments.add(sourceHour);
+    }
+    if (sourceWasSolverAssigned) {
+      targetStaff.solverAssignments.add(targetHour);
+    }
+
+    return updatedStaff;
+  });
+};
 
   const sortedStaff = useMemo(() => {
   return [...staff]

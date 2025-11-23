@@ -104,41 +104,42 @@ const handleInputChange = (e) => {
     }
 
     const staffWithIdAndObservations = {
-  ...newStaff,
-  name: newStaff.name.trim(), // Trim the name
-  id: newId,
-  numObservations: 0,
-  security: ["Security", "Onward", "Response"].includes(newStaff.role),
-  nurse: newStaff.role === "Nurse",
-  securityObs: ["Security", "Onward", "Response"].includes(newStaff.role) ? 0 : null,
-  nurseObs: newStaff.role === "Nurse" ? 0 : null,
-  observations: observationsObj,
-  lastObservation: "-",
-  obsCounts: {},
-  lastReceived: {},
-  initialized: true,
-  skillLevel: newStaff.skillLevel,
-};
+      ...newStaff,
+      name: newStaff.name.trim(),
+      id: newId,
+      numObservations: 0,
+      security: ["Security", "Onward", "Response"].includes(newStaff.role),
+      nurse: newStaff.role === "Nurse",
+      securityObs: ["Security", "Onward", "Response"].includes(newStaff.role) ? 0 : null,
+      nurseObs: newStaff.role === "Nurse" ? 0 : null,
+      observations: observationsObj,
+      lastObservation: "-",
+      obsCounts: {},
+      lastReceived: {},
+      initialized: true,
+      skillLevel: newStaff.skillLevel,
+    };
 
     console.log(`  ✅ Adding ${newStaff.name} with ID ${newId}`);
     
     // Update staff array
     setStaff(prevStaff => [...prevStaff, staffWithIdAndObservations]);
 
-    // Reset form
-    setNewStaff({
-  name: "",
-  break: "Break",
-  role: "HCA",
-  skillLevel: 3,
-  security: false,
-  nurse: false,
-  securityObs: null,
-  nurseObs: null,
-  numObservations: 0,
-});
+    // SET hasUnfinishedForm to false BEFORE resetting the form
+    setHasUnfinishedForm(false);
 
-     setHasUnfinishedForm(false);
+    // Reset form AFTER setting hasUnfinishedForm to false
+    setNewStaff({
+      name: "",
+      break: "Break",
+      role: "HCA",
+      skillLevel: 3,
+      security: false,
+      nurse: false,
+      securityObs: null,
+      nurseObs: null,
+      numObservations: 0,
+    });
 
     console.log('  ========== ADD STAFF MEMBER END ==========');
   };

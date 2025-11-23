@@ -9,33 +9,35 @@ class DataAnonymizer {
   }
 
   anonymizeStaff(staffArray) {
-    return staffArray.map((member) => {
-      const anonymousId = `staff_${member.id}`;
-      this.staffNameMap.set(member.name, anonymousId);
-      this.reverseStaffMap.set(anonymousId, member.name);
+  return staffArray.map((member) => {
+    const anonymousId = `staff_${member.id}`;
+    this.staffNameMap.set(member.name, anonymousId);
+    this.reverseStaffMap.set(anonymousId, member.name);
 
-      // Anonymize observations within staff member
-      const anonymizedObservations = {};
-      Object.entries(member.observations).forEach(([hour, obsName]) => {
-        if (obsName === '-' || obsName === 'X' || obsName === 'Break' || obsName === 'break') {
-          anonymizedObservations[hour] = obsName;
-        } else if (obsName.toLowerCase() === 'generals') {
-          // Keep Generals unchanged
-          anonymizedObservations[hour] = obsName;
-        } else {
-          const obsId = this.getOrCreateObservationId(obsName);
-          anonymizedObservations[hour] = obsId;
-        }
-      });
-
-      return {
-        ...member,
-        name: anonymousId, // Replace with ID
-        observations: anonymizedObservations,
-        // Preserve all other properties (break, role, security, nurse, etc.)
-      };
+    const anonymizedObservations = {};
+    Object.entries(member.observations).forEach(([hour, obsName]) => {
+      if (obsName === '-' || obsName === 'X' || obsName === 'Break' || obsName === 'break') {
+        anonymizedObservations[hour] = obsName;
+      } 
+      // ✅ FIX: Normalize "Gen", "Gens", "generals" to "Generals"
+      else if (obsName.toLowerCase() === 'generals' || 
+               obsName.toLowerCase() === 'gen' || 
+               obsName.toLowerCase() === 'gens') {
+        anonymizedObservations[hour] = 'Generals';  // Always use exact case
+      } 
+      else {
+        const obsId = this.getOrCreateObservationId(obsName);
+        anonymizedObservations[hour] = obsId;
+      }
     });
-  }
+
+    return {
+      ...member,
+      name: anonymousId,
+      observations: anonymizedObservations,
+    };
+  });
+}
 
   anonymizeObservations(observationsArray) {
     return observationsArray.map((obs) => {

@@ -90,6 +90,7 @@
   height: 3.8rem;
   width: 100%;
   line-height: 1.2;
+  box-sizing: border-box;
 }
 
 .inputText::placeholder {
@@ -236,15 +237,16 @@
   line-height: 1.2;
   transition: all 0.2s ease;
   border-radius: 0.6rem;
+  box-sizing: border-box;
 }
 
 .break .select:hover {
-  border: 0.15rem solid #333;
+  border: 0.1rem solid #333;
 }
 
 .break .select:focus {
-  border: 0.2rem solid black;
-  box-shadow: 0 0 0 0.3rem rgba(176, 224, 230, 0.5);
+  border: 0.1rem solid black;
+  box-shadow: 0 0 0 0.2rem rgba(176, 224, 230, 0.5);
 }
 
 /* Role Container - with divider */
@@ -298,15 +300,16 @@
   line-height: 1.2;
   transition: all 0.2s ease;
   border-radius: 0.6rem;
+  box-sizing: border-box;
 }
 
 .roleLabel .select:hover {
-  border: 0.15rem solid #333;
+  border: 0.1rem solid #333;
 }
 
 .roleLabel .select:focus {
-  border: 0.2rem solid black;
-  box-shadow: 0 0 0 0.3rem rgba(176, 224, 230, 0.5);
+  border: 0.1rem solid black;
+  box-shadow: 0 0 0 0.2rem rgba(176, 224, 230, 0.5);
 }
 
 .maxObsNumber {
@@ -328,16 +331,17 @@
   appearance: auto;
   -webkit-appearance: menulist;
   -moz-appearance: menulist;
+  box-sizing: border-box;
 }
 
 .maxObsNumber:hover {
-  border: 0.15rem solid #333;
+  border: 0.1rem solid #333;
 }
 
 .maxObsNumber:focus {
-  border: 0.2rem solid black;
+  border: 0.1rem solid black;
   outline: none;
-  box-shadow: 0 0 0 0.3rem rgba(176, 224, 230, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(176, 224, 230, 0.5);
   background: white;
 }
 
@@ -384,15 +388,16 @@
   line-height: 1.2;
   transition: all 0.2s ease;
   border-radius: 0.6rem;
+  box-sizing: border-box;
 }
 
 .intialObservation .select:hover {
-  border: 0.15rem solid #333;
+  border: 0.1rem solid #333;
 }
 
 .intialObservation .select:focus {
-  border: 0.2rem solid black;
-  box-shadow: 0 0 0 0.3rem rgba(176, 224, 230, 0.5);
+  border: 0.1rem solid black;
+  box-shadow: 0 0 0 0.2rem rgba(176, 224, 230, 0.5);
 }
 
 /* X Button - with divider */

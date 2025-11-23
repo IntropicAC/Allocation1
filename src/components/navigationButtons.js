@@ -1055,69 +1055,81 @@ function runSimulation(observations, staff, startHour = 9) {
 
 
 function resetStaff(staff, observations, startHour = 9) {
-  // Get list of current observation names
   const currentObservationNames = new Set(observations.map(obs => obs.name));
-  
-  // Get deletedObs array (all observations share the same deletedObs)
   const deletedObservations = observations[0]?.deletedObs || [];
   
-  // ✅ FIX: Only actually delete observations that are NOT current
   const observationsToClean = new Set();
-  
-  // Add ONLY deleted observations that are NOT current
   deletedObservations.forEach(name => {
     if (!currentObservationNames.has(name)) {
       observationsToClean.add(name);
     }
   });
   
-  // Add shortened form for "Generals" if it was deleted (and not current)
   if (deletedObservations.includes("Generals") && !currentObservationNames.has("Generals")) {
     observationsToClean.add("Gen");
   }
   
   staff.forEach((staffMember) => {
-    // Reset tracking variables
     staffMember.lastObservation = staffMember.observations[8];
     staffMember.obsCounts = {};
     staffMember.lastReceived = {};
     
-    // ✅ FIX: NEVER TOUCH ANYTHING BEFORE startHour
-    // All hours before startHour are completely preserved regardless of deleted status
-    // (No loop needed here - just skip these hours entirely)
+    // Initialize tracking sets if they don't exist
+    if (!staffMember.userAssignments) {
+      staffMember.userAssignments = new Set();
+    }
+    if (!staffMember.solverAssignments) {
+      staffMember.solverAssignments = new Set();
+    }
     
     // Reset observations ONLY in the scheduling window (startHour to 19)
     for (let hour = startHour; hour <= 19; hour++) {
       const currentValue = staffMember.observations[hour];
 
-      // ✅ PRESERVED: Special handling for hour 8 if within scheduling window
+      // Special handling for hour 8 if within scheduling window
       if (hour === 8 && startHour <= 8) {
         const hour8Value = staffMember.observations[8];
-        // Only preserve if it's a CURRENT observation (not deleted)
         if (hour8Value && hour8Value !== "-" && currentObservationNames.has(hour8Value)) {
-          // Keep the user's hour 8 assignment
+          // Mark hour 8 as user assignment if it has a valid observation
+          staffMember.userAssignments.add(8);
           continue;
         }
       }
       
-      // Check if this value should be cleared in the scheduling window
-      // Clear if: (1) it's a current observation OR (2) it's a deleted non-current observation
-      if (currentObservationNames.has(currentValue) || observationsToClean.has(currentValue)) {
-        // Clear this observation
+      // ✅ PRIORITY 1: PRESERVE user assignments (ALWAYS keep these)
+      if (staffMember.userAssignments.has(hour)) {
+        // Check if it's still a valid observation
+        if (currentValue && currentValue !== "-" && currentObservationNames.has(currentValue)) {
+          continue; // Keep user assignment
+        } else if (currentValue && currentValue !== "-") {
+          // User typed something custom (not an observation name) - KEEP IT
+          continue;
+        } else {
+          // User assignment is now empty, remove it from tracking
+          staffMember.userAssignments.delete(hour);
+          staffMember.observations[hour] = "-";
+        }
+      }
+      // ✅ PRIORITY 2: CLEAR solver assignments (these should be reset)
+      else if (staffMember.solverAssignments.has(hour)) {
+        staffMember.observations[hour] = "-";
+        staffMember.solverAssignments.delete(hour);
+      }
+      // ✅ PRIORITY 3: Handle deleted observations (clean these up)
+      else if (observationsToClean.has(currentValue)) {
         staffMember.observations[hour] = "-";
       }
-      // Otherwise, keep the value (user-entered custom values, Break, X, etc.)
+      // ✅ PRIORITY 4: Keep everything else (X, Break, custom text, etc.)
       else {
-        // Preserve the existing value
+        // Don't touch it - could be custom text, "X", or anything user-entered
         staffMember.observations[hour] = currentValue || "-";
       }
     }
     
-    // Recalculate numObservations based on actual assignments
+    // Recalculate numObservations
     staffMember.numObservations = 0;
     for (let hour = 7; hour <= 19; hour++) {
       const obs = staffMember.observations[hour];
-      // Count only valid observation assignments that are still in the current list
       if (obs && currentObservationNames.has(obs)) {
         staffMember.numObservations++;
       }
@@ -1371,9 +1383,15 @@ const handleAllocate = async () => {
     console.log(`     - ID: ${member.id}`);
     console.log(`     - Break: ${member.break}`);
     console.log(`     - Role: ${member.role}`);
-    console.log(`     - ObservationId: ${member.observationId}`);
-    console.log(`     - NumObservations: ${member.numObservations}`);
-    console.log(`     - Initialized: ${member.initialized}`);
+    
+    // Log user assignments
+    const userHours = Array.from(member.userAssignments || []);
+    if (userHours.length > 0) {
+      console.log(`     - 🔒 User-locked hours: ${userHours.join(', ')}`);
+      userHours.forEach(h => {
+        console.log(`       Hour ${h}: "${member.observations[h]}"`);
+      });
+    }
     
     // Check what observation values are in their schedule
     if (member.observations) {
@@ -1390,56 +1408,9 @@ const handleAllocate = async () => {
       
       console.log(`     - Unique observation values:`, [...allObsValues]);
       console.log(`     - All assignments:`, obsEntries.join(', '));
-      
-      // Check for obsolete observations
-      const obsoleteObs = [...allObsValues].filter(val => 
-        val !== 'X' && 
-        val !== 'Break' && 
-        val !== 'break' && 
-        !currentObservationNames.has(val)
-      );
-      
-      if (obsoleteObs.length > 0) {
-        console.log(`     ⚠️ OBSOLETE observations found:`, obsoleteObs);
-      }
     }
   });
   
-  // ═══════════════════════════════════════
-  // 🔍 STEP 3: ANALYZE WHAT SHOULD BE CLEANED
-  // ═══════════════════════════════════════
-  console.log('\n🧹 ═══════════════════════════════════════');
-  console.log('🧹 CLEANUP ANALYSIS');
-  console.log('🧹 ═══════════════════════════════════════');
-  
-  // Collect all observation values currently in staff
-  const allStaffObsValues = new Set();
-  staff.forEach(member => {
-    if (member.observations) {
-      Object.values(member.observations).forEach(val => {
-        if (val && val !== '-' && val !== 'X' && val !== 'Break' && val !== 'break') {
-          allStaffObsValues.add(val);
-        }
-      });
-    }
-  });
-  
-  console.log('All observation values in staff schedules:', [...allStaffObsValues]);
-  console.log('Current valid observations:', [...currentObservationNames]);
-  
-  // Find what's in staff but NOT in current observations
-  const shouldBeDeleted = [...allStaffObsValues].filter(val => !currentObservationNames.has(val));
-  console.log('❌ Values that should be deleted:', shouldBeDeleted);
-  
-  // Find what's marked as deleted in deletedObs
-  const markedAsDeleted = allDeletedObs.filter(val => !currentObservationNames.has(val));
-  console.log('🗑️ Values marked in deletedObs:', markedAsDeleted);
-  
-  // Check if they match
-  if (shouldBeDeleted.length > 0 && markedAsDeleted.length === 0) {
-    console.warn('⚠️ WARNING: Found obsolete observations but deletedObs is empty!');
-  }
-
   console.log('\n📊 Calculating metrics...');
   const metricsStartTime = Date.now();
   const metrics = calculateEffectiveMaxObservations(observations, staff, start, 19);
@@ -1490,152 +1461,114 @@ const handleAllocate = async () => {
   }
 
   // ═══════════════════════════════════════
-  // 🔍 STEP 4: BEFORE applyDeletedObsOnce
+  // 🔍 STEP 3: HANDLE DELETED OBSERVATIONS
   // ═══════════════════════════════════════
   console.log('\n🧹 ═══════════════════════════════════════');
-  console.log('🧹 BEFORE applyDeletedObsOnce');
+  console.log('🧹 HANDLING DELETED OBSERVATIONS');
   console.log('🧹 ═══════════════════════════════════════');
   
-  const beforeApply = JSON.parse(JSON.stringify(staff.map(s => ({
-    name: s.name,
-    observations: s.observations,
-    numObservations: s.numObservations
-  }))));
+  // ✅ FIX: Create deep copy for applyDeletedObsOnce
+  let staffCopy = staff.map(member => ({
+    ...member,
+    observations: { ...member.observations },
+    userAssignments: new Set(member.userAssignments || []),
+    solverAssignments: new Set(member.solverAssignments || [])
+  }));
   
-  console.log('Snapshot taken for comparison');
-  
-  // ═══════════════════════════════════════
-  // 🔍 STEP 5: RUN applyDeletedObsOnce
-  // ═══════════════════════════════════════
-  console.log('\n🧹 Calling applyDeletedObsOnce...');
-  const didClean = applyDeletedObsOnce(staff, observations, start);
+  console.log('🧹 Calling applyDeletedObsOnce...');
+  const didClean = applyDeletedObsOnce(staffCopy, observations, start);
   console.log('🧹 applyDeletedObsOnce returned:', didClean);
   
-  // ═══════════════════════════════════════
-  // 🔍 STEP 6: AFTER applyDeletedObsOnce
-  // ═══════════════════════════════════════
-  console.log('\n🧹 ═══════════════════════════════════════');
-  console.log('🧹 AFTER applyDeletedObsOnce');
-  console.log('🧹 ═══════════════════════════════════════');
-  
-  const afterApply = JSON.parse(JSON.stringify(staff.map(s => ({
-    name: s.name,
-    observations: s.observations,
-    numObservations: s.numObservations
-  }))));
-  
-  // Compare before and after
-  staff.forEach((member, idx) => {
-    const before = beforeApply[idx];
-    const after = afterApply[idx];
-    
-    const changedHours = [];
-    for (let hour = 7; hour <= 19; hour++) {
-      const beforeVal = before.observations?.[hour];
-      const afterVal = after.observations?.[hour];
-      if (beforeVal !== afterVal) {
-        changedHours.push(`${hour}: "${beforeVal}" → "${afterVal}"`);
-      }
-    }
-    
-    if (changedHours.length > 0) {
-      console.log(`\n  ${member.name}:`);
-      console.log(`    Changes: ${changedHours.join(', ')}`);
-      console.log(`    numObservations: ${before.numObservations} → ${after.numObservations}`);
-    }
-  });
-  
-  if (!didClean) {
-    console.log('  ℹ️ No changes made by applyDeletedObsOnce');
+  // ✅ FIX: Update state if changes were made
+  if (didClean) {
+    console.log('✅ Deleted observations were cleaned, updating state');
+    setStaff(staffCopy);
   }
 
   // ═══════════════════════════════════════
-  // ALWAYS USE RAILWAY SOLVER
-  // ═══════════════════════════════════════
-  console.log('\n═══════════════════════════════════════');
-  console.log('⚡ ALWAYS USING RAILWAY SOLVER');
-  console.log('═══════════════════════════════════════');
-  
-  // ═══════════════════════════════════════
-  // 🔍 STEP 7: BEFORE resetStaff
+  // 🔍 STEP 4: RESET STAFF (CLEAR SOLVER ASSIGNMENTS)
   // ═══════════════════════════════════════
   console.log('\n🔄 ═══════════════════════════════════════');
-  console.log('🔄 BEFORE resetStaff');
+  console.log('🔄 CALLING resetStaff');
   console.log('🔄 ═══════════════════════════════════════');
   
-  const beforeReset = JSON.parse(JSON.stringify(staff.map(s => ({
-    name: s.name,
-    observations: s.observations,
-    numObservations: s.numObservations
-  }))));
+  // ✅ FIX: Create a fresh deep copy for resetStaff
+  staffCopy = staffCopy.map(member => ({
+    ...member,
+    observations: { ...member.observations },
+    userAssignments: new Set(member.userAssignments || []),
+    solverAssignments: new Set(member.solverAssignments || [])
+  }));
+  
+  // Log user assignments BEFORE reset
+  console.log('\n🔒 User assignments BEFORE resetStaff:');
+  staffCopy.forEach(member => {
+    const userHours = Array.from(member.userAssignments || []);
+    if (userHours.length > 0) {
+      console.log(`  ${member.name}: hours ${userHours.join(', ')}`);
+      userHours.forEach(h => {
+        console.log(`    Hour ${h}: "${member.observations[h]}"`);
+      });
+    }
+  });
   
   console.log('\n🔄 Calling resetStaff...');
-  resetStaff(staff, observations, start);
-  console.log('✅ resetStaff complete');
+  resetStaff(staffCopy, observations, start);
   
-  // ═══════════════════════════════════════
-  // 🔍 STEP 8: AFTER resetStaff
-  // ═══════════════════════════════════════
-  console.log('\n🔄 ═══════════════════════════════════════');
-  console.log('🔄 AFTER resetStaff');
-  console.log('🔄 ═══════════════════════════════════════');
+  // ✅ FIX: Update state after reset
+  setStaff(staffCopy);
+  console.log('✅ resetStaff complete and state updated');
   
-  const afterReset = JSON.parse(JSON.stringify(staff.map(s => ({
-    name: s.name,
-    observations: s.observations,
-    numObservations: s.numObservations
-  }))));
-  
-  // Compare before and after resetStaff
-  staff.forEach((member, idx) => {
-    const before = beforeReset[idx];
-    const after = afterReset[idx];
-    
-    const changedHours = [];
-    for (let hour = 7; hour <= 19; hour++) {
-      const beforeVal = before.observations?.[hour];
-      const afterVal = after.observations?.[hour];
-      if (beforeVal !== afterVal) {
-        changedHours.push(`${hour}: "${beforeVal}" → "${afterVal}"`);
-      }
-    }
-    
-    if (changedHours.length > 0) {
-      console.log(`\n  ${member.name}:`);
-      console.log(`    Changes: ${changedHours.join(', ')}`);
-      console.log(`    numObservations: ${before.numObservations} → ${after.numObservations}`);
+  // Log user assignments AFTER reset
+  console.log('\n🔒 User assignments AFTER resetStaff:');
+  staffCopy.forEach(member => {
+    const userHours = Array.from(member.userAssignments || []);
+    if (userHours.length > 0) {
+      console.log(`  ${member.name}: hours ${userHours.join(', ')}`);
+      userHours.forEach(h => {
+        console.log(`    Hour ${h}: "${member.observations[h]}"`);
+      });
     }
   });
-  
-  console.log('\n🔍 STAFF STATE AFTER resetStaff:');
-  staff.forEach((member, idx) => {
-    console.log(`  ${member.name}: numObservations = ${member.numObservations}`);
-    const filledHours = Object.entries(member.observations || {}).filter(([h, v]) => v !== '-' && v);
-    if (filledHours.length > 0) {
-      console.log(`    Filled: ${filledHours.map(([h, v]) => `${h}:${v}`).join(', ')}`);
-    }
-  });
+
+  // ═══════════════════════════════════════
+  // CALL RAILWAY SOLVER
+  // ═══════════════════════════════════════
+  console.log('\n═══════════════════════════════════════');
+  console.log('⚡ CALLING RAILWAY SOLVER');
+  console.log('═══════════════════════════════════════');
   
   try {
-    // [Keep all your existing anonymization code]
+    // Anonymize data
     const anonymizer = new DataAnonymizer();
-    const anonymizedStaff = anonymizer.anonymizeStaff(staff);
+    const anonymizedStaff = anonymizer.anonymizeStaff(staffCopy);
     
     const railwayObservations = observations.map(obs => ({
       id: obs.id,
       name: obs.name,
       observationType: obs.observationType,
-      staff: obs.staff,           // ← Make sure this is included!
+      staff: obs.staff,
       StaffNeeded: obs.staff
     }));
     
     const anonymizedObservations = anonymizer.anonymizeObservations(railwayObservations);
     
     const requestData = {
-      staff: anonymizedStaff,
+      staff: anonymizedStaff.map(member => ({
+        ...member,
+        // ✅ FIX: Send user-locked hours to backend
+        lockedHours: Array.from(member.userAssignments || [])
+      })),
       observations: anonymizedObservations,
       startHour: start
     };
+    
+    console.log('\n📊 Locked hours being sent to solver:');
+    requestData.staff.forEach(member => {
+      if (member.lockedHours && member.lockedHours.length > 0) {
+        console.log(`  ${member.name}: ${member.lockedHours.join(', ')}`);
+      }
+    });
     
     // ═══════════════════════════════════════
     // 🆕 STEP 1: START THE JOB
@@ -1667,87 +1600,71 @@ const handleAllocate = async () => {
     console.log(`⏱️ Request took: ${Date.now() - startTime}ms`);
     
     // ═══════════════════════════════════════
-// 🆕 STEP 2: POLL FOR RESULTS
-// ═══════════════════════════════════════
-console.log('\n⏳ ═══════════════════════════════════════');
-console.log('⏳ POLLING FOR RESULTS');
-console.log('⏳ ═══════════════════════════════════════');
+    // 🆕 STEP 2: POLL FOR RESULTS
+    // ═══════════════════════════════════════
+    console.log('\n⏳ ═══════════════════════════════════════');
+    console.log('⏳ POLLING FOR RESULTS');
+    console.log('⏳ ═══════════════════════════════════════');
 
-const maxAttempts = 60;  // 60 seconds max
-let result = null;
-let attempt = 0;
+    const maxAttempts = 60;  // 60 seconds max
+    let result = null;
+    let attempt = 0;
 
-while (attempt < maxAttempts) {
-  // Wait 1 second between checks
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  attempt++;
-  
-  console.log(` Checking status... (${attempt}s elapsed)`);
-  
-  try {
-    const pollUrl = `${endpoint}/${jobId}`;
-    console.log(` Full polling URL: ${pollUrl}`);
-    
-    const statusResponse = await fetch(pollUrl);
-    console.log(` Response received - Status: ${statusResponse.status}`);
-    console.log(` Response OK: ${statusResponse.ok}`);
-    console.log(` Response headers:`, [...statusResponse.headers.entries()]);
-    
-    // Try to get response body
-    const responseText = await statusResponse.text();
-    console.log(` Response body (raw): ${responseText.substring(0, 200)}`);
-    
-    // Try to parse as JSON
-    let statusData;
-    try {
-      statusData = JSON.parse(responseText);
-      console.log(` Parsed JSON successfully:`, statusData);
-    } catch (parseError) {
-      console.error(` JSON parse failed:`, parseError);
-      console.error(` Raw text was:`, responseText);
-      throw new Error(`Invalid JSON from server: ${responseText.substring(0, 100)}`);
+    while (attempt < maxAttempts) {
+      // Wait 1 second between checks
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempt++;
+      
+      console.log(`⏳ Checking status... (${attempt}s elapsed)`);
+      
+      try {
+        const pollUrl = `${endpoint}/${jobId}`;
+        const statusResponse = await fetch(pollUrl);
+        
+        const responseText = await statusResponse.text();
+        let statusData;
+        try {
+          statusData = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error(`❌ JSON parse failed:`, parseError);
+          throw new Error(`Invalid JSON from server: ${responseText.substring(0, 100)}`);
+        }
+        
+        if (statusResponse.status === 200) {
+          // Job complete!
+          result = statusData;
+          console.log(`✅ Solve complete after ${attempt} seconds!`);
+          break;
+          
+        } else if (statusResponse.status === 202) {
+          // Still processing
+          const progress = statusData.progress || 'Solving...';
+          console.log(`  ${progress} (${statusData.elapsed_seconds || attempt}s)`);
+          
+        } else if (statusResponse.status === 404) {
+          console.error(`❌ 404 - Job not found`);
+          throw new Error('Job not found - it may have expired');
+          
+        } else {
+          console.error(`❌ Unexpected status: ${statusResponse.status}`);
+          throw new Error(`Polling failed: ${statusData.error || 'Unknown error'}`);
+        }
+        
+      } catch (pollError) {
+        console.error(`❌ POLLING ERROR AT ATTEMPT ${attempt}`);
+        console.error(`Error: ${pollError.message}`);
+        throw pollError;
+      }
     }
-    
-    if (statusResponse.status === 200) {
-      // Job complete!
-      result = statusData;
-      console.log(` Solve complete after ${attempt} seconds!`);
-      break;
-      
-    } else if (statusResponse.status === 202) {
-      // Still processing
-      const progress = statusData.progress || 'Solving...';
-      console.log(`  ${progress} (${statusData.elapsed_seconds || attempt}s)`);
-      
-    } else if (statusResponse.status === 404) {
-      console.error(` 404 - Job not found`);
-      throw new Error('Job not found - it may have expired');
-      
-    } else {
-      console.error(` Unexpected status: ${statusResponse.status}`);
-      throw new Error(`Polling failed: ${statusData.error || 'Unknown error'}`);
+
+    if (!result) {
+      throw new Error(`Solver timed out after ${maxAttempts} seconds`);
     }
-    
-  } catch (pollError) {
-    console.error(` ═══════════════════════════════════════`);
-    console.error(` POLLING ERROR AT ATTEMPT ${attempt}`);
-    console.error(` ═══════════════════════════════════════`);
-    console.error(` Error type: ${pollError.constructor.name}`);
-    console.error(` Error message: ${pollError.message}`);
-    console.error(` Error stack:`, pollError.stack);
-    console.error(` ═══════════════════════════════════════`);
-    throw pollError;  // Re-throw to outer catch
-  }
-}
 
-if (!result) {
-  throw new Error(`Solver timed out after ${maxAttempts} seconds`);
-}
-
-console.log('⏳ ═══════════════════════════════════════');
+    console.log('⏳ ═══════════════════════════════════════');
     
     // ═══════════════════════════════════════
-    // STEP 3: PROCESS RESULT (Keep your existing code)
+    // STEP 3: PROCESS RESULT
     // ═══════════════════════════════════════
     if (result.success) {
       console.log('\n🔓 ═══════════════════════════════════════');
@@ -1755,14 +1672,8 @@ console.log('⏳ ═════════════════════
       console.log('🔓 ═══════════════════════════════════════');
       console.log('✅ Railway solver succeeded!');
       
-      // [Keep all your existing de-anonymization code here - lines 1770-1869]
-      // Verify anonymizer still has the mappings
-      console.log('\n🗺️ Verifying anonymizer mappings still exist:');
-      console.log('  observationMap size:', anonymizer.observationNameMap.size);
-      console.log('  reverseObservationMap size:', anonymizer.reverseObservationMap.size);
-      
       console.log('\n🔄 Processing each staff member...');
-      const updatedStaff = staff.map((member, idx) => {
+      const updatedStaff = staffCopy.map((member, idx) => {
         const staffKey = String(member.id);
         const anonymizedSchedule = result.schedules?.[staffKey];
 
@@ -1782,24 +1693,40 @@ console.log('⏳ ═════════════════════
           }
         });
         
-        // Preserve user-assigned hour 8
+        // ✅ FIX: Preserve user assignments when merging
+        const userAssignments = new Set(member.userAssignments || []);
+        const solverAssignments = new Set();
+        
+        // Merge with existing observations, preserving user assignments
         const mergedObservations = { ...member.observations };
         Object.entries(deAnonymizedSchedule).forEach(([hour, value]) => {
           const h = parseInt(hour);
-          if (h === 8 && start <= 8 && member.observations[8] && member.observations[8] !== "-") {
-            return; // Skip - preserve user assignment
+          
+          // ✅ CRITICAL: Skip if this is a user assignment
+          if (userAssignments.has(h)) {
+            console.log(`  🔒 Preserving user assignment for ${member.name} at hour ${h}: ${member.observations[h]}`);
+            return; // DON'T overwrite this cell
           }
+          
+          // Apply solver result
           mergedObservations[h] = value;
+          
+          // Mark as solver assignment if not empty
+          if (value && value !== "-") {
+            solverAssignments.add(h);
+          }
         });
         
         return {
           ...member,
           observations: mergedObservations,
+          userAssignments: userAssignments, // Preserved!
+          solverAssignments: solverAssignments, // New solver assignments
           initialized: true
         };
       });
       
-      console.log('\n💾 Calling setStaff with de-anonymized data...');
+      console.log('\n💾 Calling setStaff with merged data...');
       setStaff(updatedStaff);
       console.log('✅ setStaff called successfully');
       console.log('✅ Schedule updated from Railway solver');
@@ -1830,7 +1757,6 @@ console.log('⏳ ═════════════════════
   console.log('🏁 Time:', new Date().toLocaleTimeString());
   console.log('🏁🏁🏁 ═══════════════════════════════════════\n\n');
 };
-
 
 
 
@@ -1900,7 +1826,6 @@ const handleNext = () => {
     if (resetObservations) {
       let observations = {};
       for (let hour = 7; hour <= 19; hour++) {
-  // Preserve hour 8 if it has a user assignment
         if (hour === 8 && staffMember.observations[8] && staffMember.observations[8] !== "-") {
           observations[hour] = staffMember.observations[8];
         } else {
@@ -1914,17 +1839,33 @@ const handleNext = () => {
         obsCounts: {},
         lastReceived: {},
         numObservations: (observations[8] && observations[8] !== "-") ? 1 : 0,
-        initialized: true, // Keep initialized as true even after reset
+        initialized: true,
+        userAssignments: new Set(), 
+        solverAssignments: new Set(), 
       };
     }
     
     // If already initialized and we're not forcing a reset, return as-is
     if (staffMember.initialized) {
+      // ADD THIS: Ensure tracking sets exist
+      if (!staffMember.userAssignments) {
+        staffMember.userAssignments = new Set();
+      }
+      if (!staffMember.solverAssignments) {
+        staffMember.solverAssignments = new Set();
+      }
       return staffMember;
     }
     
     // If we're not resetting and already has observations, return unchanged
     if (staffMember.observations) {
+      // ADD THIS: Ensure tracking sets exist
+      if (!staffMember.userAssignments) {
+        staffMember.userAssignments = new Set();
+      }
+      if (!staffMember.solverAssignments) {
+        staffMember.solverAssignments = new Set();
+      }
       return staffMember;
     }
 
@@ -1937,6 +1878,8 @@ const handleNext = () => {
     return {
       ...staffMember,
       observations,
+      userAssignments: new Set(), // ADD THIS
+      solverAssignments: new Set(), // ADD THIS
     };
   });
 }
