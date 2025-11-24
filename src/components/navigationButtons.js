@@ -1461,29 +1461,26 @@ const handleAllocate = async () => {
   }
 
   // ═══════════════════════════════════════
+  // ✅ CREATE WORKING COPY - ALL OPERATIONS ON THIS
+  // ═══════════════════════════════════════
+  let workingStaffCopy = staff.map(member => ({
+    ...member,
+    observations: { ...member.observations },
+    userAssignments: new Set(member.userAssignments || []),
+    solverAssignments: new Set(member.solverAssignments || [])
+  }));
+
+  // ═══════════════════════════════════════
   // 🔍 STEP 3: HANDLE DELETED OBSERVATIONS
   // ═══════════════════════════════════════
   console.log('\n🧹 ═══════════════════════════════════════');
   console.log('🧹 HANDLING DELETED OBSERVATIONS');
   console.log('🧹 ═══════════════════════════════════════');
   
-  // ✅ FIX: Create deep copy for applyDeletedObsOnce
-  let staffCopy = staff.map(member => ({
-    ...member,
-    observations: { ...member.observations },
-    userAssignments: new Set(member.userAssignments || []),
-    solverAssignments: new Set(member.solverAssignments || [])
-  }));
-  
   console.log('🧹 Calling applyDeletedObsOnce...');
-  const didClean = applyDeletedObsOnce(staffCopy, observations, start);
+  const didClean = applyDeletedObsOnce(workingStaffCopy, observations, start);
   console.log('🧹 applyDeletedObsOnce returned:', didClean);
-  
-  // ✅ FIX: Update state if changes were made
-  if (didClean) {
-    console.log('✅ Deleted observations were cleaned, updating state');
-    setStaff(staffCopy);
-  }
+  // ❌ NO setStaff call here - just modify workingStaffCopy in place
 
   // ═══════════════════════════════════════
   // 🔍 STEP 4: RESET STAFF (CLEAR SOLVER ASSIGNMENTS)
@@ -1492,17 +1489,9 @@ const handleAllocate = async () => {
   console.log('🔄 CALLING resetStaff');
   console.log('🔄 ═══════════════════════════════════════');
   
-  // ✅ FIX: Create a fresh deep copy for resetStaff
-  staffCopy = staffCopy.map(member => ({
-    ...member,
-    observations: { ...member.observations },
-    userAssignments: new Set(member.userAssignments || []),
-    solverAssignments: new Set(member.solverAssignments || [])
-  }));
-  
   // Log user assignments BEFORE reset
   console.log('\n🔒 User assignments BEFORE resetStaff:');
-  staffCopy.forEach(member => {
+  workingStaffCopy.forEach(member => {
     const userHours = Array.from(member.userAssignments || []);
     if (userHours.length > 0) {
       console.log(`  ${member.name}: hours ${userHours.join(', ')}`);
@@ -1513,15 +1502,13 @@ const handleAllocate = async () => {
   });
   
   console.log('\n🔄 Calling resetStaff...');
-  resetStaff(staffCopy, observations, start);
-  
-  // ✅ FIX: Update state after reset
-  setStaff(staffCopy);
-  console.log('✅ resetStaff complete and state updated');
+  resetStaff(workingStaffCopy, observations, start);
+  console.log('✅ resetStaff complete');
+  // ❌ NO setStaff call here - just modify workingStaffCopy in place
   
   // Log user assignments AFTER reset
   console.log('\n🔒 User assignments AFTER resetStaff:');
-  staffCopy.forEach(member => {
+  workingStaffCopy.forEach(member => {
     const userHours = Array.from(member.userAssignments || []);
     if (userHours.length > 0) {
       console.log(`  ${member.name}: hours ${userHours.join(', ')}`);
@@ -1541,7 +1528,7 @@ const handleAllocate = async () => {
   try {
     // Anonymize data
     const anonymizer = new DataAnonymizer();
-    const anonymizedStaff = anonymizer.anonymizeStaff(staffCopy);
+    const anonymizedStaff = anonymizer.anonymizeStaff(workingStaffCopy);
     
     const railwayObservations = observations.map(obs => ({
       id: obs.id,
@@ -1556,7 +1543,6 @@ const handleAllocate = async () => {
     const requestData = {
       staff: anonymizedStaff.map(member => ({
         ...member,
-        // ✅ FIX: Send user-locked hours to backend
         lockedHours: Array.from(member.userAssignments || [])
       })),
       observations: anonymizedObservations,
@@ -1606,12 +1592,11 @@ const handleAllocate = async () => {
     console.log('⏳ POLLING FOR RESULTS');
     console.log('⏳ ═══════════════════════════════════════');
 
-    const maxAttempts = 60;  // 60 seconds max
+    const maxAttempts = 60;
     let result = null;
     let attempt = 0;
 
     while (attempt < maxAttempts) {
-      // Wait 1 second between checks
       await new Promise(resolve => setTimeout(resolve, 1000));
       attempt++;
       
@@ -1631,25 +1616,19 @@ const handleAllocate = async () => {
         }
         
         if (statusResponse.status === 200) {
-          // Job complete!
           result = statusData;
           console.log(`✅ Solve complete after ${attempt} seconds!`);
           break;
-          
         } else if (statusResponse.status === 202) {
-          // Still processing
           const progress = statusData.progress || 'Solving...';
           console.log(`  ${progress} (${statusData.elapsed_seconds || attempt}s)`);
-          
         } else if (statusResponse.status === 404) {
           console.error(`❌ 404 - Job not found`);
           throw new Error('Job not found - it may have expired');
-          
         } else {
           console.error(`❌ Unexpected status: ${statusResponse.status}`);
           throw new Error(`Polling failed: ${statusData.error || 'Unknown error'}`);
         }
-        
       } catch (pollError) {
         console.error(`❌ POLLING ERROR AT ATTEMPT ${attempt}`);
         console.error(`Error: ${pollError.message}`);
@@ -1664,16 +1643,16 @@ const handleAllocate = async () => {
     console.log('⏳ ═══════════════════════════════════════');
     
     // ═══════════════════════════════════════
-    // STEP 3: PROCESS RESULT
+    // STEP 3: PROCESS RESULT AND MERGE
     // ═══════════════════════════════════════
     if (result.success) {
       console.log('\n🔓 ═══════════════════════════════════════');
-      console.log('🔓 DE-ANONYMIZATION PROCESS');
+      console.log('🔓 DE-ANONYMIZATION AND MERGE');
       console.log('🔓 ═══════════════════════════════════════');
       console.log('✅ Railway solver succeeded!');
       
       console.log('\n🔄 Processing each staff member...');
-      const updatedStaff = staffCopy.map((member, idx) => {
+      const finalStaff = workingStaffCopy.map((member) => {
         const staffKey = String(member.id);
         const anonymizedSchedule = result.schedules?.[staffKey];
 
@@ -1693,11 +1672,10 @@ const handleAllocate = async () => {
           }
         });
         
-        // ✅ FIX: Preserve user assignments when merging
+        // Preserve user assignments when merging
         const userAssignments = new Set(member.userAssignments || []);
         const solverAssignments = new Set();
         
-        // Merge with existing observations, preserving user assignments
         const mergedObservations = { ...member.observations };
         Object.entries(deAnonymizedSchedule).forEach(([hour, value]) => {
           const h = parseInt(hour);
@@ -1705,7 +1683,7 @@ const handleAllocate = async () => {
           // ✅ CRITICAL: Skip if this is a user assignment
           if (userAssignments.has(h)) {
             console.log(`  🔒 Preserving user assignment for ${member.name} at hour ${h}: ${member.observations[h]}`);
-            return; // DON'T overwrite this cell
+            return;
           }
           
           // Apply solver result
@@ -1720,18 +1698,18 @@ const handleAllocate = async () => {
         return {
           ...member,
           observations: mergedObservations,
-          userAssignments: userAssignments, // Preserved!
-          solverAssignments: solverAssignments, // New solver assignments
+          userAssignments: userAssignments,
+          solverAssignments: solverAssignments,
           initialized: true
         };
       });
       
-      console.log('\n💾 Calling setStaff with merged data...');
-      setStaff(updatedStaff);
+      // ✅ SINGLE setStaff CALL - ONLY HERE!
+      console.log('\n💾 Calling setStaff with final merged data...');
+      setStaff(finalStaff);
       console.log('✅ setStaff called successfully');
       console.log('✅ Schedule updated from Railway solver');
       
-      // Show warning if it was a partial solution
       if (result.warning) {
         alert(`Success with note: ${result.warning}`);
       }

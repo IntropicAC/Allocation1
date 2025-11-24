@@ -3,10 +3,7 @@ import MainPage from './pages/mainPage';
 import useLocalStorage from './hooks/useLocalStorage';
 import { useUndoRedo, useUndoRedoShortcuts } from './helperFunctions/UndoRedoManager';
 
-function App() {
-  const [observations, setObservations, clearObservations] = useLocalStorage('observations', [], '1.0');
-  // Track if AllocationCreation has been initialized
-  const [isAllocationReady, setIsAllocationReady] = useState(false);
+
 
   // Helper to ensure Sets are properly restored after JSON serialization
 const normalizeStaffSets = (staffArray) => {
@@ -22,6 +19,13 @@ const normalizeStaffSets = (staffArray) => {
       : new Set(Array.isArray(member.solverAssignments) ? member.solverAssignments : [])
   }));
 };
+
+function App() {
+  const [observations, setObservations, clearObservations] = useLocalStorage('observations', [], '1.0');
+  // Track if AllocationCreation has been initialized
+  const [isAllocationReady, setIsAllocationReady] = useState(false);
+
+
 
   const loadInitialStaff = () => {
     try {
