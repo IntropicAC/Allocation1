@@ -208,22 +208,29 @@ const handleRoleChange = (e, staffId) => {
 };
 
   const handleMaxObsChange = (e, staffId) => {
-    const value = e.target.value;
-    const maxObs = value === 'max' ? 999 : Number(value);
-    
-    setStaff(currentStaff => 
-      currentStaff.map((staffMember) => {
-        if (staffMember.id === staffId) {
-          if (staffMember.security) {
-            return { ...staffMember, securityObs: maxObs };
-          } else if (staffMember.nurse) {
-            return { ...staffMember, nurseObs: maxObs };
-          }
+  const value = e.target.value;
+  let maxObs;
+  if (value === 'max') {
+    maxObs = 999;
+  } else if (value === 'min') {
+    maxObs = -1;  // Use -1 to indicate "minimum" priority
+  } else {
+    maxObs = Number(value);
+  }
+  
+  setStaff(currentStaff => 
+    currentStaff.map((staffMember) => {
+      if (staffMember.id === staffId) {
+        if (staffMember.security) {
+          return { ...staffMember, securityObs: maxObs };
+        } else if (staffMember.nurse) {
+          return { ...staffMember, nurseObs: maxObs };
         }
-        return staffMember;
-      })
-    );
-  };
+      }
+      return staffMember;
+    })
+  );
+};
 
   const handleBreakChange = (e, staffId) => {
     const value = e.target.value;
@@ -383,14 +390,15 @@ const handleRoleChange = (e, staffId) => {
   });
 
   const getObsLimitDisplayValue = (staffMember) => {
-    if (!staffMember.security && !staffMember.nurse) return 0;
-    
-    const value = staffMember.security ? staffMember.securityObs : staffMember.nurseObs;
-    
-    if (value === null || value === undefined) return 0;
-    if (value === 999) return 'max';
-    return value;
-  };
+  if (!staffMember.security && !staffMember.nurse) return 0;
+  
+  const value = staffMember.security ? staffMember.securityObs : staffMember.nurseObs;
+  
+  if (value === null || value === undefined) return 0;
+  if (value === 999) return 'max';
+  if (value === -1) return 'min';
+  return value;
+};
 
   return (
     <section className={styles.container}>
@@ -498,6 +506,7 @@ const handleRoleChange = (e, staffId) => {
                   onChange={(e) => handleMaxObsChange(e, staffMember.id)}
                 >
                   <option value={0}>Obs Limit</option>
+                  <option value="min">Minimum</option>
                   <option value={0}>0</option>
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                     <option key={num} value={num}>
