@@ -113,7 +113,7 @@
 .allocationTable th, .hourCell, table td {
   border: 0.1rem solid black;
   text-align: center;
-  padding: 0.3rem 0.2rem;
+  padding: 0.1rem 0rem;
   width: 12rem;
   height: 3rem;
   white-space: normal;
@@ -132,12 +132,19 @@
 .allocationTable td,
 .allocationTable th {
   pointer-events: auto;
+  user-select: text; /* ✅ Allow text selection for copying */
+  box-sizing: border-box;
+}
+
+/* Only disable selection when drag/drop is enabled */
+.allocationTable.dragDropMode td,
+.allocationTable.dragDropMode th {
   user-select: none;
 }
 
 .allocationTable td {
   vertical-align: middle;
-  padding: 0.3rem 0.2rem;
+  padding: 0.1rem 0rem;
 }
 
 table td:not(.hourCell):hover {
@@ -233,6 +240,9 @@ table td:not(.hourCell):hover {
 
   .allocationTable {
     min-height: 100vh;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border: 1px solid black !important;
   }
 
   .tableContainer *{
@@ -279,9 +289,19 @@ table td:not(.hourCell):hover {
   background-color: #f0f0f0;
 }
 
+.allocationTable.transposed th:first-child {
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.allocationTable.transposed thead th:hover {
+  background-color: #f0f0f0;
+}
+
 .break {
   font-weight: bold;
 }
+
 
 /* Context Menu Styles */
 .contextMenu {
@@ -362,4 +382,42 @@ table td:not(.hourCell):hover {
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
+}
+
+@media print {
+  .allocationTable td span[title="User-assigned (locked)"] {
+    display: none !important;
+  }
+}
+
+/* Additional print-specific fixes */
+@media print {
+  .allocationTable {
+    border-collapse: separate !important; /* Helps prevent color bleeding */
+    border-spacing: 0;
+  }
+  
+  .allocationTable td,
+  .allocationTable th {
+    background-clip: padding-box !important;
+    box-sizing: border-box !important;
+  }
+}
+
+.allocationTable.transposed th,
+.allocationTable.transposed td {
+  width: auto;
+  min-width: 1rem;
+  max-width: 6rem; /* Columns expand up to 25rem, then wrap */
+  height: auto;
+  min-height: 8rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.allocationTable.transposed thead th {
+  height: auto;
+  min-height: 2rem !important;
+  max-height: 3rem;
+  vertical-align: middle;
+  padding: 0.4rem;
 }

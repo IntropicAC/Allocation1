@@ -181,122 +181,416 @@ function createInterleavedObservationsList(
     }
   }
 
-  function calculateEffectiveMaxObservations(observations, staff, startHour = 9, endHour = 19) {
-  // Total observation slots needed
-  const totalObsPerHour = observations.reduce((sum, obs) => sum + obs.staff, 0);
-  const totalHours = endHour - startHour + 1;
-  const totalObsSlots = totalObsPerHour * totalHours;
+  function validateScheduleFeasibility(observations, staff, startHour = 8, endHour = 19) {
+  const errors = [];
+  const warnings = [];
   
-  // Calculate available capacity for each staff member
-  let totalAvailableSlots = 0;
-  let hourlyFeasibility = {}; // Track feasibility for each hour
-  let infeasibleHours = []; // Track which hours are problematic
+  // Get current observation names and requirements
+  const currentObservationNames = new Set(observations.map(obs => obs.name));
+  const obsRequirements = {};
   
-  // First pass: Calculate hour-by-hour availability
-  for (let hour = startHour; hour <= endHour; hour++) {
-    let availableStaffThisHour = 0;
-    
-    staff.forEach(staffMember => {
-      // Check if staff member is available this hour
-      let isAvailable = true;
-      
-      // Skip if this hour is their break
-      if (staffMember.break === hour) {
-        isAvailable = false;
-      }
-      
-      
-      // Skip hour 8 if they have a user-assigned observation
-      if (hour === 8 && staffMember.observations[8] && staffMember.observations[8] !== "-") {
-        isAvailable = false;
-      }
-      
-      // Check for security/nurse restricted hours (only if maxObs would be <= 9)
-      const roughMaxObs = Math.ceil(totalObsSlots / staff.length);
-      
-      if (roughMaxObs <= 9) {
-        if (staffMember.security === true && [8, 12, 17, 19].includes(hour)) {
-          isAvailable = false;
-        }
-        if (staffMember.nurse === true && [8, 9, 19].includes(hour)) {
-          isAvailable = false;
-        }
-      }
-      
-      if (isAvailable) {
-        availableStaffThisHour++;
-      }
-    });
-    
-    hourlyFeasibility[hour] = {
-      available: availableStaffThisHour,
-      required: totalObsPerHour,
-      isFeasible: availableStaffThisHour >= totalObsPerHour
+  observations.forEach(obs => {
+    obsRequirements[obs.name] = {
+      staffNeeded: obs.staff || obs.StaffNeeded || 1,
+      observationType: obs.observationType
     };
-    
-    if (!hourlyFeasibility[hour].isFeasible) {
-      infeasibleHours.push(hour);
-    }
-  }
-  
-  // Second pass: Calculate total capacity respecting individual limits
-  staff.forEach(staffMember => {
-    let availableHours = 0;
-    
-    // Determine this staff member's observation limit
-    let obsLimit;
-    if (staffMember.security === true) {
-      obsLimit = staffMember.securityObs ?? totalHours;
-    } else if (staffMember.nurse === true) {
-      obsLimit = staffMember.nurseObs ?? totalHours;
-    } else {
-      // Regular staff can work all available hours
-      obsLimit = totalHours;
-    }
-    
-    // Count actually available hours for this staff member
-    for (let hour = startHour; hour <= endHour; hour++) {
-      // Skip if this hour is their break
-      if (staffMember.break === hour) continue;
-      
-      // Skip hour 8 if they have a user-assigned observation
-      if (hour === 8 && staffMember.observations[8] && staffMember.observations[8] !== "-") {
-        continue;
-      }
-      
-      // Check for security/nurse restricted hours (only if maxObs would be <= 9)
-      const roughMaxObs = Math.ceil(totalObsSlots / staff.length);
-      
-      if (roughMaxObs <= 9) {
-        if (staffMember.security === true && [8, 12, 17, 19].includes(hour)) {
-          continue;
-        }
-        if (staffMember.nurse === true && [8, 9, 19].includes(hour)) {
-          continue;
-        }
-      }
-      
-      availableHours++;
-    }
-    
-    // This staff member can contribute the minimum of their limit or available hours
-    totalAvailableSlots += Math.min(obsLimit, availableHours);
   });
   
-  // Calculate the actual pressure on the system
-  const systemPressure = totalObsSlots / totalAvailableSlots;
-  const effectiveMaxObs = Math.ceil(totalObsSlots / staff.length);
-  const isHourlyFeasible = infeasibleHours.length === 0;
+  // 1. CHECK HOURLY CAPACITY, SKILL LEVELS, AND OVER-ASSIGNMENTS
+  for (let hour = startHour; hour <= endHour; hour++) {
+    const hourData = analyzeHourCapacity(
+      staff, 
+      observations, 
+      hour, 
+      obsRequirements, 
+      currentObservationNames
+    );
+    
+    // Check if enough total staff
+    if (!hourData.hasEnoughCapacity) {
+      errors.push({
+        type: 'INSUFFICIENT_CAPACITY',
+        hour,
+        required: hourData.totalRequired,
+        available: hourData.availableStaff,
+        breakdown: hourData.unavailableReasons
+      });
+    }
+    
+    // Check if enough skilled staff for unskilled staff
+    if (!hourData.hasEnoughSkilledStaff) {
+      errors.push({
+        type: 'INSUFFICIENT_SKILLED_STAFF',
+        hour,
+        skilledNeeded: hourData.skilledNeeded,
+        skilledAvailable: hourData.skilledAvailable,
+        unskilledCount: hourData.unskilledCount
+      });
+    }
+    
+    // Check for over-assignments at this hour
+    const overAssignments = checkOverAssignments(
+      staff, 
+      hour, 
+      obsRequirements, 
+      currentObservationNames
+    );
+    
+    overAssignments.forEach(oa => {
+      errors.push({
+        type: 'OVER_ASSIGNED',
+        hour,
+        observation: oa.observation,
+        required: oa.required,
+        assigned: oa.assigned,
+        staffList: oa.staffList
+      });
+    });
+  }
+  
+  // 2. CHECK FOR CONSECUTIVE HOUR VIOLATIONS
+  const consecutiveViolations = checkConsecutiveHourViolations(
+    staff, 
+    startHour, 
+    endHour,
+    currentObservationNames
+  );
+  
+  consecutiveViolations.forEach(violation => {
+    errors.push({
+      type: 'CONSECUTIVE_HOURS',
+      staffName: violation.staffName,
+      observation: violation.observation,
+      hours: violation.hours
+    });
+  });
   
   return {
-    effectiveMaxObs,           // Average observations per staff member
-    totalObsSlots,             // Total slots that need filling
-    totalAvailableSlots,       // Total capacity across all staff
-    systemPressure,            // Ratio of demand to capacity (>1 means infeasible)
-    isFeasible: systemPressure <= 1.0 && isHourlyFeasible,
-    hourlyFeasibility,         // Detailed breakdown per hour
-    infeasibleHours            // List of problematic hours
+    isValid: errors.length === 0,
+    errors,
+    warnings
   };
+}
+
+function analyzeHourCapacity(staff, observations, hour, obsRequirements, currentObservationNames) {
+  let availableStaff = 0;
+  let skilledAvailable = 0; // skill level 1-3
+  let unskilledAvailable = 0; // skill level 4-5
+  
+  // Track user assignments for this hour (to subtract from requirements)
+  const userAssignmentCounts = {};
+  
+  const unavailableReasons = {
+    onBreak: [],
+    userAssigned: [],
+    restrictedRole: []
+  };
+  
+  // First pass: Count user assignments and check availability
+  staff.forEach(member => {
+    const skillLevel = member.skillLevel || 3; // default to skilled
+    const isSkilled = skillLevel >= 1 && skillLevel <= 3;
+    const isUnskilled = skillLevel >= 4 && skillLevel <= 5;
+    
+    // ONLY check user assignments (solver assignments will be cleared)
+    const isUserAssignment = member.userAssignments && member.userAssignments.has(hour);
+    
+    if (isUserAssignment) {
+      const assignedObs = member.observations?.[hour];
+      const hasValidObservation = assignedObs && 
+                                   assignedObs !== '-' && 
+                                   currentObservationNames.has(assignedObs);
+      const hasCustomText = assignedObs && 
+                            assignedObs !== '-' && 
+                            !currentObservationNames.has(assignedObs);
+      
+      if (hasValidObservation) {
+        // Count this user assignment toward the observation's requirement
+        userAssignmentCounts[assignedObs] = (userAssignmentCounts[assignedObs] || 0) + 1;
+        
+        unavailableReasons.userAssigned.push({
+          name: member.name,
+          observation: assignedObs
+        });
+      } else if (hasCustomText) {
+        // Staff has custom text (like "lunch", "meeting", etc.) - they're unavailable
+        unavailableReasons.userAssigned.push({
+          name: member.name,
+          observation: assignedObs + ' (custom)'
+        });
+      }
+    } else if (isStaffAvailableAtHour(member, hour, currentObservationNames)) {
+      // This staff is available for solver to assign
+      availableStaff++;
+      
+      if (isSkilled) {
+        skilledAvailable++;
+      } else if (isUnskilled) {
+        unskilledAvailable++;
+      }
+    } else {
+      // Track other reasons for unavailability
+      if (member.break === hour) {
+        unavailableReasons.onBreak.push(member.name);
+      } else if ((member.security && [8, 12, 17, 19].includes(hour)) ||
+                 (member.nurse && [8, 9, 19].includes(hour))) {
+        unavailableReasons.restrictedRole.push({
+          name: member.name,
+          role: member.security ? 'Security' : 'Nurse'
+        });
+      }
+    }
+  });
+  
+  // Calculate REMAINING requirements after subtracting user assignments
+  let totalRemainingRequired = 0;
+  const remainingByObs = {};
+  
+  observations.forEach(obs => {
+    const totalNeeded = obs.staff || obs.StaffNeeded || 1;
+    const alreadyAssigned = userAssignmentCounts[obs.name] || 0;
+    const remaining = Math.max(0, totalNeeded - alreadyAssigned);
+    
+    totalRemainingRequired += remaining;
+    remainingByObs[obs.name] = {
+      total: totalNeeded,
+      assigned: alreadyAssigned,
+      remaining: remaining
+    };
+  });
+  
+  // Check if there are any multi-staff observations that STILL need assignments
+  const hasMultiStaffObs = observations.some(obs => {
+    const totalNeeded = obs.staff || obs.StaffNeeded || 1;
+    const alreadyAssigned = userAssignmentCounts[obs.name] || 0;
+    const remaining = totalNeeded - alreadyAssigned;
+    return totalNeeded >= 2 && remaining > 0; // Only counts if still needs assignments
+  });
+  
+  // Calculate skilled staff needed
+  const skilledNeeded = hasMultiStaffObs ? unskilledAvailable : 0;
+  const hasEnoughSkilledStaff = !hasMultiStaffObs || skilledAvailable >= skilledNeeded;
+  
+  return {
+    availableStaff,
+    skilledAvailable,
+    unskilledCount: unskilledAvailable,
+    totalRequired: totalRemainingRequired, // Now shows REMAINING needed, not total
+    skilledNeeded,
+    hasEnoughCapacity: availableStaff >= totalRemainingRequired,
+    hasEnoughSkilledStaff,
+    unavailableReasons,
+    userAssignmentCounts, // For debugging
+    remainingByObs // Shows breakdown per observation
+  };
+}
+
+function isStaffAvailableAtHour(member, hour, currentObservationNames) {
+  // Check if on break
+  if (member.break === hour) return false;
+  
+  // ONLY check user assignments (not solver assignments, which will be cleared)
+  const isUserAssignment = member.userAssignments && member.userAssignments.has(hour);
+  
+  if (isUserAssignment) {
+    // Staff is unavailable due to user assignment
+    return false;
+  }
+  
+  // Check role restrictions
+  // Note: This is simplified - you may want to add the maxObs check
+  // from calculateEffectiveMaxObservations
+  if (member.security && [8, 12, 17, 19].includes(hour)) return false;
+  if (member.nurse && [8, 9, 19].includes(hour)) return false;
+  
+  return true;
+}
+
+function checkOverAssignments(staff, hour, obsRequirements, currentObservationNames) {
+  const overAssignments = [];
+  const assignmentCounts = {};
+  const staffByObs = {};
+  
+  // Count ONLY user assignments at this hour (ignore solver assignments)
+  staff.forEach(member => {
+    const isUserAssignment = member.userAssignments && member.userAssignments.has(hour);
+    
+    if (isUserAssignment) {
+      const obs = member.observations?.[hour];
+      if (obs && obs !== '-' && currentObservationNames.has(obs)) {
+        assignmentCounts[obs] = (assignmentCounts[obs] || 0) + 1;
+        if (!staffByObs[obs]) staffByObs[obs] = [];
+        staffByObs[obs].push(member.name);
+      }
+    }
+  });
+  
+  // Check against requirements
+  Object.entries(assignmentCounts).forEach(([obsName, count]) => {
+    const required = obsRequirements[obsName]?.staffNeeded || 1;
+    if (count > required) {
+      overAssignments.push({
+        observation: obsName,
+        required,
+        assigned: count,
+        staffList: staffByObs[obsName]
+      });
+    }
+  });
+  
+  return overAssignments;
+}
+
+function checkConsecutiveHourViolations(staff, startHour, endHour, currentObservationNames) {
+  const violations = [];
+  
+  staff.forEach(member => {
+    // Check from (startHour - 1) to catch violations at the boundary
+    // e.g., if startHour=9, check from hour 8 to catch hour 8→9 violations
+    const checkFrom = Math.max(7, startHour - 1);
+    
+    for (let hour = checkFrom; hour < endHour; hour++) {
+      // ONLY check user assignments (solver assignments will be cleared)
+      const isCurrentUserAssignment = member.userAssignments && member.userAssignments.has(hour);
+      const isNextUserAssignment = member.userAssignments && member.userAssignments.has(hour + 1);
+      
+      // Only flag violation if BOTH hours are user assignments
+      if (isCurrentUserAssignment && isNextUserAssignment) {
+        const currentObs = member.observations?.[hour];
+        const nextObs = member.observations?.[hour + 1];
+        
+        // Both hours must have valid observations AND be the same observation
+        if (currentObs && currentObs !== '-' && 
+            nextObs && nextObs !== '-' &&
+            currentObservationNames.has(currentObs) &&
+            currentObservationNames.has(nextObs) &&
+            currentObs === nextObs) {
+          violations.push({
+            staffName: member.name,
+            observation: currentObs,
+            hours: [hour, hour + 1]
+          });
+        }
+      }
+    }
+  });
+  
+  return violations;
+}
+
+function formatValidationErrors(validationResult) {
+  if (validationResult.isValid) {
+    return null;
+  }
+  
+  let message = '⚠️ SCHEDULE VALIDATION ERRORS\n';
+  message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+  
+  // Group errors by type
+  const errorsByType = {};
+  validationResult.errors.forEach(error => {
+    if (!errorsByType[error.type]) {
+      errorsByType[error.type] = [];
+    }
+    errorsByType[error.type].push(error);
+  });
+  
+  // Format insufficient capacity errors
+  if (errorsByType.INSUFFICIENT_CAPACITY) {
+    message += '❌ INSUFFICIENT STAFF CAPACITY\n\n';
+    
+    errorsByType.INSUFFICIENT_CAPACITY.forEach(error => {
+      message += `  Hour ${error.hour}:00\n`;
+      message += `    Required: ${error.required} staff\n`;
+      message += `    Available: ${error.available} staff\n`;
+      message += `    Shortage: ${error.required - error.available} staff\n\n`;
+      
+      if (error.breakdown.userAssigned.length > 0) {
+        message += `    ✓ Already Assigned by User:\n`;
+        error.breakdown.userAssigned.forEach(ua => {
+          message += `       • ${ua.name} → ${ua.observation}\n`;
+        });
+        message += '\n';
+      }
+      if (error.breakdown.onBreak.length > 0) {
+        message += `    📍 On Break: ${error.breakdown.onBreak.join(', ')}\n`;
+      }
+      if (error.breakdown.restrictedRole.length > 0) {
+        message += `    📍 Role Restrictions:\n`;
+        error.breakdown.restrictedRole.forEach(rr => {
+          message += `       • ${rr.name} (${rr.role} not available)\n`;
+        });
+      }
+      message += '\n';
+    });
+  }
+  
+  // Format skill level errors
+  if (errorsByType.INSUFFICIENT_SKILLED_STAFF) {
+    message += '❌ INSUFFICIENT SKILLED STAFF\n\n';
+    message += '  Note: Unskilled staff (levels 4-5) can only work multi-staff\n';
+    message += '  observations when paired with skilled staff (levels 1-3)\n\n';
+    
+    errorsByType.INSUFFICIENT_SKILLED_STAFF.forEach(error => {
+      message += `  Hour ${error.hour}:00\n`;
+      message += `    Skilled needed: ${error.skilledNeeded} (levels 1-3)\n`;
+      message += `    Skilled available: ${error.skilledAvailable}\n`;
+      message += `    Unskilled staff: ${error.unskilledCount} (levels 4-5)\n`;
+      message += `    Problem: Not enough skilled staff to pair with unskilled\n\n`;
+    });
+  }
+  
+  // Format over-assignment errors
+  if (errorsByType.OVER_ASSIGNED) {
+    message += '❌ OVER-ASSIGNED OBSERVATIONS\n\n';
+    
+    errorsByType.OVER_ASSIGNED.forEach(error => {
+      message += `  Hour ${error.hour}:00 - "${error.observation}"\n`;
+      message += `    Required: ${error.required} staff\n`;
+      message += `    Assigned: ${error.assigned} staff\n`;
+      message += `    Over by: ${error.assigned - error.required}\n`;
+      message += `    Staff: ${error.staffList.join(', ')}\n\n`;
+    });
+  }
+  
+  // Format consecutive hour violations
+  if (errorsByType.CONSECUTIVE_HOURS) {
+    message += '❌ CONSECUTIVE HOUR VIOLATIONS\n\n';
+    message += '  Staff cannot work the same observation in consecutive hours\n\n';
+    
+    errorsByType.CONSECUTIVE_HOURS.forEach(error => {
+      message += `  ${error.staffName}: "${error.observation}"\n`;
+      message += `    Hours: ${error.hours.join(':00 and ')}:00\n\n`;
+    });
+  }
+  
+  // Add suggestions
+  message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  message += '💡 SUGGESTIONS TO FIX\n\n';
+  
+  if (errorsByType.INSUFFICIENT_CAPACITY) {
+    message += '  • Adjust break times to reduce overlaps\n';
+    message += '  • Remove or modify user-assigned observations\n';
+    message += '  • Add more staff members\n';
+  }
+  
+  if (errorsByType.INSUFFICIENT_SKILLED_STAFF) {
+    message += '  • Add more skilled staff (skill levels 1-3)\n';
+    message += '  • Adjust skill levels of existing staff\n';
+    message += '  • Change break times for skilled staff\n';
+  }
+  
+  if (errorsByType.OVER_ASSIGNED) {
+    message += '  • Remove excess user assignments\n';
+    message += '  • Check that observation requirements are correct\n';
+  }
+  
+  if (errorsByType.CONSECUTIVE_HOURS) {
+    message += '  • Manually reassign observations to different hours\n';
+    message += '  • Remove one of the consecutive assignments\n';
+  }
+  
+  return message;
 }
 
   function getLastObservationHour(staffMember, hour, observations) {
@@ -1434,53 +1728,19 @@ const handleAllocate = async () => {
     }
   });
   
-  console.log('\n📊 Calculating metrics...');
-  const metricsStartTime = Date.now();
-  const metrics = calculateEffectiveMaxObservations(observations, staff, start, 19);
-  const metricsDuration = Date.now() - metricsStartTime;
+  const validationResult = validateScheduleFeasibility(
+    observations, 
+    staff, 
+    start, 
+    19
+  );
   
-  console.log('═══════════════════════════════════════');
-  console.log('📈 METRICS CALCULATION COMPLETE');
-  console.log('═══════════════════════════════════════');
-  console.log(`⏱️ Calculation time: ${metricsDuration}ms`);
-  console.log(`Effective Max Observations: ${metrics.effectiveMaxObs}`);
-  console.log(`Total Slots Needed: ${metrics.totalObsSlots}`);
-  console.log(`Total Available Capacity: ${metrics.totalAvailableSlots}`);
-  console.log(`System Pressure: ${metrics.systemPressure.toFixed(2)}`);
-  console.log(`Feasible: ${metrics.isFeasible ? 'YES ✓' : 'NO ✗'}`);
-  
-  // Log hourly breakdown
-  console.log('\n--- Hourly Feasibility ---');
-  Object.keys(metrics.hourlyFeasibility).forEach(hour => {
-    const hourData = metrics.hourlyFeasibility[hour];
-    const status = hourData.isFeasible ? '✓' : '✗';
-    console.log(`Hour ${hour}: ${hourData.available} available / ${hourData.required} required ${status}`);
-  });
-  console.log('═══════════════════════════════════════');
-
-  // Show detailed alert if infeasible
-  if (!metrics.isFeasible) {
-    console.log('⚠️ SCHEDULE IS NOT FEASIBLE!');
-    let alertMessage = 'Warning: This schedule is NOT feasible!\n\n';
-    
-    if (metrics.infeasibleHours.length > 0) {
-      alertMessage += 'Problematic hours:\n';
-      metrics.infeasibleHours.forEach(hour => {
-        const hourData = metrics.hourlyFeasibility[hour];
-        alertMessage += `  Hour ${hour}: Need ${hourData.required} staff, only ${hourData.available} available\n`;
-      });
-      alertMessage += '\nSuggestions:\n';
-      alertMessage += '- Adjust break times to avoid overlaps\n';
-      alertMessage += '- Add more staff members\n';
-      alertMessage += '- Reduce observation requirements\n';
-    } else {
-      alertMessage += `Overall capacity issue:\n`;
-      alertMessage += `Total slots needed: ${metrics.totalObsSlots}\n`;
-      alertMessage += `Total available capacity: ${metrics.totalAvailableSlots}\n`;
-      alertMessage += `The system is ${((metrics.systemPressure - 1) * 100).toFixed(1)}% over capacity.\n`;
-    }
-    
-    alert(alertMessage);
+  if (!validationResult.isValid) {
+    const errorMessage = formatValidationErrors(validationResult);
+    console.error(errorMessage);
+    alert(errorMessage);
+    setIsLoadingSolver(false);
+    return; // Stop - don't call solver
   }
 
   // ═══════════════════════════════════════

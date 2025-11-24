@@ -74,11 +74,12 @@
 
 .mainContent {
   display: flex;
-  flex-direction: column;  /* Stack items vertically */
+  flex-direction: column;
   justify-content: space-between;
   align-items: flex-start;
-  height: 58rem;
-  margin: 6rem 14rem 15rem 14rem;
+  /* ✅ FIX: Use calc to fill viewport minus nav and footer */
+  height: calc(100vh - 18rem); /* Subtracts nav (9rem) + footer (5rem) + margins (4rem) */
+  margin: 6rem 7rem 8rem 7rem;
   border-right: black solid 0.2rem;
   border-left: black solid 0.2rem;
   border-radius: 0.8rem;
@@ -87,12 +88,14 @@
 }
 
 .contentWrapper {
-  flex: 1;  /* Takes all available space */
-  overflow: hidden;  /* Changed from auto */
+  flex: 1;
+  overflow: hidden;
   width: 100%;
   animation: fadeIn 0.3s ease-in;
   display: flex;
-  flex-direction: column;  /* Add this */
+  flex-direction: column;
+  /* ✅ ADD: Ensure it fills the height */
+  min-height: 0;
 }
 
 .footer {

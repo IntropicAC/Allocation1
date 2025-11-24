@@ -155,6 +155,12 @@ const setTableRef = (ref) => {
     
     const cells = clonedTable.querySelectorAll("td, th");
     cells.forEach((cell) => {
+      // ✅ Remove lock icons from copied table
+      const lockIcon = cell.querySelector('span[title="User-assigned (locked)"]');
+      if (lockIcon) {
+        lockIcon.remove();
+      }
+      
       cell.style.padding = "0";
       cell.style.margin = "0";
       cell.style.border = "1px solid black";

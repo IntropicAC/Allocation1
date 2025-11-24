@@ -332,7 +332,7 @@ const handleCellClick = (e) => {
   isTypingRef.current = true;
   
   // Strip zero-width space before processing
-  const text = stripZeroWidthSpace(e.target.textContent || '').slice(0, 14);
+  const text = stripZeroWidthSpace(e.target.textContent || '').slice(0, 16);
   setLocalEditValue(text);
   setEditValue(text);
   
@@ -363,7 +363,7 @@ const handleCellClick = (e) => {
     }
     
     const currentLength = cellRef.current ? cellRef.current.textContent.length : 0;
-    if (currentLength >= 14 && e.key.length === 1) {
+    if (currentLength >= 16 && e.key.length === 1) {
       e.preventDefault();
     }
   };
@@ -1137,7 +1137,7 @@ useEffect(() => {
               const currentText = oldValue === '-' ? '' : oldValue;
               
               // Only add character if under 14 char limit
-              if (currentText.length < 14) {
+              if (currentText.length < 16) {
                 const newValue = currentText + e.key;
                 
                 if (oldValue !== newValue) {
@@ -1264,7 +1264,7 @@ useEffect(() => {
           });
           
           if (hasUpdates) {
-            // ✅ Maintain user assignment tracking (don't remove it just because we backspaced)
+            // Maintain user assignment tracking (don't remove it just because we backspaced)
             // Only clear tracking if the cell becomes empty ('-')
             const newUserAssignments = new Set(staffMember.userAssignments || []);
             const newSolverAssignments = new Set(staffMember.solverAssignments || []);
@@ -1291,7 +1291,65 @@ useEffect(() => {
         });
       });
     } else if (e.key === 'Delete') {
-      // ... existing Delete key code stays the same ...
+      e.preventDefault();
+      
+      // Delete: Clear entire cell content for all selected cells (except breaks)
+      setStaff(prevStaff => {
+        return prevStaff.map(staffMember => {
+          const updates = {};
+          let hasUpdates = false;
+          
+          selectedCells.forEach(cellKey => {
+            const [staffName, hourStr] = cellKey.split('-');
+            const hour = parseInt(hourStr);
+            
+            // Skip break cells
+            if (staffName === staffMember.name && staffMember.break !== hour) {
+              const oldValue = staffMember.observations[hour] || '-';
+              
+              if (oldValue !== '-' && oldValue !== '') {
+                updates[hour] = '-';
+                hasUpdates = true;
+                
+                // Handle hour 8 StaffNeeded updates
+                if (hour === 8) {
+                  if (oldValue && oldValue !== "-") {
+                    setObservations(currentObservations => 
+                      currentObservations.map(obs => {
+                        if (obs.name === oldValue && obs.StaffNeeded < obs.staff) {
+                          return { ...obs, StaffNeeded: obs.StaffNeeded + 1 };
+                        }
+                        return obs;
+                      })
+                    );
+                  }
+                }
+              }
+            }
+          });
+          
+          if (hasUpdates) {
+            // Clear tracking for deleted cells
+            const newUserAssignments = new Set(staffMember.userAssignments || []);
+            const newSolverAssignments = new Set(staffMember.solverAssignments || []);
+            
+            Object.keys(updates).forEach(hourStr => {
+              const hour = parseInt(hourStr);
+              newUserAssignments.delete(hour);
+              newSolverAssignments.delete(hour);
+            });
+            
+            return {
+              ...staffMember,
+              observations: { ...staffMember.observations, ...updates },
+              userAssignments: newUserAssignments,
+              solverAssignments: newSolverAssignments
+            };
+          }
+          
+          return staffMember;
+        });
+      });
     }
   };
 
@@ -1634,19 +1692,44 @@ const getObservationColor = (observationName) => {
   
   return 'transparent';
 };
-  const countValidObservations = (staffObservations, observations) => {
+ const countValidObservations = (staffObservations, observations) => {
   if (!staffObservations || typeof staffObservations !== 'object') {
     return 0;
   }
-  
-  // Include both current observation names AND deleted observation names
-  const validNames = new Set(observations.map(obs => obs.name));
-  const deletedNames = new Set(observations[0]?.deletedObs || []);
-  
+
+  const normalise = (str) =>
+    typeof str === 'string' ? str.trim().toLowerCase() : '';
+
+  // Normalise observation names to lowercase
+  const validNames = observations
+    .map(obs => normalise(obs.name))
+    .filter(Boolean);
+
+  // Deleted observations also count
+  const deletedNames = (observations[0]?.deletedObs || [])
+    .map(name => normalise(name))
+    .filter(Boolean);
+
   return Object.values(staffObservations).filter(obs => {
-    return (validNames.has(obs) || deletedNames.has(obs)) && obs !== '-';
+    const obsLower = normalise(obs);
+
+    if (!obsLower || obsLower === '-') return false;
+
+    // If staff typed "gen", "gens", "general", etc.
+    // check if any full name starts with what they typed
+    const matchesValid = validNames.some(name =>
+      name.startsWith(obsLower)
+    );
+
+    const matchesDeleted = deletedNames.some(name =>
+      name.startsWith(obsLower)
+    );
+
+    return matchesValid || matchesDeleted;
   }).length;
 };
+
+
 
   function updateStaffNeeded(observationName, increment) {
     setObservations(prevObservations => {
@@ -1891,7 +1974,7 @@ const getObservationColor = (observationName) => {
                   onClick={() => setSelectedStartHour(selectedStartHour === hour ? null : hour)}
                   style={{ cursor: 'pointer' }}
                 >
-                  {getDisplayHour(hour)}:00
+                  {getDisplayHour(hour).toString().padStart(2, '0')}:00
                 </td>
                 {sortedStaff.map(staffMember => {
                   let observation = staffMember.observations[hour] === 'Generals' ? 'Gen' : staffMember.observations[hour] || '-';
@@ -1946,16 +2029,16 @@ const getObservationColor = (observationName) => {
               </th>
               {hours.map(hour => (
                 <th 
-                  key={hour}
-                  className={`${
-                    selectedStartHour === hour ? styles.selectedHour 
-                    : selectedStartHour && hour >= selectedStartHour ? styles.affectedHour : ''
-                  }`}
-                  onClick={() => setSelectedStartHour(selectedStartHour === hour ? null : hour)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {getDisplayHour(hour)}:00
-                </th>
+                key={hour}
+                className={`${
+                  selectedStartHour === hour ? styles.selectedHour 
+                  : selectedStartHour && hour >= selectedStartHour ? styles.affectedHour : ''
+                }`}
+                onClick={() => setSelectedStartHour(selectedStartHour === hour ? null : hour)}
+                style={{ cursor: 'pointer' }}
+              >
+                {getDisplayHour(hour).toString().padStart(2, '0')}:00
+              </th>
               ))}
             </tr>
           </thead>
@@ -2073,12 +2156,14 @@ const getObservationColor = (observationName) => {
     </div>
   
     <div className={styles.tableContainer}>
-      <table ref={localTableRef} className={styles.allocationTable}>
+      <table 
+        ref={localTableRef} 
+        className={`${styles.allocationTable} ${isTransposed ? styles.transposed : ''}`}
+      >
         {renderTable()}
       </table>
     </div>
     
-    <ContextMenu />
   </div>
 );
 }
