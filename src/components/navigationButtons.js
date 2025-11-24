@@ -2055,7 +2055,15 @@ const handleNext = () => {
       
       if (!isAllocationReady && staff.length > 0) {
         console.log('🟢 Starting undo/redo tracking for AllocationCreation (first time only)');
-        resetHistory(staff);
+        
+        // ✅ FIX: Serialize Sets to arrays before resetting history
+        const serializedStaff = staff.map(member => ({
+          ...member,
+          userAssignments: Array.from(member.userAssignments || []),
+          solverAssignments: Array.from(member.solverAssignments || [])
+        }));
+        
+        resetHistory(serializedStaff);
         setIsAllocationReady(true);
       } else if (isAllocationReady) {
         console.log('ℹ️ Undo/redo already active, not resetting');
