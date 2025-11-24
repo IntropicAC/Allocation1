@@ -1146,10 +1146,10 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
 
   if (toDelete.size === 0) return false; // nothing to do
 
-  // ✅ FIX: Get current observation names - don't delete these!
+  // ✅ Get current observation names - don't delete these!
   const currentNames = new Set(observations.map(o => o.name));
   
-  // ✅ FIX: Only delete observations that are NOT currently active
+  // ✅ Only delete observations that are NOT currently active
   const toActuallyDelete = new Set([...toDelete].filter(name => !currentNames.has(name)));
 
   if (toActuallyDelete.size === 0) {
@@ -1163,7 +1163,7 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
   // For counting valid obs later
   const validNames = new Set(observations.map(o => o.name));
 
-  // ✅ FIX: Only remove deleted observations from the scheduling window (startHour to 19)
+  // ✅ Only remove deleted observations from the scheduling window (startHour to 19)
   // NEVER touch anything before startHour - those are preserved regardless
   staff.forEach(member => {
     const obsMap = member.observations || {};
@@ -1172,7 +1172,7 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
     for (let h = startHour; h <= 19; h++) {
       const val = obsMap[h];
       
-      // ✅ CRITICAL: Preserve user-assigned hour 8 if it's a VALID observation
+      // ✅ Preserve user-assigned hour 8 if it's a VALID observation
       if (h === 8 && val && val !== "-" && validNames.has(val)) {
         continue;
       }
@@ -1190,9 +1190,32 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
     );
   });
 
-  // 2) Clear deletedObs so future iterations ignore them
+  // ✅ CHANGED: Instead of clearing deletedObs completely, only keep observations
+  // that are still present SOMEWHERE in the table (any hour from 7-19)
+  console.log('🔍 Checking which deleted observations are still in use...');
+  
+  const stillInUse = new Set();
+  staff.forEach(member => {
+    const obsMap = member.observations || {};
+    // Check ALL hours (7-19), not just the scheduling window
+    for (let h = 7; h <= 19; h++) {
+      const val = obsMap[h];
+      if (val && val !== "-" && toActuallyDelete.has(val)) {
+        stillInUse.add(val);
+        console.log(`  ✓ "${val}" still found at ${member.name} hour ${h}`);
+      }
+    }
+  });
+  
+  console.log('🔍 Deleted observations still in use:', [...stillInUse]);
+  
+  // Only keep deleted observations that are still present in the table
   observations.forEach(o => {
-    if (Array.isArray(o.deletedObs) && o.deletedObs.length) o.deletedObs = [];
+    if (Array.isArray(o.deletedObs) && o.deletedObs.length) {
+      const remainingDeleted = o.deletedObs.filter(name => stillInUse.has(name));
+      o.deletedObs = remainingDeleted;
+      console.log('📋 Updated deletedObs for observation:', o.name, '→', remainingDeleted);
+    }
   });
 
   return true;

@@ -1635,12 +1635,18 @@ const getObservationColor = (observationName) => {
   return 'transparent';
 };
   const countValidObservations = (staffObservations, observations) => {
-    if (!staffObservations || typeof staffObservations !== 'object') {
-      return 0;
-    }
-    const validNames = new Set(observations.map(obs => obs.name));
-    return Object.values(staffObservations).filter(obs => validNames.has(obs) && obs !== '-').length;
-  };
+  if (!staffObservations || typeof staffObservations !== 'object') {
+    return 0;
+  }
+  
+  // Include both current observation names AND deleted observation names
+  const validNames = new Set(observations.map(obs => obs.name));
+  const deletedNames = new Set(observations[0]?.deletedObs || []);
+  
+  return Object.values(staffObservations).filter(obs => {
+    return (validNames.has(obs) || deletedNames.has(obs)) && obs !== '-';
+  }).length;
+};
 
   function updateStaffNeeded(observationName, increment) {
     setObservations(prevObservations => {
