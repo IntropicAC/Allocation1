@@ -305,6 +305,38 @@ function validateScheduleFeasibility(observations, staff, startHour = 9, endHour
     });
   });
   
+  // 3. CHECK NURSE CONSTRAINT - Not all nurses can work the same hour
+  const nurses = staff.filter(member => member.role === 'Nurse');
+  
+  if (nurses.length >= 2) {
+    for (let hour = startHour; hour <= endHour; hour++) {
+      // Count how many nurses have user-assigned observations at this hour
+      const nursesWorkingThisHour = nurses.filter(nurse => {
+        const isUserAssignment = nurse.userAssignments?.has(hour);
+        
+        if (isUserAssignment) {
+          const obs = nurse.observations?.[hour];
+          // Only count if they have a valid observation assignment
+          return obs && obs !== '-' && currentObservationNames.has(obs);
+        }
+        
+        return false;
+      });
+      
+      // If ALL nurses are user-assigned at this hour, it violates the constraint
+      if (nursesWorkingThisHour.length >= nurses.length) {
+        errors.push({
+          type: 'ALL_NURSES_WORKING',
+          hour,
+          nurseCount: nurses.length,
+          nursesAffected: nursesWorkingThisHour.map(n => n.name),
+          message: `All ${nurses.length} nurses have user assignments at hour ${hour}. ` +
+                   `The solver requires at least one nurse to remain unassigned every hour.`
+        });
+      }
+    }
+  }
+  
   return {
     isValid: errors.length === 0,
     errors,
@@ -326,6 +358,27 @@ function analyzeHourCapacity(staff, observations, hour, obsRequirements, current
     restrictedRole: []
   };
   
+  // Helper to normalize observation names
+  const normalizeObservation = (obsName) => {
+    if (!obsName || obsName === '-') return null;
+    const lowerName = obsName.toLowerCase().trim();
+    if (lowerName === 'gen' || lowerName === 'gens' || lowerName === 'generals') {
+      return 'Generals';
+    }
+    return obsName;
+  };
+  
+  // Helper to check if observation is valid
+  const isValidObservation = (obsName) => {
+    if (!obsName || obsName === '-') return false;
+    if (currentObservationNames.has(obsName)) return true;
+    const normalized = normalizeObservation(obsName);
+    if (normalized === 'Generals' && currentObservationNames.has('Generals')) {
+      return true;
+    }
+    return false;
+  };
+  
   // First pass: Count user assignments and check availability
   staff.forEach(member => {
     const skillLevel = member.skillLevel || 3; // default to skilled
@@ -339,14 +392,15 @@ function analyzeHourCapacity(staff, observations, hour, obsRequirements, current
       const assignedObs = member.observations?.[hour];
       const hasValidObservation = assignedObs && 
                                    assignedObs !== '-' && 
-                                   currentObservationNames.has(assignedObs);
+                                   isValidObservation(assignedObs);
       const hasCustomText = assignedObs && 
                             assignedObs !== '-' && 
-                            !currentObservationNames.has(assignedObs);
+                            !isValidObservation(assignedObs);
       
       if (hasValidObservation) {
-        // Count this user assignment toward the observation's requirement
-        userAssignmentCounts[assignedObs] = (userAssignmentCounts[assignedObs] || 0) + 1;
+        // Normalize before counting
+        const normalizedObs = normalizeObservation(assignedObs);
+        userAssignmentCounts[normalizedObs] = (userAssignmentCounts[normalizedObs] || 0) + 1;
         
         unavailableReasons.userAssigned.push({
           name: member.name,
@@ -451,16 +505,39 @@ function checkOverAssignments(staff, hour, obsRequirements, currentObservationNa
   const assignmentCounts = {};
   const staffByObs = {};
   
+  // Helper to normalize observation names
+  const normalizeObservation = (obsName) => {
+    if (!obsName || obsName === '-') return null;
+    const lowerName = obsName.toLowerCase().trim();
+    if (lowerName === 'gen' || lowerName === 'gens' || lowerName === 'generals') {
+      return 'Generals';
+    }
+    return obsName;
+  };
+  
+  // Helper to check if observation is valid
+  const isValidObservation = (obsName) => {
+    if (!obsName || obsName === '-') return false;
+    if (currentObservationNames.has(obsName)) return true;
+    const normalized = normalizeObservation(obsName);
+    if (normalized === 'Generals' && currentObservationNames.has('Generals')) {
+      return true;
+    }
+    return false;
+  };
+  
   // Count ONLY user assignments at this hour (ignore solver assignments)
   staff.forEach(member => {
     const isUserAssignment = member.userAssignments && member.userAssignments.has(hour);
     
     if (isUserAssignment) {
       const obs = member.observations?.[hour];
-      if (obs && obs !== '-' && currentObservationNames.has(obs)) {
-        assignmentCounts[obs] = (assignmentCounts[obs] || 0) + 1;
-        if (!staffByObs[obs]) staffByObs[obs] = [];
-        staffByObs[obs].push(member.name);
+      if (obs && obs !== '-' && isValidObservation(obs)) {
+        // Normalize before counting
+        const normalizedObs = normalizeObservation(obs);
+        assignmentCounts[normalizedObs] = (assignmentCounts[normalizedObs] || 0) + 1;
+        if (!staffByObs[normalizedObs]) staffByObs[normalizedObs] = [];
+        staffByObs[normalizedObs].push(member.name);
       }
     }
   });
@@ -484,40 +561,70 @@ function checkOverAssignments(staff, hour, obsRequirements, currentObservationNa
 function checkConsecutiveHourViolations(staff, startHour, endHour, currentObservationNames) {
   const violations = [];
   
+  // Helper function to normalize observation names (especially Generals variants)
+  const normalizeObservation = (obsName) => {
+    if (!obsName || obsName === '-') return null;
+    
+    const lowerName = obsName.toLowerCase().trim();
+    
+    // Normalize all Generals variations
+    if (lowerName === 'gen' || lowerName === 'gens' || lowerName === 'generals') {
+      return 'Generals';
+    }
+    
+    return obsName;
+  };
+  
+  // Helper to check if an observation is valid (including normalized versions)
+  const isValidObservation = (obsName) => {
+    if (!obsName || obsName === '-') return false;
+    
+    // Check exact match first
+    if (currentObservationNames.has(obsName)) return true;
+    
+    // Check if it's a Generals variant and Generals exists
+    const normalized = normalizeObservation(obsName);
+    if (normalized === 'Generals' && currentObservationNames.has('Generals')) {
+      return true;
+    }
+    
+    return false;
+  };
+  
   staff.forEach(member => {
     // Check from (startHour - 1) to catch violations at the boundary
     // e.g., if startHour=9, check from hour 8 to catch hour 8→9 violations
     const checkFrom = Math.max(8, startHour - 1);
     
     for (let hour = checkFrom; hour < endHour; hour++) {
-      // ✅ FIXED: Check if hour has a user assignment OR is hour 8 with a valid observation
+      // ✅ Check if hour has a user assignment OR is hour 8 with a valid observation
+      const currentObs = member.observations?.[hour];
+      const nextObs = member.observations?.[hour + 1];
+      
       const isCurrentUserAssignment = 
         (member.userAssignments && member.userAssignments.has(hour)) ||
-        (hour === 8 && member.observations?.[8] && 
-         member.observations[8] !== '-' && 
-         currentObservationNames.has(member.observations[8]));
+        (hour === 8 && currentObs && currentObs !== '-' && isValidObservation(currentObs));
       
       const isNextUserAssignment = 
         (member.userAssignments && member.userAssignments.has(hour + 1)) ||
-        (hour + 1 === 8 && member.observations?.[8] && 
-         member.observations[8] !== '-' && 
-         currentObservationNames.has(member.observations[8]));
+        (hour + 1 === 8 && nextObs && nextObs !== '-' && isValidObservation(nextObs));
       
       // Only flag violation if BOTH hours are user assignments
       if (isCurrentUserAssignment && isNextUserAssignment) {
-        const currentObs = member.observations?.[hour];
-        const nextObs = member.observations?.[hour + 1];
+        // Normalize both observation names
+        const normalizedCurrent = normalizeObservation(currentObs);
+        const normalizedNext = normalizeObservation(nextObs);
         
-        // Both hours must have valid observations AND be the same observation
-        if (currentObs && currentObs !== '-' && 
-            nextObs && nextObs !== '-' &&
-            currentObservationNames.has(currentObs) &&
-            currentObservationNames.has(nextObs) &&
-            currentObs === nextObs) {
+        // Both hours must have valid observations AND be the same observation (after normalization)
+        if (normalizedCurrent && normalizedNext &&
+            isValidObservation(currentObs) &&
+            isValidObservation(nextObs) &&
+            normalizedCurrent === normalizedNext) {
           violations.push({
             staffName: member.name,
-            observation: currentObs,
-            hours: [hour, hour + 1]
+            observation: normalizedCurrent, // Use normalized name in violation report
+            hours: [hour, hour + 1],
+            originalNames: [currentObs, nextObs] // Keep originals for debugging
           });
         }
       }
@@ -613,6 +720,22 @@ function formatValidationErrors(validationResult) {
     });
   }
   
+  // Format nurse constraint violations
+  if (errorsByType.ALL_NURSES_WORKING) {
+    message += '❌ NURSE CONSTRAINT VIOLATIONS\n\n';
+    message += '  Note: At least one nurse must remain unassigned each hour\n';
+    message += '  for staffing flexibility (solver requirement)\n\n';
+    
+    errorsByType.ALL_NURSES_WORKING.forEach(error => {
+      message += `  Hour ${error.hour}:00\n`;
+      message += `    All ${error.nurseCount} nurses have user assignments:\n`;
+      error.nursesAffected.forEach(name => {
+        message += `       • ${name}\n`;
+      });
+      message += '\n';
+    });
+  }
+  
   // Add suggestions
   message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
   message += '💡 SUGGESTIONS TO FIX\n\n';
@@ -637,6 +760,12 @@ function formatValidationErrors(validationResult) {
   if (errorsByType.CONSECUTIVE_HOURS) {
     message += '  • Manually reassign observations to different hours\n';
     message += '  • Remove one of the consecutive assignments\n';
+  }
+  
+  if (errorsByType.ALL_NURSES_WORKING) {
+    message += '  • Remove at least one nurse\'s assignment for the affected hour(s)\n';
+    message += '  • Leave at least one nurse free for the solver to assign\n';
+    message += '  • Consider staggering nurse assignments across different hours\n';
   }
   
   return message;

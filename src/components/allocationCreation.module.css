@@ -252,6 +252,9 @@ table td:not(.hourCell):hover {
     font-size: 2rem;
   }
 
+  .allocationTable th {
+  user-select: none; /* ✅ ADD THIS to prevent header text selection during drag */
+}
   .allocationTable td, .allocationTable th {
     word-wrap: break-word;
     white-space: normal;
@@ -281,6 +284,8 @@ table td:not(.hourCell):hover {
 .hourCell {
   transition: background-color 0.2s ease;
   cursor: pointer;
+  user-select: none !important;
+  pointer-events: auto; 
 }
 
 .hourCell:hover {

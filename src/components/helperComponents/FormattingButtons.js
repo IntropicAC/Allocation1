@@ -19,76 +19,76 @@ const FormattingButtons = ({
 
   // Single shared color palette - organized in COLUMNS (top to bottom)
   const colorPalette = [
-    // Column 1 - Red shades (darkest to lightest, top to bottom)
-    { name: 'Dark Red', color: '#8B0000' },
-    { name: 'Red', color: '#CC0000' },
-    { name: 'Light Red', color: '#FF4444' },
-    { name: 'Lighter Red', color: '#FF7777' },
-    { name: 'Pale Red', color: '#FFAAAA' },
-    
-    // Column 2 - Orange shades
-    { name: 'Dark Orange', color: '#CC4400' },
-    { name: 'Orange', color: '#FF6600' },
-    { name: 'Light Orange', color: '#FF8833' },
-    { name: 'Lighter Orange', color: '#FFAA66' },
-    { name: 'Pale Orange', color: '#FFCC99' },
-    
-    // Column 3 - Yellow shades
-    { name: 'Dark Yellow', color: '#CC9900' },
-    { name: 'Yellow', color: '#FFCC00' },
-    { name: 'Light Yellow', color: '#FFDD33' },
-    { name: 'Lighter Yellow', color: '#FFEE66' },
-    { name: 'Pale Yellow', color: '#FFFF99' },
-    
-    // Column 4 - Green shades
-    { name: 'Dark Green', color: '#004400' },
-    { name: 'Green', color: '#006600' },
-    { name: 'Light Green', color: '#009900' },
-    { name: 'Lighter Green', color: '#33CC33' },
-    { name: 'Pale Green', color: '#66FF66' },
-    
-    // Column 5 - Teal shades
-    { name: 'Dark Teal', color: '#006666' },
-    { name: 'Teal', color: '#008B8B' },
-    { name: 'Light Teal', color: '#20B2AA' },
-    { name: 'Lighter Teal', color: '#48D1CC' },
-    { name: 'Pale Teal', color: '#7FFFD4' },
-    
-    // Column 6 - Blue shades
-    { name: 'Dark Blue', color: '#003399' },
-    { name: 'Blue', color: '#0066CC' },
-    { name: 'Light Blue', color: '#3399FF' },
-    { name: 'Lighter Blue', color: '#66B3FF' },
-    { name: 'Pale Blue', color: '#99CCFF' },
-    
-    // Column 7 - Purple shades
-    { name: 'Dark Purple', color: '#660099' },
-    { name: 'Purple', color: '#9933CC' },
-    { name: 'Light Purple', color: '#B366FF' },
-    { name: 'Lighter Purple', color: '#CC99FF' },
-    { name: 'Pale Purple', color: '#E6CCFF' },
-    
-    // Column 8 - Pink shades
-    { name: 'Dark Pink', color: '#CC0066' },
-    { name: 'Pink', color: '#FF0080' },
-    { name: 'Light Pink', color: '#FF3399' },
-    { name: 'Lighter Pink', color: '#FF66B3' },
-    { name: 'Pale Pink', color: '#FF99CC' },
-    
-    // Column 9 - Gray shades
-    { name: 'Black', color: '#000000' },
-    { name: 'Dark Gray', color: '#333333' },
-    { name: 'Gray', color: '#666666' },
-    { name: 'Light Gray', color: '#999999' },
-    { name: 'Pale Gray', color: '#CCCCCC' },
-    
-    // Column 10 - Brown shades
-    { name: 'Dark Brown', color: '#663300' },
-    { name: 'Brown', color: '#996633' },
-    { name: 'Light Brown', color: '#CC9966' },
-    { name: 'Lighter Brown', color: '#DDBB99' },
-    { name: 'Pale Brown', color: '#F0D9B5' },
-  ];
+  // Column 1 - Red shades (dark to lightest, top to bottom)
+  { name: 'Red', color: '#CC0000' },
+  { name: 'Light Red', color: '#FF4444' },
+  { name: 'Lighter Red', color: '#FF7777' },
+  { name: 'Pale Red', color: '#FFAAAA' },
+  { name: 'Very Pale Red', color: '#FFDDDD' },
+  
+  // Column 2 - Orange shades
+  { name: 'Orange', color: '#FF6600' },
+  { name: 'Light Orange', color: '#FF8833' },
+  { name: 'Lighter Orange', color: '#FFAA66' },
+  { name: 'Pale Orange', color: '#FFCC99' },
+  { name: 'Very Pale Orange', color: '#FFE5CC' },
+  
+  // Column 3 - Yellow shades
+  { name: 'Yellow', color: '#FFCC00' },
+  { name: 'Light Yellow', color: '#FFDD33' },
+  { name: 'Lighter Yellow', color: '#FFEE66' },
+  { name: 'Pale Yellow', color: '#FFFF99' },
+  { name: 'Very Pale Yellow', color: '#FFFFCC' },
+  
+  // Column 4 - Green shades
+  { name: 'Green', color: '#006600' },
+  { name: 'Light Green', color: '#009900' },
+  { name: 'Lighter Green', color: '#33CC33' },
+  { name: 'Pale Green', color: '#66FF66' },
+  { name: 'Very Pale Green', color: '#CCFFCC' },
+  
+  // Column 5 - Teal shades
+  { name: 'Teal', color: '#008B8B' },
+  { name: 'Light Teal', color: '#20B2AA' },
+  { name: 'Lighter Teal', color: '#48D1CC' },
+  { name: 'Pale Teal', color: '#7FFFD4' },
+  { name: 'Very Pale Teal', color: '#CCFFFF' },
+  
+  // Column 6 - Blue shades
+  { name: 'Blue', color: '#0066CC' },
+  { name: 'Light Blue', color: '#3399FF' },
+  { name: 'Lighter Blue', color: '#66B3FF' },
+  { name: 'Pale Blue', color: '#99CCFF' },
+  { name: 'Very Pale Blue', color: '#CCE5FF' },
+  
+  // Column 7 - Purple shades
+  { name: 'Purple', color: '#9933CC' },
+  { name: 'Light Purple', color: '#B366FF' },
+  { name: 'Lighter Purple', color: '#CC99FF' },
+  { name: 'Pale Purple', color: '#E6CCFF' },
+  { name: 'Very Pale Purple', color: '#F5E6FF' },
+  
+  // Column 8 - Pink shades
+  { name: 'Pink', color: '#FF0080' },
+  { name: 'Light Pink', color: '#FF3399' },
+  { name: 'Lighter Pink', color: '#FF66B3' },
+  { name: 'Pale Pink', color: '#FF99CC' },
+  { name: 'Very Pale Pink', color: '#FFCCEE' },
+  
+  // Column 9 - Gray shades
+  { name: 'Dark Gray', color: '#333333' },
+  { name: 'Gray', color: '#666666' },
+  { name: 'Light Gray', color: '#999999' },
+  { name: 'Pale Gray', color: '#CCCCCC' },
+  { name: 'Very Pale Gray', color: '#EEEEEE' },
+  
+  // Column 10 - Brown shades
+  { name: 'Brown', color: '#996633' },
+  { name: 'Light Brown', color: '#CC9966' },
+  { name: 'Lighter Brown', color: '#DDBB99' },
+  { name: 'Pale Brown', color: '#F0D9B5' },
+  { name: 'Very Pale Brown', color: '#F5E6D3' },
+];
 
   // Close pickers when clicking outside
   useEffect(() => {
