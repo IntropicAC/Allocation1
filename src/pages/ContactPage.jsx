@@ -54,7 +54,7 @@ function ContactPage() {
       if (result.success) {
         setSubmitted(true);
         
-        // Reset after 3 seconds
+        // Reset after 8 seconds (increased from 3)
         setTimeout(() => {
           setFormData({
             name: '',
@@ -64,7 +64,7 @@ function ContactPage() {
             message: ''
           });
           setSubmitted(false);
-        }, 3000);
+        }, 5000);
       } else {
         setError('Failed to send message. Please try again.');
       }
@@ -150,7 +150,7 @@ function ContactPage() {
                 </p>
               </div>
             ) : (
-              <div className={styles.contactForm}>
+              <form onSubmit={handleSubmit} className={styles.contactForm}>
                 {error && (
                   <div className={styles.errorMessage}>
                     {error}
@@ -228,14 +228,13 @@ function ContactPage() {
                 </div>
 
                 <button 
-                  type="button"
+                  type="submit"
                   className={styles.submitButton}
-                  onClick={handleSubmit}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
-              </div>
+              </form>
             )}
           </div>
         </div>

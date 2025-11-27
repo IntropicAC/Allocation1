@@ -7,17 +7,15 @@ function WelcomePage({ onNewAllocation, onContinue, hasCachedData }) {
 
   const handleNewAllocationClick = () => {
     if (hasCachedData) {
-      // Show confirmation modal
       setShowDeleteConfirmation(true);
     } else {
-      // No data exists, proceed directly
-      onNewAllocation();
+      onNewAllocation(); // This will call startNewAllocation from App.js
     }
   };
 
   const handleConfirmDelete = () => {
     setShowDeleteConfirmation(false);
-    onNewAllocation();
+    onNewAllocation(); // This will call startNewAllocation from App.js
   };
 
   const handleCancelDelete = () => {

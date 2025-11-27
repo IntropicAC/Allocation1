@@ -34,7 +34,8 @@ function MainPage(props) {
     isAllocationReady,
     setIsAllocationReady,
     resetHistory,
-    startNewAllocation
+    startNewAllocation,
+    allocationId
   } = props;
 
   // Navigation state - determines which page to show
@@ -319,6 +320,7 @@ const setTableRef = (ref) => {
             setIsAllocationReady={setIsAllocationReady}
             resetHistory={resetHistory}
             hasUnfinishedForm={hasUnfinishedForm}
+            allocationId={allocationId}
           />
         </>
       )}

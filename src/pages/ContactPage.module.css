@@ -33,6 +33,8 @@
   max-width: 120rem;
   margin: 0 auto;
   padding: 4rem 2rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* Hero Section */
@@ -153,6 +155,7 @@
   border: 2px solid #e0e0e0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   position: relative;
+  z-index: 1;
 }
 
 .formSection::before {
@@ -170,22 +173,25 @@
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .formGroup {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  position: relative; /* ADD THIS */
-  z-index: 1; /* ADD THIS */
+  position: relative;
+  z-index: 1;
 }
 
 .label {
   font-size: 1.6rem;
   font-weight: 600;
   color: #1a1a1a;
-  cursor: pointer; /* ADD THIS - makes it clear the label is clickable */
-  user-select: none; /* ADD THIS - prevents text selection */
+  display: block;
+  position: relative;
+  z-index: 1;
 }
 
 .input,
@@ -199,8 +205,10 @@
   font-family: Arial, sans-serif;
   color: #1a1a1a;
   background-color: white;
-  width: 100%; /* ADD THIS - ensures full width */
-  box-sizing: border-box; /* ADD THIS - includes padding in width calculation */
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .input:focus,
@@ -227,18 +235,29 @@
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: 1rem;
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  display: block;
 }
 
-.submitButton:hover {
+.submitButton:hover:not(:disabled) {
   background-color: #333;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Success Message */
 .successMessage {
   text-align: center;
   padding: 4rem 2rem;
+  position: relative;
+  z-index: 1;
 }
 
 .successIcon {
@@ -269,6 +288,7 @@
   border: 2px solid #e0e0e0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   margin-top: 2rem;
+  z-index: 1;
 }
 
 .additionalInfo::before {
@@ -299,6 +319,18 @@
   color: #555;
   max-width: 80rem;
   margin: 0 auto;
+}
+
+.errorMessage {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 1.2rem;
+  border-radius: 0.8rem;
+  margin-bottom: 1.6rem;
+  font-size: 1.4rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* Responsive Design */
@@ -334,13 +366,4 @@
     flex-direction: column;
     gap: 1.5rem;
   }
-}
-.errorMessage {
-  background-color: #fee;
-  border: 1px solid #fcc;
-  color: #c33;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-size: 14px;
 }

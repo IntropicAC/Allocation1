@@ -17,7 +17,7 @@ function LandingPage({ onCreateAllocation }) {
         Safe Staffing, <span className={styles.titleHighlight}>Solved in Minutes</span>
       </h1>
       <p className={styles.heroSubtitle}>
-        Transform 60-minute allocation chaos into fair, compliant schedules instantly. 
+        Transform allocation chaos into fair, compliant schedules instantly. 
         Built by healthcare staff who understand the challenges you face every shift.
       </p>
       <div className={styles.ctaGroup}>

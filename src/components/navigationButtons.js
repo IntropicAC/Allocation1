@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import styles from "./navigationButtons.module.css";
 import { useReactToPrint } from "react-to-print";
 import DataAnonymizer from './services/dataAnonymizer';
-
+import DisclaimerModal from './helperComponents/DisclaimerModal';
 
 function NavigationButtons({
   onBack,
@@ -20,9 +20,49 @@ function NavigationButtons({
   isAllocationReady,
   setIsAllocationReady,
   resetHistory,
-  hasUnfinishedForm
+  hasUnfinishedForm,
+  allocationId
 }) {
   
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [disclaimerShownForAllocation, setDisclaimerShownForAllocation] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+
+  // Reset disclaimer when allocation changes (new allocation created)
+  useEffect(() => {
+    console.log('🔄 AllocationId changed, resetting disclaimer:', allocationId);
+    setDisclaimerShownForAllocation(false);
+  }, [allocationId]);
+
+  const handleProtectedAction = (action) => {
+    if (!disclaimerShownForAllocation) {
+      console.log('⚠️ Showing disclaimer before action');
+      setPendingAction(() => action);
+      setShowDisclaimer(true);
+    } else {
+      console.log('✅ Disclaimer already shown, executing action');
+      action();
+    }
+  };
+
+  const handleDisclaimerAccept = () => {
+    console.log('✅ User accepted disclaimer (will show again)');
+    setShowDisclaimer(false);
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+  };
+
+  const handleDisclaimerAcceptAndDontShow = () => {
+    console.log('✅ User accepted disclaimer (won\'t show again for this allocation)');
+    setDisclaimerShownForAllocation(true);
+    setShowDisclaimer(false);
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+  };
   useEffect(() => {
   console.log('\n🔔 ═══════════════════════════════════════');
   console.log('🔔 STATE CHANGE DETECTED');
@@ -2176,115 +2216,125 @@ const handleNext = () => {
   });
 
   return (
-  <>
-    {/* Loading Overlay */}
-    {isLoadingSolver && (
-      <div className={styles.loadingOverlay}>
-        <div className={styles.loadingContent}>
-          <div className={styles.spinner}></div>
-          <div className={styles.loadingText}>
-            Optimizing Schedule...
-          </div>
-          <div className={styles.loadingSubtext}>
-            {selectedStartHour ? 
-              `Using advanced solver (${selectedStartHour}:00 - 19:00)` : 
-              'Using advanced solver'}
-          </div>
-          <div className={styles.progressBar}>
-            <div className={styles.progressBarFill}></div>
-          </div>
-        </div>
-      </div>
-    )}
-    
-    {/* Navigation container */}
-    <div className={styles.navigationContainer}>
-      {(currentPage === "staff" || currentPage === "allocation" || (currentPage === "patient" && hasCachedData)) && (
-        <button onClick={onBack} className={styles.backButton}>
-          Back
-        </button>
-      )}
+    <>
+      {/* Disclaimer Modal */}
+      <DisclaimerModal
+        isOpen={showDisclaimer}
+        onAccept={handleDisclaimerAccept}
+        onAcceptAndDontShow={handleDisclaimerAcceptAndDontShow}
+      />
 
-      {currentPage === "allocation" && (
-        <div className={styles.rightButtonsContainer}>
-
-          <button onClick={handlePrint} className={styles.backButton}>
-            Print Table
-          </button>
-          
-          <button
-            onClick={handleCopyClick}
-            className={styles.animatedCopyButton}
-            title="Copy table to clipboard"
-          >
-            <span
-              className={isCopied ? styles.buttonTextCopied : styles.buttonText}
-            >
-              {isCopied ? "Copied!" : "Copy Table"}
-            </span>
-            {isCopied && <span className={styles.checkmark}>✓</span>}
-          </button>
-          
-          <button
-            onClick={handleAutoGenerate}
-            className={`${styles.backButton} ${isLoadingSolver ? styles.disabledButton : ''}`}
-            title="Auto-assign Observations"
-            disabled={isLoadingSolver}
-          >
-            {isLoadingSolver ? (
-              <>
-                <i className="fa-solid fa-spinner fa-spin" style={{marginRight: '8px'}}></i>
-                Solving...
-              </>
-            ) : (
-              selectedStartHour ? `Auto-Assign ${selectedStartHour} - 19` : 'Auto-Assign'
-            )}
-          </button>
-          
-          <button
-            onClick={handleReset}
-            className={styles.backButton}
-            title="Reset"
-          >
-            <i
-              className={`fa-solid fa-arrows-rotate ${
-                isSpinning ? "fa-spin" : ""
-              }`}
-            ></i>
-          </button>
-        </div>
-      )}
-
-      {currentPage !== "staff" && currentPage !== "allocation" && (
-        <div className={styles.spacer}></div>
-      )}
-
-      {currentPage === "staff" && (
-        <div className={styles.observationsInfo}>
-          {observations.map((observation, index) => (
-            <div key={index} className={styles.observationDetail}>
-              <span>{observation.name}: </span>
-              <span>{observation.StaffNeeded}</span>
+      {/* Loading Overlay */}
+      {isLoadingSolver && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.loadingContent}>
+            <div className={styles.spinner}></div>
+            <div className={styles.loadingText}>
+              Optimizing Schedule...
             </div>
-          ))}
+            <div className={styles.loadingSubtext}>
+              {selectedStartHour ? 
+                `Using advanced solver (${selectedStartHour}:00 - 19:00)` : 
+                'Using advanced solver'}
+            </div>
+            <div className={styles.progressBar}>
+              <div className={styles.progressBarFill}></div>
+            </div>
+          </div>
         </div>
       )}
+      
+      {/* Navigation container */}
+      <div className={styles.navigationContainer}>
+        {(currentPage === "staff" || currentPage === "allocation" || (currentPage === "patient" && hasCachedData)) && (
+          <button onClick={onBack} className={styles.backButton}>
+            Back
+          </button>
+        )}
 
-      {(currentPage === "patient" || currentPage === "staff") && (
-        <button
-          className={
-            currentPage === "patient"
-              ? styles.nextButton
-              : styles.createAllocation
-          }
-          onClick={handleNext}
-        >
-          {currentPage === "patient" ? "Next" : "Create Allocation"}
-        </button>
-      )}
-    </div>
-  </>
-);
+        {currentPage === "allocation" && (
+          <div className={styles.rightButtonsContainer}>
+
+            <button 
+              onClick={handlePrint} 
+              className={styles.backButton}
+            >
+              Print Table
+            </button>
+            
+            <button
+              onClick={handleCopyClick}
+              className={styles.animatedCopyButton}
+              title="Copy table to clipboard"
+            >
+              <span
+                className={isCopied ? styles.buttonTextCopied : styles.buttonText}
+              >
+                {isCopied ? "Copied!" : "Copy Table"}
+              </span>
+              {isCopied && <span className={styles.checkmark}>✓</span>}
+            </button>
+            
+            <button
+              onClick={() => handleProtectedAction(handleAllocate)}
+              className={`${styles.backButton} ${isLoadingSolver ? styles.disabledButton : ''}`}
+              title="Auto-assign Observations"
+              disabled={isLoadingSolver}
+            >
+              {isLoadingSolver ? (
+                <>
+                  <i className="fa-solid fa-spinner fa-spin" style={{marginRight: '8px'}}></i>
+                  Solving...
+                </>
+              ) : (
+                selectedStartHour ? `Auto-Assign ${selectedStartHour} - 19` : 'Auto-Assign'
+              )}
+            </button>
+            
+            <button
+              onClick={handleReset}
+              className={styles.backButton}
+              title="Reset"
+            >
+              <i
+                className={`fa-solid fa-arrows-rotate ${
+                  isSpinning ? "fa-spin" : ""
+                }`}
+              ></i>
+            </button>
+          </div>
+        )}
+
+        {currentPage !== "staff" && currentPage !== "allocation" && (
+          <div className={styles.spacer}></div>
+        )}
+
+        {currentPage === "staff" && (
+          <div className={styles.observationsInfo}>
+            {observations.map((observation, index) => (
+              <div key={index} className={styles.observationDetail}>
+                <span>{observation.name}: </span>
+                <span>{observation.StaffNeeded}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(currentPage === "patient" || currentPage === "staff") && (
+          <button
+            className={
+              currentPage === "patient"
+                ? styles.nextButton
+                : styles.createAllocation
+            }
+            onClick={handleNext}
+          >
+            {currentPage === "patient" ? "Next" : "Create Allocation"}
+          </button>
+        )}
+      </div>
+    </>
+  );
 }
 
 export default NavigationButtons;

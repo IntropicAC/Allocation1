@@ -1,0 +1,193 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.modalContent {
+  background: white;
+  border-radius: 1.2rem;
+  max-width: 60rem;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  padding: 3rem 3rem 2rem 3rem;
+  text-align: center;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.iconContainer {
+  margin-bottom: 1.5rem;
+}
+
+.modalTitle {
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.modalBody {
+  padding: 2.5rem 3rem;
+  color: #374151;
+}
+
+.modalMessage {
+  font-size: 1.7rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  color: #1f2937;
+}
+
+.modalMessage strong {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.reminderBox {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 2rem;
+  border-radius: 0.6rem;
+  margin: 2rem 0;
+}
+
+.reminderBox p {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 1.2rem;
+}
+
+.reminderList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.reminderList li {
+  font-size: 1.5rem;
+  line-height: 1.7;
+  color: #78350f;
+  padding: 0.6rem 0;
+  padding-left: 2.5rem;
+  position: relative;
+}
+
+.reminderList li::before {
+  content: '•';
+  position: absolute;
+  left: 1rem;
+  color: #f59e0b;
+  font-weight: bold;
+  font-size: 1.8rem;
+}
+
+.disclaimer {
+  font-size: 1.5rem;
+  line-height: 1.7;
+  color: #4b5563;
+  margin-top: 2rem;
+}
+
+.disclaimer strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.modalFooter {
+  padding: 2rem 3rem 3rem 3rem;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: flex-end;
+  border-top: 2px solid #f3f4f6;
+}
+
+.dontShowButton {
+  padding: 1.2rem 2.5rem;
+  font-size: 1.6rem;
+  font-weight: 600;
+  border: 2px solid #d1d5db;
+  background: white;
+  color: #6b7280;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dontShowButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.acceptButton {
+  padding: 1.2rem 3rem;
+  font-size: 1.6rem;
+  font-weight: 600;
+  border: none;
+  background: #1a1a1a;
+  color: white;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.acceptButton:hover {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .modalContent {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .modalHeader {
+    padding: 2rem 2rem 1.5rem 2rem;
+  }
+
+  .modalTitle {
+    font-size: 2.2rem;
+  }
+
+  .modalBody {
+    padding: 2rem;
+  }
+
+  .modalFooter {
+    flex-direction: column;
+    padding: 1.5rem 2rem 2rem 2rem;
+  }
+
+  .dontShowButton,
+  .acceptButton {
+    width: 100%;
+  }
+}
