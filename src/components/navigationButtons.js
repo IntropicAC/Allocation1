@@ -181,7 +181,7 @@ function createInterleavedObservationsList(
     }
   }
 
-  function validateScheduleFeasibility(observations, staff, startHour = 8, endHour = 19) {
+function validateScheduleFeasibility(observations, staff, startHour = 9, endHour = 19) {
   const errors = [];
   const warnings = [];
   
@@ -447,12 +447,21 @@ function checkConsecutiveHourViolations(staff, startHour, endHour, currentObserv
   staff.forEach(member => {
     // Check from (startHour - 1) to catch violations at the boundary
     // e.g., if startHour=9, check from hour 8 to catch hour 8→9 violations
-    const checkFrom = Math.max(7, startHour - 1);
+    const checkFrom = Math.max(8, startHour - 1);
     
     for (let hour = checkFrom; hour < endHour; hour++) {
-      // ONLY check user assignments (solver assignments will be cleared)
-      const isCurrentUserAssignment = member.userAssignments && member.userAssignments.has(hour);
-      const isNextUserAssignment = member.userAssignments && member.userAssignments.has(hour + 1);
+      // ✅ FIXED: Check if hour has a user assignment OR is hour 8 with a valid observation
+      const isCurrentUserAssignment = 
+        (member.userAssignments && member.userAssignments.has(hour)) ||
+        (hour === 8 && member.observations?.[8] && 
+         member.observations[8] !== '-' && 
+         currentObservationNames.has(member.observations[8]));
+      
+      const isNextUserAssignment = 
+        (member.userAssignments && member.userAssignments.has(hour + 1)) ||
+        (hour + 1 === 8 && member.observations?.[8] && 
+         member.observations[8] !== '-' && 
+         currentObservationNames.has(member.observations[8]));
       
       // Only flag violation if BOTH hours are user assignments
       if (isCurrentUserAssignment && isNextUserAssignment) {

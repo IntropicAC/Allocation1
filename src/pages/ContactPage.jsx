@@ -11,6 +11,8 @@ function ContactPage() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,27 +20,60 @@ function ContactPage() {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // In production, you'd send this to your backend/email service
-    console.log('Form submitted:', formData);
-    
-    setSubmitted(true);
-    
-    // Reset after 3 seconds
-    setTimeout(() => {
-      setFormData({
-        name: '',
-        email: '',
-        organization: '',
-        category: 'feedback',
-        message: ''
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          access_key: '0cff2f87-8eaa-49fb-8eb0-d42a59ad5e4e',
+          name: formData.name,
+          email: formData.email,
+          organization: formData.organization || 'Not provided',
+          category: formData.category,
+          message: formData.message,
+          subject: `${formData.category.charAt(0).toUpperCase() + formData.category.slice(1)}: Contact from ${formData.name}`,
+          botcheck: '',
+          redirect: false
+        })
       });
-      setSubmitted(false);
-    }, 3000);
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitted(true);
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+          setFormData({
+            name: '',
+            email: '',
+            organization: '',
+            category: 'feedback',
+            message: ''
+          });
+          setSubmitted(false);
+        }, 3000);
+      } else {
+        setError('Failed to send message. Please try again.');
+      }
+    } catch (err) {
+      console.error('Form submission error:', err);
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -116,6 +151,12 @@ function ContactPage() {
               </div>
             ) : (
               <div className={styles.contactForm}>
+                {error && (
+                  <div className={styles.errorMessage}>
+                    {error}
+                  </div>
+                )}
+
                 <div className={styles.formGroup}>
                   <label className={styles.label} htmlFor="name">Name *</label>
                   <input
@@ -190,8 +231,9 @@ function ContactPage() {
                   type="button"
                   className={styles.submitButton}
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                 >
-                  Send Message
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
               </div>
             )}
