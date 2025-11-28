@@ -222,6 +222,7 @@ const setTableRef = (ref) => {
             observations={observations}
             setObservations={setObservations}
             setStaff={setStaff}
+            staff={staff}
           />
           <NavigationButtons
             copyTable={copyTable}

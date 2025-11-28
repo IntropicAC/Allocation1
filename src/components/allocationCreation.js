@@ -885,79 +885,81 @@ function AllocationCreation({
   const localTableRef = useRef(null);
 
   const updateObservation = useCallback((staffName, hour, newObservation) => {
-    setStaff(prevStaff => {
-      const updatedStaff = prevStaff.map(staffMember => {
-        if (staffMember.name === staffName) {
-          if (staffMember.break === hour) {
-            return staffMember;
-          }
-          
-          // Initialize tracking sets if needed
-          if (!staffMember.userAssignments) {
-            staffMember.userAssignments = new Set();
-          }
-          if (!staffMember.solverAssignments) {
-            staffMember.solverAssignments = new Set();
-          }
-          
-          if (hour === 8) {
-            const oldObservation = staffMember.observations[8];
-            
-            if (oldObservation && oldObservation !== "-") {
-              setObservations(currentObservations => 
-                currentObservations.map(obs => {
-                  if (obs.name === oldObservation && obs.StaffNeeded < obs.staff) {
-                    return { ...obs, StaffNeeded: obs.StaffNeeded + 1 };
-                  }
-                  return obs;
-                })
-              );
-            }
-            
-            if (newObservation && newObservation !== "-") {
-              setObservations(currentObservations => 
-                currentObservations.map(obs => {
-                  if (obs.name === newObservation && obs.StaffNeeded > 0) {
-                    return { ...obs, StaffNeeded: obs.StaffNeeded - 1 };
-                  }
-                  return obs;
-                })
-              );
-            }
-          }
-          
-          // **MARK AS USER ASSIGNMENT** - Safely handle Sets/Arrays/Objects
-          const safeConvertToSet = (value) => {
-            if (value instanceof Set) return new Set(value);
-            if (Array.isArray(value)) return new Set(value);
-            return new Set();
-          };
-
-          const newUserAssignments = safeConvertToSet(staffMember.userAssignments);
-          const newSolverAssignments = safeConvertToSet(staffMember.solverAssignments);
-
-          if (newObservation && newObservation !== "-") {
-            newUserAssignments.add(hour);
-            newSolverAssignments.delete(hour);
-          } else {
-            // If clearing the cell, remove from both sets
-            newUserAssignments.delete(hour);
-            newSolverAssignments.delete(hour);
-          }
-
-          return {
-            ...staffMember,
-            observations: { ...staffMember.observations, [hour]: newObservation },
-            userAssignments: newUserAssignments,
-            solverAssignments: newSolverAssignments
-          };
+  setStaff(prevStaff => {
+    const updatedStaff = prevStaff.map(staffMember => {
+      if (staffMember.name === staffName) {
+        if (staffMember.break === hour) {
+          return staffMember;
         }
-        return staffMember;
-      });
-      
-      return updatedStaff;
+        
+        // Initialize tracking sets if needed
+        if (!staffMember.userAssignments) {
+          staffMember.userAssignments = new Set();
+        }
+        if (!staffMember.solverAssignments) {
+          staffMember.solverAssignments = new Set();
+        }
+        
+        if (hour === 8) {
+          const oldObservation = staffMember.observations[8];
+          
+          // If there was an old observation (and it's not "-"), increment its StaffNeeded
+          if (oldObservation && oldObservation !== "-") {
+            setObservations(currentObservations => 
+              currentObservations.map(obs => {
+                if (obs.name === oldObservation) {
+                  return { ...obs, StaffNeeded: obs.StaffNeeded + 1 };
+                }
+                return obs;
+              })
+            );
+          }
+          
+          // If there's a new observation (and it's not "-"), decrement its StaffNeeded
+          if (newObservation && newObservation !== "-") {
+            setObservations(currentObservations => 
+              currentObservations.map(obs => {
+                if (obs.name === newObservation) {
+                  return { ...obs, StaffNeeded: obs.StaffNeeded - 1 };
+                }
+                return obs;
+              })
+            );
+          }
+        }
+        
+        // **MARK AS USER ASSIGNMENT** - Safely handle Sets/Arrays/Objects
+        const safeConvertToSet = (value) => {
+          if (value instanceof Set) return new Set(value);
+          if (Array.isArray(value)) return new Set(value);
+          return new Set();
+        };
+
+        const newUserAssignments = safeConvertToSet(staffMember.userAssignments);
+        const newSolverAssignments = safeConvertToSet(staffMember.solverAssignments);
+
+        if (newObservation && newObservation !== "-") {
+          newUserAssignments.add(hour);
+          newSolverAssignments.delete(hour);
+        } else {
+          // If clearing the cell, remove from both sets
+          newUserAssignments.delete(hour);
+          newSolverAssignments.delete(hour);
+        }
+
+        return {
+          ...staffMember,
+          observations: { ...staffMember.observations, [hour]: newObservation },
+          userAssignments: newUserAssignments,
+          solverAssignments: newSolverAssignments
+        };
+      }
+      return staffMember;
     });
-  }, [setObservations, setStaff]);
+    
+    return updatedStaff;
+  });
+}, [setObservations, setStaff]);
 
   // NEW: Selection helper functions
   const getCellKey = (staffName, hour) => `${staffName}-${hour}`;
