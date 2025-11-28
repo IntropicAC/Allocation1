@@ -87,7 +87,7 @@ function LandingPage({ onCreateAllocation }) {
             <div className={styles.benefitIcon}>🛡️</div>
             <h3 className={styles.benefitTitle}>Reduces Clinical Risk</h3>
             <p className={styles.benefitText}>
-              Prevents skill-mix errors, ensures gender-appropriate care, and maintains CQC compliance. 
+              Prevents skill-mix errors and maintains CQC compliance. 
               Automatically flags unsafe staffing combinations before they happen.
             </p>
           </div>
@@ -139,17 +139,6 @@ function LandingPage({ onCreateAllocation }) {
           <div className={styles.featureItem}>
             <div className={styles.featureNumber}>02</div>
             <div className={styles.featureContent}>
-              <h3 className={styles.featureTitle}>Gender-Based Assignments</h3>
-              <p className={styles.featureText}>
-                Automatically assigns staff according to patient needs and safeguarding requirements. 
-                Supports trauma-informed care and sexual safety guidance.
-              </p>
-            </div>
-          </div>
-
-          <div className={styles.featureItem}>
-            <div className={styles.featureNumber}>03</div>
-            <div className={styles.featureContent}>
               <h3 className={styles.featureTitle}>Instant Regeneration</h3>
               <p className={styles.featureText}>
                 Staff sickness or last-minute changes? Recalculate a safe, fair allocation instantly. 
@@ -159,7 +148,7 @@ function LandingPage({ onCreateAllocation }) {
           </div>
 
           <div className={styles.featureItem}>
-            <div className={styles.featureNumber}>04</div>
+            <div className={styles.featureNumber}>03</div>
             <div className={styles.featureContent}>
               <h3 className={styles.featureTitle}>Secure by Design</h3>
               <p className={styles.featureText}>

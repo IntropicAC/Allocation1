@@ -2405,7 +2405,9 @@ const handleNext = () => {
             </button>
             
             <button
-              onClick={() => handleProtectedAction(handleAllocate)}
+              onClick={() => handleProtectedAction(() => {
+                  setTimeout(() => handleAllocate(), 250);
+                })}
               className={`${styles.backButton} ${isLoadingSolver ? styles.disabledButton : ''}`}
               title="Auto-assign Observations"
               disabled={isLoadingSolver}

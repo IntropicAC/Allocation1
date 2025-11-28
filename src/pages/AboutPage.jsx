@@ -67,7 +67,7 @@ function AboutPage() {
                 <div className={styles.solutionIcon}>🎯</div>
                 <div>
                   <h3 className={styles.solutionItemTitle}>Automated Constraints</h3>
-                  <p className={styles.solutionItemText}>Skill mix, gender pairing, observation distribution - all automatic</p>
+                  <p className={styles.solutionItemText}>Skill mix, observation distribution - all automatic</p>
                 </div>
               </div>
               <div className={styles.solutionItem}>
@@ -167,11 +167,6 @@ function AboutPage() {
               <div className={styles.benefitIcon}>✓</div>
               <h3 className={styles.benefitTitle}>CQC Compliance</h3>
               <p className={styles.benefitText}>Supports "Safe" and "Well-Led" domains with audit trails</p>
-            </div>
-            <div className={styles.benefitCard}>
-              <div className={styles.benefitIcon}>✓</div>
-              <h3 className={styles.benefitTitle}>Trauma-Informed Care</h3>
-              <p className={styles.benefitText}>Gender-appropriate pairing for sensitive observations</p>
             </div>
             <div className={styles.benefitCard}>
               <div className={styles.benefitIcon}>✓</div>

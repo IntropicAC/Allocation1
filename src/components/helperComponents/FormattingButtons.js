@@ -4,7 +4,7 @@ import styles from './FormattingButtons.module.css';
 const FormattingButtons = ({ 
   onTextColorChange, 
   onUnderlineToggle,
-  onBoldToggle,  // 👈 ADD THIS
+  onBoldToggle,
   onHighlightChange, 
   onFillColorChange,
   hasSelection 
@@ -150,9 +150,12 @@ const FormattingButtons = ({
           }}
           title="Text color"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 2L3 14h2l1.2-3h3.6L11 14h2L8 2zm0 3.5L9.5 9h-3l1.5-3.5z"/>
-            <rect x="3" y="14" width="10" height="2" fill="#cc0000"/>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path 
+              d="M8 2L3.5 13h2.2l.9-2.5h3.8l.9 2.5h2.2L8 2zm0 2.5l1.4 4h-2.8l1.4-4z" 
+              fill="currentColor"
+            />
+            <rect x="2" y="14.5" width="12" height="1.5" rx="0.5" fill="#1976D2"/>
           </svg>
         </button>
         {showTextColorPicker && (
@@ -178,8 +181,11 @@ const FormattingButtons = ({
         }}
         title="Bold"
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <text x="3" y="13" fontFamily="Arial, sans-serif" fontSize="14" fontWeight="bold">B</text>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path 
+            d="M4 2v12h5.5c1.9 0 3.5-1.3 3.5-3 0-1.2-.7-2.2-1.7-2.7.7-.5 1.2-1.3 1.2-2.3 0-1.7-1.4-3-3.3-3H4zm2 2h2.5c.8 0 1.5.7 1.5 1.5S9.3 7 8.5 7H6V4zm0 5h3c1.1 0 2 .9 2 2s-.9 2-2 2H6V9z" 
+            fill="currentColor"
+          />
         </svg>
       </button>
 
@@ -192,13 +198,16 @@ const FormattingButtons = ({
         }}
         title="Underline"
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M4 2v6c0 2.2 1.8 4 4 4s4-1.8 4-4V2h-1.5v6c0 1.4-1.1 2.5-2.5 2.5S5.5 9.4 5.5 8V2H4z"/>
-          <rect x="3" y="14" width="10" height="1"/>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path 
+            d="M4 2v6c0 2.2 1.8 4 4 4s4-1.8 4-4V2h-1.5v6c0 1.4-1.1 2.5-2.5 2.5S5.5 9.4 5.5 8V2H4z" 
+            fill="currentColor"
+          />
+          <rect x="3" y="14" width="10" height="1.5" rx="0.5" fill="currentColor"/>
         </svg>
       </button>
 
-      {/* Fill Color Button */}
+      {/* Fill Color Button - Paint Bucket */}
       <div className={styles.buttonWrapper} ref={fillRef}>
         <button
           className={styles.formatButton}
@@ -208,10 +217,38 @@ const FormattingButtons = ({
           }}
           title="Cell fill color"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M14 6c.6 0 1 .4 1 1v7c0 .6-.4 1-1 1H2c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h12zM3 8v5h10V8H3z"/>
-            <rect x="3" y="2" width="10" height="1.5"/>
-            <rect x="2" y="13" width="12" height="1.5" fill="#cce5ff"/>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            {/* Paint bucket body */}
+            <path 
+              d="M11.5 7.5l-3-3-6 6v2.5c0 .6.4 1 1 1h5c.6 0 1-.4 1-1v-2.5l2-3z" 
+              fill="currentColor"
+              opacity="0.9"
+            />
+            {/* Bucket handle */}
+            <path 
+              d="M8.5 4.5l3 3c.4.4.4 1 0 1.4l-.5.5" 
+              stroke="currentColor" 
+              strokeWidth="1.2" 
+              strokeLinecap="round"
+              fill="none"
+            />
+            {/* Paint drip */}
+            <ellipse 
+              cx="12.5" 
+              cy="12" 
+              rx="1.2" 
+              ry="1.8" 
+              fill="#1976D2"
+            />
+            {/* Color indicator bar */}
+            <rect 
+              x="2" 
+              y="14.5" 
+              width="10" 
+              height="1.5" 
+              rx="0.5" 
+              fill="#1976D2"
+            />
           </svg>
         </button>
         {showFillPicker && (
