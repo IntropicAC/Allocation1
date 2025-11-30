@@ -3,8 +3,9 @@ import { useAuth0 } from '@auth0/auth0-react';
 import styles from './AccountButton.module.css';
 
 const AccountButton = ({ className }) => {
-  const { user } = useAuth0();
+  const { user, getAccessTokenSilently, logout } = useAuth0();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -51,22 +52,65 @@ const AccountButton = ({ className }) => {
     setIsDropdownOpen(false);
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     // Show confirmation dialog
     const confirmed = window.confirm(
-      'Are you sure you want to delete your account? This action cannot be undone.\n\n' +
-      'All your data stored locally (observations and staff) will remain on your device, ' +
-      'but you will lose access to your account and will need to create a new one to use the allocation tool.\n\n' +
-      'To proceed with account deletion, please contact support at support@allocateit.co.uk'
+      '⚠️ DELETE ACCOUNT\n\n' +
+      'Are you sure you want to permanently delete your account?\n\n' +
+      'This action CANNOT be undone:\n' +
+      '• Your account will be permanently deleted\n' +
+      '• You will be immediately logged out\n' +
+      '• You can create a new account with the same email afterward\n' +
+      '• Local data (observations/staff) will remain on this device\n\n' +
+      'Do you want to proceed?'
     );
 
-    if (confirmed) {
-      // In pilot phase, redirect to contact support
-      // In production, you would implement Auth0 Management API deletion
-      alert('Please email support@allocateit.co.uk to request account deletion. Include your email address: ' + user?.email);
+    if (!confirmed) {
+      setIsDropdownOpen(false);
+      return;
     }
 
-    setIsDropdownOpen(false);
+    setIsDeleting(true);
+
+    try {
+      // Get the user's access token
+      const token = await getAccessTokenSilently();
+
+      // Call the delete account API
+      const response = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success - show message and log out
+        alert('✅ Account deleted successfully.\n\nYou will now be logged out.');
+
+        // Log out and redirect to home
+        logout({
+          logoutParams: {
+            returnTo: window.location.origin
+          }
+        });
+      } else {
+        // Error from API
+        throw new Error(data.message || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert(
+        '❌ Account Deletion Failed\n\n' +
+        error.message + '\n\n' +
+        'If this problem persists, please contact support at support@allocateit.co.uk'
+      );
+      setIsDeleting(false);
+      setIsDropdownOpen(false);
+    }
   };
 
   return (
@@ -106,9 +150,10 @@ const AccountButton = ({ className }) => {
           <button
             className={`${styles.dropdownItem} ${styles.dangerItem}`}
             onClick={handleDeleteAccount}
+            disabled={isDeleting}
           >
             <span className={styles.dropdownIcon}>🗑️</span>
-            Delete Account
+            {isDeleting ? 'Deleting...' : 'Delete Account'}
           </button>
         </div>
       )}
