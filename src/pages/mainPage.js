@@ -18,6 +18,7 @@ import LandingPage from './LandingPage';
 import AboutPage from './AboutPage';
 import ContactPage from './ContactPage';
 import LogoutButton from '../components/LogoutButton';
+import AccountButton from '../components/AccountButton';
 
 function MainPage(props) {
   // Destructure props passed from App.js
@@ -382,8 +383,9 @@ const setTableRef = (ref) => {
             </button>
           </li>
           {isAuthenticated && (
-            <li className={styles.navItem} style={{ marginLeft: 'auto' }}>
-              <span style={{ marginRight: '16px', color: '#666' }}>{user?.email}</span>
+            <li className={styles.navItem} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ marginRight: '8px', color: '#666' }}>{user?.email}</span>
+              <AccountButton className={styles.navButton} />
               <LogoutButton className={styles.navButton}>
                 Log Out
               </LogoutButton>
