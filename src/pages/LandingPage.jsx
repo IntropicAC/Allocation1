@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import styles from './LandingPage.module.css';
 import LoginButton from '../components/LoginButton';
@@ -6,6 +6,26 @@ import SignupButton from '../components/SignupButton';
 
 function LandingPage({ onCreateAllocation }) {
   const { isAuthenticated, isLoading } = useAuth0();
+  const [authError, setAuthError] = useState(null);
+
+  useEffect(() => {
+    // Check for Auth0 errors in URL
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    const errorDescription = params.get('error_description');
+
+    if (error) {
+      setAuthError(errorDescription || 'Authentication failed. Please try again.');
+
+      // Clear error from URL so user can try again
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // Clear error when user tries to login/signup again
+  const handleClearError = () => {
+    setAuthError(null);
+  };
   return (
     <div className={styles.landingPage}>
       {/* Hero Section */}
@@ -21,9 +41,26 @@ function LandingPage({ onCreateAllocation }) {
         Safe Staffing, <span className={styles.titleHighlight}>Solved in Minutes</span>
       </h1>
       <p className={styles.heroSubtitle}>
-        Transform allocation chaos into fair, compliant schedules instantly. 
+        Transform allocation chaos into fair, compliant schedules instantly.
         Built by healthcare staff who understand the challenges you face every shift.
       </p>
+
+      {/* Auth Error Message */}
+      {authError && (
+        <div style={{
+          background: '#fff3cd',
+          border: '1px solid #ffc107',
+          borderRadius: '8px',
+          padding: '16px',
+          marginTop: '16px',
+          marginBottom: '16px'
+        }}>
+          <p style={{ margin: 0, color: '#856404', fontSize: '14px' }}>
+            ⚠️ {authError}
+          </p>
+        </div>
+      )}
+
       <div className={styles.ctaGroup}>
         {isLoading ? (
           <button className={styles.ctaButton} disabled>
@@ -38,7 +75,7 @@ function LandingPage({ onCreateAllocation }) {
             <span className={styles.buttonArrow}>→</span>
           </button>
         ) : (
-          <>
+          <div onClick={handleClearError}>
             <SignupButton className={styles.ctaButton}>
               <span>Get Started Free</span>
               <span className={styles.buttonArrow}>→</span>
@@ -46,7 +83,7 @@ function LandingPage({ onCreateAllocation }) {
             <LoginButton className={styles.ctaButton} style={{ marginLeft: '16px', background: 'transparent', border: '2px solid #0066cc', color: '#0066cc' }}>
               Log In
             </LoginButton>
-          </>
+          </div>
         )}
         <div className={styles.heroStats}>
           <div className={styles.statItem}>
