@@ -1,7 +1,11 @@
 import React from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import styles from './LandingPage.module.css';
+import LoginButton from '../components/LoginButton';
+import SignupButton from '../components/SignupButton';
 
 function LandingPage({ onCreateAllocation }) {
+  const { isAuthenticated, isLoading } = useAuth0();
   return (
     <div className={styles.landingPage}>
       {/* Hero Section */}
@@ -21,13 +25,29 @@ function LandingPage({ onCreateAllocation }) {
         Built by healthcare staff who understand the challenges you face every shift.
       </p>
       <div className={styles.ctaGroup}>
-        <button 
-          className={styles.ctaButton}
-          onClick={onCreateAllocation}
-        >
-          <span>Create Allocation</span>
-          <span className={styles.buttonArrow}>→</span>
-        </button>
+        {isLoading ? (
+          <button className={styles.ctaButton} disabled>
+            <span>Loading...</span>
+          </button>
+        ) : isAuthenticated ? (
+          <button
+            className={styles.ctaButton}
+            onClick={onCreateAllocation}
+          >
+            <span>Go to App</span>
+            <span className={styles.buttonArrow}>→</span>
+          </button>
+        ) : (
+          <>
+            <SignupButton className={styles.ctaButton}>
+              <span>Get Started Free</span>
+              <span className={styles.buttonArrow}>→</span>
+            </SignupButton>
+            <LoginButton className={styles.ctaButton} style={{ marginLeft: '16px', background: 'transparent', border: '2px solid #0066cc', color: '#0066cc' }}>
+              Log In
+            </LoginButton>
+          </>
+        )}
         <div className={styles.heroStats}>
           <div className={styles.statItem}>
             <div className={styles.statNumber}>50</div>
@@ -41,11 +61,11 @@ function LandingPage({ onCreateAllocation }) {
         </div>
       </div>
       <p className={styles.heroMeta}>
-        <span className={styles.metaIcon}>🔒</span> No login required
+        <span className={styles.metaIcon}>🔒</span> Your data never leaves your device
         <span className={styles.metaSeparator}>•</span>
-        <span className={styles.metaIcon}>💾</span> All data stays local
+        <span className={styles.metaIcon}>💾</span> Privacy-first design
         <span className={styles.metaSeparator}>•</span>
-        <span className={styles.metaIcon}>✓</span> Free to use
+        <span className={styles.metaIcon}>✓</span> Free tier available
       </p>
     </div>
     <div className={styles.heroVisual}>

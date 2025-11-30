@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DndProvider } from 'react-dnd';
+import { useAuth0 } from '@auth0/auth0-react';
 import styles from './mainPage.module.css';
 
 // Import your existing components
@@ -16,6 +17,7 @@ import TutorialModal from '../components/helperComponents/tutorialModal';
 import LandingPage from './LandingPage';
 import AboutPage from './AboutPage';
 import ContactPage from './ContactPage';
+import LogoutButton from '../components/LogoutButton';
 
 function MainPage(props) {
   // Destructure props passed from App.js
@@ -37,6 +39,9 @@ function MainPage(props) {
     startNewAllocation,
     allocationId
   } = props;
+
+  // Auth0 hook
+  const { isAuthenticated, isLoading, user } = useAuth0();
 
   // Navigation state - determines which page to show
   const [activePage, setActivePage] = useState('landing'); // 'landing', 'about', 'contact', 'app'
@@ -341,7 +346,7 @@ const setTableRef = (ref) => {
       <nav className={styles.navBar}>
         <ul className={styles.navList}>
           <li className={styles.navItem}>
-            <button 
+            <button
               className={`${styles.navButton} ${activePage === 'landing' ? styles.activeNav : ''}`}
               type="button"
               onClick={() => handleNavigation('landing')}
@@ -350,7 +355,7 @@ const setTableRef = (ref) => {
             </button>
           </li>
           <li className={styles.navItem}>
-            <button 
+            <button
               className={`${styles.navButton} ${activePage === 'app' ? styles.activeNav : ''}`}
               type="button"
               onClick={() => handleNavigation('app')}
@@ -359,7 +364,7 @@ const setTableRef = (ref) => {
             </button>
           </li>
           <li className={styles.navItem}>
-            <button 
+            <button
               className={`${styles.navButton} ${activePage === 'about' ? styles.activeNav : ''}`}
               type="button"
               onClick={() => handleNavigation('about')}
@@ -368,7 +373,7 @@ const setTableRef = (ref) => {
             </button>
           </li>
           <li className={styles.navItem}>
-            <button 
+            <button
               className={`${styles.navButton} ${activePage === 'contact' ? styles.activeNav : ''}`}
               type="button"
               onClick={() => handleNavigation('contact')}
@@ -376,6 +381,14 @@ const setTableRef = (ref) => {
               Contact
             </button>
           </li>
+          {isAuthenticated && (
+            <li className={styles.navItem} style={{ marginLeft: 'auto' }}>
+              <span style={{ marginRight: '16px', color: '#666' }}>{user?.email}</span>
+              <LogoutButton className={styles.navButton}>
+                Log Out
+              </LogoutButton>
+            </li>
+          )}
         </ul>
       </nav>
 
@@ -390,7 +403,34 @@ const setTableRef = (ref) => {
       {activePage === 'app' && (
         <main id="content-area" className={styles.mainContent}>
           <div className={styles.contentWrapper}>
-            {renderAppPage()}
+            {isLoading ? (
+              <div style={{ textAlign: 'center', padding: '48px' }}>
+                <p>Loading...</p>
+              </div>
+            ) : !isAuthenticated ? (
+              <div style={{ textAlign: 'center', padding: '48px' }}>
+                <h2>Authentication Required</h2>
+                <p style={{ marginTop: '16px', marginBottom: '24px' }}>
+                  Please log in to access the allocation tool.
+                </p>
+                <button
+                  onClick={() => handleNavigation('landing')}
+                  style={{
+                    padding: '12px 24px',
+                    background: '#0066cc',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '16px'
+                  }}
+                >
+                  Go to Login
+                </button>
+              </div>
+            ) : (
+              renderAppPage()
+            )}
           </div>
         </main>
       )}
