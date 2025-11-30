@@ -75,12 +75,12 @@ function LandingPage({ onCreateAllocation }) {
             <span className={styles.buttonArrow}>→</span>
           </button>
         ) : (
-          <div onClick={handleClearError}>
+          <div className={styles.authButtonGroup} onClick={handleClearError}>
             <SignupButton className={styles.ctaButton}>
               <span>Get Started Free</span>
               <span className={styles.buttonArrow}>→</span>
             </SignupButton>
-            <LoginButton className={styles.ctaButton} style={{ marginLeft: '16px', background: 'transparent', border: '2px solid #0066cc', color: '#0066cc' }}>
+            <LoginButton className={styles.secondaryButton}>
               Log In
             </LoginButton>
           </div>
