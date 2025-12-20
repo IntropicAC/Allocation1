@@ -21,6 +21,9 @@
 .env.production.local
 /backend/.env
 
+# Claude Code
+.claude/
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
