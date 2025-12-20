@@ -70,7 +70,7 @@
   align-items: center;
   border: black solid 0.1rem;
   padding: 0.8rem 1rem;
-  margin: 1rem;
+  margin: 0.3rem;
   border-radius: 0.7rem;
   font-size: 1.7rem;
   background-color: white;
@@ -79,6 +79,19 @@
 
 .obsCells:hover{
   background-color: rgb(214, 214, 214);
+}
+
+.obsWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  position: relative;
+}
+
+.obsCellsDisabled {
+  background-color: #f0f0f0;
+  border-color: #c9c9c9;
+  color: #8a8a8a;
 }
 
 .tableContainer::-webkit-scrollbar {
@@ -332,51 +345,6 @@ table td:not(.hourCell):hover {
   }
 }
 
-.contextMenuHeader {
-  padding: 10px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
-  letter-spacing: 0.025em;
-}
-
-.contextMenuItem {
-  padding: 10px 16px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #1f2937;
-}
-
-.contextMenuItem:hover {
-  background-color: #f3f4f6;
-  padding-left: 20px;
-}
-
-.contextMenuItem:active {
-  background-color: #e5e7eb;
-}
-
-.contextMenuSeparator {
-  margin: 6px 0;
-  border: none;
-  border-top: 1px solid #e5e7eb;
-}
-
-/* Section headers within context menu */
-.contextMenuSection {
-  padding: 8px 16px 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
 
 /* Color preview dots */
 .colorPreview {
@@ -411,7 +379,7 @@ table td:not(.hourCell):hover {
 .allocationTable.transposed td {
   width: auto;
   min-width: 1rem;
-  max-width: 6rem; /* Columns expand up to 25rem, then wrap */
+  max-width: 15rem; /* Wider columns for better readability in transposed view */
   height: auto;
   min-height: 8rem;
   white-space: normal;

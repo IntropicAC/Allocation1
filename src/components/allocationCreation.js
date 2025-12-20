@@ -6,12 +6,42 @@ import ColorToggleButton from './helperComponents/ColorToggleButton';
 import UndoRedoButtons from './helperComponents/UndoRedoButtons';
 import SettingsButton from './helperComponents/SettingsButton';
 import FormattingButtons from './helperComponents/FormattingButtons';
+import ColorPicker from './helperComponents/ColorPicker';
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 function stripZeroWidthSpace(text) {
   return text.replace(/\u200B/g, '');
+}
+
+function getObservationKey(observationName) {
+  if (!observationName || typeof observationName !== 'string') return '';
+
+  let cleanedName = stripZeroWidthSpace(observationName).trim();
+  if (!cleanedName) return '';
+
+  const lowerCleaned = cleanedName.toLowerCase();
+  if (lowerCleaned === 'gen' || lowerCleaned === 'gens') {
+    cleanedName = 'Generals';
+  }
+
+  return cleanedName.split(/[\s-]/)[0];
+}
+
+function getStaffSortPriority(staffMember) {
+  if (staffMember?.nurse === true) return 1;
+  if (staffMember?.role === 'Security') return 2;
+  if (staffMember?.role === 'Onward') return 3;
+  if (staffMember?.role === 'Response') return 4;
+  return 5;
+}
+
+function sortStaffForDisplay(staffList) {
+  if (!Array.isArray(staffList)) return [];
+  return [...staffList]
+    .filter(s => s && s.observations && typeof s.observations === 'object')
+    .sort((a, b) => getStaffSortPriority(a) - getStaffSortPriority(b));
 }
 
 // Single DragDropCell component OUTSIDE of AllocationCreation
@@ -840,13 +870,13 @@ const displayText = `${capitalizedStaffName}${roleTag} - ${totalObservations}`;
 
 
 
-function AllocationCreation({ 
-  staff, 
-  setStaff, 
-  setTableRef, 
-  observations, 
-  setObservations, 
-  selectedStartHour, 
+function AllocationCreation({
+  staff,
+  setStaff,
+  setTableRef,
+  observations,
+  setObservations,
+  selectedStartHour,
   setSelectedStartHour,
   undo,
   redo,
@@ -854,7 +884,7 @@ function AllocationCreation({
   canRedo,
   currentIndex,
   historyLength,
-  isTransposed,          
+  isTransposed,
   setIsTransposed,
   timeRange,
   setTimeRange,
@@ -863,11 +893,10 @@ function AllocationCreation({
   dragDropEnabled,
   setDragDropEnabled,
   cellColors,
-  setCellColors,
   textColors,
-  setTextColors,
   cellDecorations,
-  setCellDecorations,
+  observationColorPreferences,
+  setObservationColorPreferences,
 }) {
   
   const [editingCell, setEditingCell] = useState(null);
@@ -880,6 +909,8 @@ function AllocationCreation({
 
   
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
+  const [activeObservationColorPicker, setActiveObservationColorPicker] = useState(null);
+  const [formattingPickersCloseSignal, setFormattingPickersCloseSignal] = useState(0);
   
 
   const localTableRef = useRef(null);
@@ -996,18 +1027,7 @@ const handleSelectionMove = useCallback((staffName, hour) => {
   }
 
   // Use the SAME sorting logic as sortedStaff
-  const sortedStaffList = [...staff]
-    .filter(s => s && s.observations && typeof s.observations === 'object')
-    .sort((a, b) => {
-      const getPriority = (staffMember) => {
-        if (staffMember.nurse === true) return 1;
-        if (staffMember.security === true) return 2;
-        return 3;
-      };
-      const priorityA = getPriority(a);
-      const priorityB = getPriority(b);
-      return priorityA - priorityB;
-    });
+  const sortedStaffList = sortStaffForDisplay(staff);
 
   // Safety check: ensure we have valid sorted staff
   if (!sortedStaffList || sortedStaffList.length === 0) {
@@ -1099,6 +1119,32 @@ const getTextColor = useCallback((staffName, hour) => {
     }
   }, [dragDropEnabled]);
 
+  useEffect(() => {
+    if (dragDropEnabled) {
+      setActiveObservationColorPicker(null);
+    }
+  }, [dragDropEnabled]);
+
+  useEffect(() => {
+    if (!colorCodingEnabled) {
+      setActiveObservationColorPicker(null);
+    }
+  }, [colorCodingEnabled]);
+
+  useEffect(() => {
+    if (!activeObservationColorPicker) return;
+
+    const handleClickOutside = (event) => {
+      if (event.target.closest('[data-observation-color-picker]')) {
+        return;
+      }
+
+      setActiveObservationColorPicker(null);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [activeObservationColorPicker]);
 
 useEffect(() => {
   const handleKeyPress = (e) => {
@@ -1440,37 +1486,82 @@ const obsCount = observations.length;
   };
 
   const handleCellColorChange = useCallback((color) => {
-  
-  
-  const newColors = { ...cellColors };
-  selectedCells.forEach(cellKey => {
-    if (color === 'clear') {
-      delete newColors[cellKey];
-    } else {
-      newColors[cellKey] = color;
-    }
+  setStaff(prevStaff => {
+    return prevStaff.map(member => {
+      const memberCells = Array.from(selectedCells).filter(cellKey =>
+        cellKey.startsWith(`${member.name}-`)
+      );
+
+      if (memberCells.length === 0) return member;
+
+      const newFormatting = { ...member.cellFormatting };
+
+      memberCells.forEach(cellKey => {
+        const hour = parseInt(cellKey.split('-').pop());
+
+        if (color === 'clear') {
+          if (newFormatting[hour]) {
+            const { bgColor, ...rest } = newFormatting[hour];
+            if (Object.keys(rest).length === 0) {
+              delete newFormatting[hour];
+            } else {
+              newFormatting[hour] = rest;
+            }
+          }
+        } else {
+          newFormatting[hour] = {
+            ...(newFormatting[hour] || {}),
+            bgColor: color
+          };
+        }
+      });
+
+      return { ...member, cellFormatting: newFormatting };
+    });
   });
-  
- 
-  setCellColors(newColors);
-  
+
   setContextMenu({ visible: false, x: 0, y: 0 });
-}, [selectedCells, cellColors]);
+}, [selectedCells, setStaff]);
 
 
 // NEW: Handle text color
 const handleTextColorChange = useCallback((color) => {
-  const newColors = { ...textColors };
-  selectedCells.forEach(cellKey => {
-    if (color === 'clear') {
-      delete newColors[cellKey];
-    } else {
-      newColors[cellKey] = color;
-    }
+  setStaff(prevStaff => {
+    return prevStaff.map(member => {
+      const memberCells = Array.from(selectedCells).filter(cellKey =>
+        cellKey.startsWith(`${member.name}-`)
+      );
+
+      if (memberCells.length === 0) return member;
+
+      const newFormatting = { ...member.cellFormatting };
+
+      memberCells.forEach(cellKey => {
+        const hour = parseInt(cellKey.split('-').pop());
+
+        if (color === 'clear') {
+          if (newFormatting[hour]) {
+            const { textColor, ...rest } = newFormatting[hour];
+            if (Object.keys(rest).length === 0) {
+              delete newFormatting[hour];
+            } else {
+              newFormatting[hour] = rest;
+            }
+          }
+        } else {
+          newFormatting[hour] = {
+            ...(newFormatting[hour] || {}),
+            textColor: color
+          };
+        }
+      });
+
+      return { ...member, cellFormatting: newFormatting };
+    });
   });
-  setTextColors(newColors);
+
   setContextMenu({ visible: false, x: 0, y: 0 });
-}, [selectedCells, textColors]);
+}, [selectedCells, setStaff]);
 
 
 // Update these handler functions:
@@ -1479,60 +1570,112 @@ const handleFormatTextColor = useCallback((color) => {
   if (selectedCells.size > 0) {
     handleTextColorChange(color);
   } else if (editingCell) {
-    const newColors = { ...textColors };
-    if (color === 'clear') {
-      delete newColors[editingCell];
-    } else {
-      newColors[editingCell] = color;
-    }
-    setTextColors(newColors);
+    const lastDash = editingCell.lastIndexOf('-');
+    const staffName = editingCell.substring(0, lastDash);
+    const hour = parseInt(editingCell.substring(lastDash + 1));
+
+    setStaff(prevStaff => {
+      return prevStaff.map(member => {
+        if (member.name !== staffName) return member;
+
+        const newFormatting = { ...member.cellFormatting };
+
+        if (color === 'clear') {
+          if (newFormatting[hour]) {
+            const { textColor, ...rest } = newFormatting[hour];
+            if (Object.keys(rest).length === 0) {
+              delete newFormatting[hour];
+            } else {
+              newFormatting[hour] = rest;
+            }
+          }
+        } else {
+          newFormatting[hour] = {
+            ...(newFormatting[hour] || {}),
+            textColor: color
+          };
+        }
+
+        return { ...member, cellFormatting: newFormatting };
+      });
+    });
   }
-}, [selectedCells, editingCell, handleTextColorChange, textColors]);
+}, [selectedCells, editingCell, handleTextColorChange, setStaff]);
 
 // Add this after handleFormatUnderline
 const handleFormatBold = useCallback(() => {
-  if (selectedCells.size > 0) {
-    const newDecorations = { ...cellDecorations };
-    selectedCells.forEach(cellKey => {
-      if (!newDecorations[cellKey]) {
-        newDecorations[cellKey] = {};
-      }
-      // Toggle bold
-      newDecorations[cellKey].bold = !newDecorations[cellKey].bold;
+  const cellsToFormat = selectedCells.size > 0 ? selectedCells : (editingCell ? new Set([editingCell]) : new Set());
+
+  if (cellsToFormat.size === 0) return;
+
+  setStaff(prevStaff => {
+    return prevStaff.map(member => {
+      const memberCells = Array.from(cellsToFormat).filter(cellKey =>
+        cellKey.startsWith(`${member.name}-`)
+      );
+
+      if (memberCells.length === 0) return member;
+
+      const newFormatting = { ...member.cellFormatting };
+
+      memberCells.forEach(cellKey => {
+        const hour = parseInt(cellKey.split('-').pop());
+        const currentFormat = newFormatting[hour] || {};
+        const currentBold = currentFormat.bold || false;
+
+        newFormatting[hour] = {
+          ...currentFormat,
+          bold: !currentBold
+        };
+
+        // Clean up if all formatting is false/default
+        if (!newFormatting[hour].bold && !newFormatting[hour].underline &&
+            !newFormatting[hour].bgColor && !newFormatting[hour].textColor) {
+          delete newFormatting[hour];
+        }
+      });
+
+      return { ...member, cellFormatting: newFormatting };
     });
-    setCellDecorations(newDecorations);
-  } else if (editingCell) {
-    const newDecorations = { ...cellDecorations };
-    if (!newDecorations[editingCell]) {
-      newDecorations[editingCell] = {};
-    }
-    // Toggle bold
-    newDecorations[editingCell].bold = !newDecorations[editingCell].bold;
-    setCellDecorations(newDecorations);
-  }
-}, [selectedCells, editingCell, cellDecorations, setCellDecorations]);
+  });
+}, [selectedCells, editingCell, setStaff]);
 
 const handleFormatUnderline = useCallback(() => {
-  if (selectedCells.size > 0) {
-    const newDecorations = { ...cellDecorations };
-    selectedCells.forEach(cellKey => {
-      if (!newDecorations[cellKey]) {
-        newDecorations[cellKey] = {};
-      }
-      // Toggle underline
-      newDecorations[cellKey].underline = !newDecorations[cellKey].underline;
+  const cellsToFormat = selectedCells.size > 0 ? selectedCells : (editingCell ? new Set([editingCell]) : new Set());
+
+  if (cellsToFormat.size === 0) return;
+
+  setStaff(prevStaff => {
+    return prevStaff.map(member => {
+      const memberCells = Array.from(cellsToFormat).filter(cellKey =>
+        cellKey.startsWith(`${member.name}-`)
+      );
+
+      if (memberCells.length === 0) return member;
+
+      const newFormatting = { ...member.cellFormatting };
+
+      memberCells.forEach(cellKey => {
+        const hour = parseInt(cellKey.split('-').pop());
+        const currentFormat = newFormatting[hour] || {};
+        const currentUnderline = currentFormat.underline || false;
+
+        newFormatting[hour] = {
+          ...currentFormat,
+          underline: !currentUnderline
+        };
+
+        // Clean up if all formatting is false/default
+        if (!newFormatting[hour].bold && !newFormatting[hour].underline &&
+            !newFormatting[hour].bgColor && !newFormatting[hour].textColor) {
+          delete newFormatting[hour];
+        }
+      });
+
+      return { ...member, cellFormatting: newFormatting };
     });
-    setCellDecorations(newDecorations);
-  } else if (editingCell) {
-    const newDecorations = { ...cellDecorations };
-    if (!newDecorations[editingCell]) {
-      newDecorations[editingCell] = {};
-    }
-    // Toggle underline
-    newDecorations[editingCell].underline = !newDecorations[editingCell].underline;
-    setCellDecorations(newDecorations);
-  }
-}, [selectedCells, editingCell, cellDecorations]);
+  });
+}, [selectedCells, editingCell, setStaff]);
 
 const getCellDecoration = useCallback((staffName, hour) => {
   const cellKey = getCellKey(staffName, hour);
@@ -1544,15 +1687,37 @@ const handleFormatFill = useCallback((color) => {
   if (selectedCells.size > 0) {
     handleCellColorChange(color);
   } else if (editingCell) {
-    const newColors = { ...cellColors };
-    if (color === 'clear') {
-      delete newColors[editingCell];
-    } else {
-      newColors[editingCell] = color;
-    }
-    setCellColors(newColors);
+    const lastDash = editingCell.lastIndexOf('-');
+    const staffName = editingCell.substring(0, lastDash);
+    const hour = parseInt(editingCell.substring(lastDash + 1));
+
+    setStaff(prevStaff => {
+      return prevStaff.map(member => {
+        if (member.name !== staffName) return member;
+
+        const newFormatting = { ...member.cellFormatting };
+
+        if (color === 'clear') {
+          if (newFormatting[hour]) {
+            const { bgColor, ...rest } = newFormatting[hour];
+            if (Object.keys(rest).length === 0) {
+              delete newFormatting[hour];
+            } else {
+              newFormatting[hour] = rest;
+            }
+          }
+        } else {
+          newFormatting[hour] = {
+            ...(newFormatting[hour] || {}),
+            bgColor: color
+          };
+        }
+
+        return { ...member, cellFormatting: newFormatting };
+      });
+    });
   }
-}, [selectedCells, editingCell, handleCellColorChange, cellColors]);
+}, [selectedCells, editingCell, handleCellColorChange, setStaff]);
 
 
   // NEW: Context Menu Component
@@ -1660,38 +1825,74 @@ const ContextMenu = () => {
     setTimeRange(prev => prev === 'day' ? 'night' : 'day');
   };
 
+const handleObservationColorChange = useCallback((observationName, color) => {
+  const observationKey = getObservationKey(observationName);
+  if (!observationKey) return;
+
+  setObservationColorPreferences(prev => {
+    const existingKey = Object.keys(prev).find(
+      key => key.toLowerCase() === observationKey.toLowerCase()
+    );
+
+    if (color === null || color === 'clear') {
+      if (!existingKey) return prev;
+      const updated = { ...prev };
+      delete updated[existingKey];
+      return updated;
+    }
+
+    const keyToUse = existingKey || observationKey;
+    if (prev[keyToUse] === color) {
+      return prev;
+    }
+
+    return { ...prev, [keyToUse]: color };
+  });
+}, [setObservationColorPreferences]);
+
 const getObservationColor = (observationName) => {
   if (!colorCodingEnabled || !observationName || observationName === '-') {
     return 'transparent';
   }
-  
+
   // Strip zero-width space and normalize
   let cleanedName = stripZeroWidthSpace(observationName).trim();
-  
+
   // Special handling for Generals abbreviations
   const lowerCleaned = cleanedName.toLowerCase();
   if (lowerCleaned === 'gen' || lowerCleaned === 'gens') {
     cleanedName = 'Generals';
   }
-  
+
   const firstWord = cleanedName.split(/[\s-]/)[0].toLowerCase();
-  
+
+  // CHECK CUSTOM COLOR FIRST
+  // Try to find a custom color preference (case-insensitive)
+  const customColorKey = Object.keys(observationColorPreferences).find(
+    key => key.toLowerCase() === firstWord
+  );
+
+  if (customColorKey) {
+    return observationColorPreferences[customColorKey];
+  }
+
+  // FALLBACK TO DEFAULT COLORS
   const deletedObs = observations[0]?.deletedObs || [];
   const currentNames = observations.map(obs => obs.name);
-  
+
   // Stable ordering: deleted first, then current (excluding deleted)
   const orderedNames = [
     ...deletedObs,
     ...currentNames.filter(name => !deletedObs.includes(name))
   ];
-  
+
   // Case-insensitive search
   const index = orderedNames.findIndex(name => name.toLowerCase() === firstWord);
-  
+
   if (index !== -1) {
     return observationColors[index % 10];
   }
-  
+
   return 'transparent';
 };
  const countValidObservations = (staffObservations, observations) => {
@@ -1824,23 +2025,20 @@ const getObservationColor = (observationName) => {
 };
 
   const sortedStaff = useMemo(() => {
-  return [...staff]
-    .filter(s => s && s.observations && typeof s.observations === 'object')
-    .sort((a, b) => {
-      const getPriority = (staffMember) => {
-        if (staffMember.nurse === true) return 1;
-        if (staffMember.role === 'Security') return 2;
-        if (staffMember.role === 'Onward') return 3;
-        if (staffMember.role === 'Response') return 4;
-        return 5;
-      };
-      const priorityA = getPriority(a);
-      const priorityB = getPriority(b);
-      return priorityA - priorityB;
-    });
+  return sortStaffForDisplay(staff);
 }, [staff]);
 
-  const DraggableObservationCell = ({ observation }) => {
+  const DraggableObservationCell = ({
+    observation,
+    dragDropEnabled,
+    getObservationColor,
+    observationColorPreferences,
+    onColorPreferenceChange,
+    colorCodingEnabled,
+    isOpen,
+    onToggle,
+    onClose,
+  }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
       type: 'externalObservation',
       item: { observationName: observation.name },
@@ -1848,19 +2046,61 @@ const getObservationColor = (observationName) => {
       collect: monitor => ({
         isDragging: !!monitor.isDragging(),
       }),
-    }), [dragDropEnabled]);
+    }), [dragDropEnabled, observation.name]);
+
+    const isColorPickerDisabled = !colorCodingEnabled && !dragDropEnabled;
+
+    const preferenceColor = useMemo(() => {
+      const observationKey = getObservationKey(observation.name);
+      if (!observationKey) return null;
+
+      const existingKey = Object.keys(observationColorPreferences || {}).find(
+        key => key.toLowerCase() === observationKey.toLowerCase()
+      );
+
+      return existingKey ? observationColorPreferences[existingKey] : null;
+    }, [observation.name, observationColorPreferences]);
+
+    const indicatorColor = useMemo(() => {
+      if (!colorCodingEnabled) return 'transparent';
+      return preferenceColor || getObservationColor(observation.name);
+    }, [colorCodingEnabled, preferenceColor, getObservationColor, observation.name]);
 
     return (
-      <div 
-        ref={drag} 
-        className={styles.obsCells} 
-        style={{ 
-          cursor: dragDropEnabled ? 'grab' : 'not-allowed',
-          borderRadius: 10, 
-          opacity: isDragging ? 0.3 : dragDropEnabled ? 1 : 0.6
-        }}
+      <div
+        className={styles.obsWrapper}
+        data-observation-color-picker="true"
       >
-        {observation.name}
+        <div 
+          ref={drag} 
+          className={`${styles.obsCells} ${isColorPickerDisabled ? styles.obsCellsDisabled : ''}`}
+          style={{ 
+            cursor: dragDropEnabled ? 'grab' : isColorPickerDisabled ? 'not-allowed' : 'pointer',
+            borderRadius: 10, 
+            opacity: isDragging ? 0.3 : 1,
+            backgroundColor: colorCodingEnabled ? indicatorColor : undefined
+          }}
+          onMouseDown={(event) => {
+            if (dragDropEnabled || isColorPickerDisabled) return;
+            event.preventDefault();
+            event.stopPropagation();
+            onToggle(observation.name);
+          }}
+        >
+          {observation.name}
+        </div>
+        {!dragDropEnabled && isOpen && (
+          <ColorPicker
+            onSelect={(color) => {
+              onColorPreferenceChange(observation.name, color);
+              onClose();
+            }}
+            onClear={() => {
+              onColorPreferenceChange(observation.name, null);
+              onClose();
+            }}
+          />
+        )}
       </div>
     );
   };
@@ -1878,11 +2118,11 @@ const getObservationColor = (observationName) => {
     return (
       <div 
         ref={drag} 
-        className={styles.obsCells} 
+        className={`${styles.obsCells} ${!dragDropEnabled ? styles.obsCellsDisabled : ''}`} 
         style={{ 
           cursor: dragDropEnabled ? 'grab' : 'not-allowed',
           borderRadius: 10, 
-          opacity: isDragging ? 0.3 : dragDropEnabled ? 1 : 0.6
+          opacity: isDragging ? 0.3 : 1
         }}
       >
         {value}
@@ -2120,6 +2360,8 @@ const getObservationColor = (observationName) => {
           onBoldToggle={handleFormatBold}
           onFillColorChange={handleFormatFill}
           hasSelection={selectedCells.size > 0 || editingCell !== null}
+          closeAllPickersSignal={formattingPickersCloseSignal}
+          onAnyPickerOpen={() => setActiveObservationColorPicker(null)}
         />
       </div>
 
@@ -2146,7 +2388,25 @@ const getObservationColor = (observationName) => {
 
         {observations.map((observation, index) => (
           <div key={index}>
-            <DraggableObservationCell observation={observation} />
+            <DraggableObservationCell
+              observation={observation}
+              dragDropEnabled={dragDropEnabled}
+              getObservationColor={getObservationColor}
+              observationColorPreferences={observationColorPreferences}
+              onColorPreferenceChange={handleObservationColorChange}
+              colorCodingEnabled={colorCodingEnabled}
+              isOpen={activeObservationColorPicker === observation.name}
+              onToggle={(name) => {
+                setActiveObservationColorPicker(prev => {
+                  const next = prev === name ? null : name;
+                  if (next) {
+                    setFormattingPickersCloseSignal(signal => signal + 1);
+                  }
+                  return next;
+                });
+              }}
+              onClose={() => setActiveObservationColorPicker(null)}
+            />
           </div>
         ))}
       </div>

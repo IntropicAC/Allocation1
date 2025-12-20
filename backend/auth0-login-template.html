@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Sign In - AllocateIt</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  {%- auth0:head -%}
+  <style>
+    /* Make logo clickable and link to your website */
+    .auth0-lock-header-logo {
+      cursor: pointer !important;
+    }
+
+    /* Custom styling for your brand */
+    .auth0-lock.auth0-lock .auth0-lock-header {
+      background-color: #B0E0E6 !important;
+    }
+  </style>
+  <script>
+    // Make logo clickable and redirect to your website
+    window.addEventListener('DOMContentLoaded', function() {
+      // Wait for Auth0 widget to load
+      setTimeout(function() {
+        const logo = document.querySelector('.auth0-lock-header-logo');
+        if (logo) {
+          logo.style.cursor = 'pointer';
+          logo.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'https://allocateit.co.uk';
+          });
+        }
+      }, 500);
+    });
+  </script>
+</head>
+<body>
+  {%- auth0:widget -%}
+</body>
+</html>

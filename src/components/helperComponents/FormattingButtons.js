@@ -7,7 +7,9 @@ const FormattingButtons = ({
   onBoldToggle,
   onHighlightChange, 
   onFillColorChange,
-  hasSelection 
+  hasSelection,
+  closeAllPickersSignal,
+  onAnyPickerOpen
 }) => {
   const [showTextColorPicker, setShowTextColorPicker] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
@@ -108,6 +110,12 @@ const FormattingButtons = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    setShowTextColorPicker(false);
+    setShowHighlightPicker(false);
+    setShowFillPicker(false);
+  }, [closeAllPickersSignal]);
+
   const ColorPicker = ({ onSelect, onClear }) => (
     <div className={styles.colorPicker} data-color-picker="true">
       <div className={styles.colorGrid}>
@@ -146,7 +154,11 @@ const FormattingButtons = ({
           className={styles.formatButton}
           onMouseDown={(e) => {
             e.preventDefault();
-            setShowTextColorPicker(!showTextColorPicker);
+            const nextValue = !showTextColorPicker;
+            if (nextValue && onAnyPickerOpen) {
+              onAnyPickerOpen();
+            }
+            setShowTextColorPicker(nextValue);
           }}
           title="Text color"
         >
@@ -213,7 +225,11 @@ const FormattingButtons = ({
           className={styles.formatButton}
           onMouseDown={(e) => {
             e.preventDefault();
-            setShowFillPicker(!showFillPicker);
+            const nextValue = !showFillPicker;
+            if (nextValue && onAnyPickerOpen) {
+              onAnyPickerOpen();
+            }
+            setShowFillPicker(nextValue);
           }}
           title="Cell fill color"
         >

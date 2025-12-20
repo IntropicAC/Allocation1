@@ -78,8 +78,8 @@ const handleInputChange = (e) => {
     }
 
     // Check max staff limit
-    if (staff.length >= 20) {
-      alert("The maximum number of 20 staff members has been reached.");
+    if (staff.length >= 24) {
+      alert("The maximum number of 24 staff members has been reached.");
       return;
     }
 
@@ -118,6 +118,9 @@ const handleInputChange = (e) => {
       lastReceived: {},
       initialized: true,
       skillLevel: newStaff.skillLevel,
+      userAssignments: new Set(),
+      solverAssignments: new Set(),
+      cellFormatting: {}
     };
 
     console.log(`  ✅ Adding ${newStaff.name} with ID ${newId}`);
@@ -235,19 +238,33 @@ const handleRoleChange = (e, staffId) => {
   const handleBreakChange = (e, staffId) => {
     const value = e.target.value;
     const updatedBreakTime = value === "Break" ? "Break" : parseInt(value.split(":")[0]);
-    
-    setStaff(currentStaff => 
+
+    setStaff(currentStaff =>
       currentStaff.map(staffMember => {
         if (staffMember.id === staffId) {
+          const previousBreak = staffMember.break;
           const hour8Observation = staffMember.observations[8];
-          
-          // If changing to "Break" and hour 8 has an observation, check if we need to unassign
-          if (updatedBreakTime === "Break" && hour8Observation && hour8Observation !== "-") {
+          const updatedObservations = { ...staffMember.observations };
+
+          // If changing FROM a specific hour break, clear that hour's observation
+          if (typeof previousBreak === 'number' && previousBreak !== updatedBreakTime) {
+            // Check if that hour was user-assigned or has hour 8 initial observation
+            const isUserAssigned = staffMember.userAssignments && staffMember.userAssignments.has(previousBreak);
+            const isHour8WithInitialObs = previousBreak === 8 && hour8Observation && hour8Observation !== "-";
+
+            // Only clear if not user-assigned AND not hour 8 with initial observation
+            if (!isUserAssigned && !isHour8WithInitialObs) {
+              updatedObservations[previousBreak] = "-";
+            }
+          }
+
+          // If setting break TO hour 8 and there's an observation there, clear it
+          if (updatedBreakTime === 8 && hour8Observation && hour8Observation !== "-") {
             const restrictedObservation = observations.find(obs => obs.name === hour8Observation);
-            
+
             if (restrictedObservation) {
               // Update the observation StaffNeeded
-              setObservations(currentObservations => 
+              setObservations(currentObservations =>
                 currentObservations.map(observation => {
                   if (observation.name === hour8Observation) {
                     return { ...observation, StaffNeeded: observation.StaffNeeded + 1 };
@@ -256,17 +273,16 @@ const handleRoleChange = (e, staffId) => {
                 })
               );
 
-              // Clear the hour 8 observation
-              return { 
-                ...staffMember, 
-                break: updatedBreakTime, 
-                observations: { ...staffMember.observations, 8: "-" }
-              };
+              // Clear the hour 8 observation because break conflicts with it
+              updatedObservations[8] = "-";
             }
           }
 
-          // Just update the break time
-          return { ...staffMember, break: updatedBreakTime };
+          return {
+            ...staffMember,
+            break: updatedBreakTime,
+            observations: updatedObservations
+          };
         }
         return staffMember;
       })

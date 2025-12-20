@@ -6,21 +6,33 @@ import { useUndoRedo, useUndoRedoShortcuts } from './helperFunctions/UndoRedoMan
 // Helper to ensure Sets are properly restored after JSON serialization
 const normalizeStaffSets = (staffArray) => {
   if (!Array.isArray(staffArray)) return staffArray;
-  
+
   return staffArray.map(member => ({
     ...member,
-    userAssignments: member.userAssignments instanceof Set 
-      ? member.userAssignments 
+    userAssignments: member.userAssignments instanceof Set
+      ? member.userAssignments
       : new Set(Array.isArray(member.userAssignments) ? member.userAssignments : []),
-    solverAssignments: member.solverAssignments instanceof Set 
-      ? member.solverAssignments 
-      : new Set(Array.isArray(member.solverAssignments) ? member.solverAssignments : [])
+    solverAssignments: member.solverAssignments instanceof Set
+      ? member.solverAssignments
+      : new Set(Array.isArray(member.solverAssignments) ? member.solverAssignments : []),
+    cellFormatting: member.cellFormatting || {}
   }));
 };
 
 function App() {
   const [observations, setObservations, clearObservations] = useLocalStorage('observations', [], '1.0');
-  
+
+  // Track user's custom observation color preferences
+  const [observationColorPreferences, setObservationColorPreferences] = useState(() => {
+    try {
+      const stored = localStorage.getItem('observationColorPreferences');
+      return stored ? JSON.parse(stored) : {};
+    } catch (error) {
+      console.error('Error loading observation colors:', error);
+      return {};
+    }
+  });
+
   // Track allocation ID - persists across reloads
   const [allocationId, setAllocationId] = useState(() => {
     const stored = localStorage.getItem('allocationId');
@@ -85,6 +97,16 @@ function App() {
       console.error('Error saving staff to localStorage:', error);
     }
   }, [staff]);
+
+  // Save observation color preferences to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('observationColorPreferences',
+        JSON.stringify(observationColorPreferences));
+    } catch (error) {
+      console.error('Error saving observation colors:', error);
+    }
+  }, [observationColorPreferences]);
 
   // Smart setStaff wrapper that always uses current state
   const setStaff = useCallback((newStaffOrUpdater) => {
@@ -173,9 +195,9 @@ function App() {
       {/*{!isLoggedIn ? (
         <LoginForm onLoginSuccess={handleLoginSuccess} />
       ) : (*/}
-        <MainPage 
-          observations={observations} 
-          setObservations={setObservations} 
+        <MainPage
+          observations={observations}
+          setObservations={setObservations}
           staff={staff}
           setStaff={setStaff}
           clearAllData={clearAllData}
@@ -190,6 +212,8 @@ function App() {
           resetHistory={resetHistory}
           startNewAllocation={startNewAllocation}
           allocationId={allocationId}
+          observationColorPreferences={observationColorPreferences}
+          setObservationColorPreferences={setObservationColorPreferences}
         />
     </>
   );

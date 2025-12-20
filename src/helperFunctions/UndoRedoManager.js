@@ -203,6 +203,13 @@ const redo = useCallback(() => {
     setHistory([clonedState]);
     setCurrentIndex(0);
     isInternalUpdate.current = true;
+
+    // Reset the flag after a short delay to ensure it doesn't block the next saveState call
+    // This is necessary because if currentIndex was already 0, the useEffect won't trigger
+    setTimeout(() => {
+      isInternalUpdate.current = false;
+      console.log('  ✅ isInternalUpdate flag reset in resetHistory');
+    }, 0);
   }, [initialState]);
 
   // Clear history from localStorage

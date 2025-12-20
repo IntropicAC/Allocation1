@@ -63,12 +63,12 @@ function LandingPage({ onCreateAllocation }) {
 
       <div className={styles.ctaGroup}>
         {isLoading ? (
-          <button className={styles.ctaButton} disabled>
+          <button className={`${styles.ctaButton} ${styles.ctaButtonLoggedIn}`} disabled>
             <span>Loading...</span>
           </button>
         ) : isAuthenticated ? (
           <button
-            className={styles.ctaButton}
+            className={`${styles.ctaButton} ${styles.ctaButtonLoggedIn}`}
             onClick={onCreateAllocation}
           >
             <span>Go to App</span>
@@ -76,8 +76,8 @@ function LandingPage({ onCreateAllocation }) {
           </button>
         ) : (
           <div className={styles.authButtonGroup} onClick={handleClearError}>
-            <SignupButton className={styles.ctaButton}>
-              <span>Get Started Free</span>
+            <SignupButton className={`${styles.ctaButton} ${styles.ctaButtonLoggedOut}`}>
+              <span>Get Started</span>
               <span className={styles.buttonArrow}>→</span>
             </SignupButton>
             <LoginButton className={styles.secondaryButton}>

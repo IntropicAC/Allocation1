@@ -172,7 +172,7 @@
 .contactForm {
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 1.5rem;
   position: relative;
   z-index: 1;
 }

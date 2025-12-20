@@ -1,0 +1,170 @@
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: 9998;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.cookieBanner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 28px 32px;
+  max-width: 600px;
+  width: calc(100% - 40px);
+  z-index: 9999;
+  animation: slideUp 0.4s ease-out;
+}
+
+.bannerContent {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.bannerIcon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.bannerText {
+  flex: 1;
+}
+
+.bannerText h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.bannerText p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #4a5568;
+}
+
+.bannerText a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 5px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.bannerText a:hover {
+  border-bottom-color: #667eea;
+}
+
+.acceptButton {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.acceptButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.acceptButton:active {
+  transform: translateY(0);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .cookieBanner {
+    bottom: 10px;
+    padding: 24px;
+    width: calc(100% - 20px);
+  }
+
+  .bannerContent {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .bannerIcon {
+    font-size: 2rem;
+  }
+
+  .bannerText h3 {
+    font-size: 1.1rem;
+  }
+
+  .bannerText p {
+    font-size: 0.9rem;
+  }
+
+  .acceptButton {
+    width: 100%;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cookieBanner {
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .bannerContent {
+    gap: 12px;
+  }
+
+  .bannerIcon {
+    font-size: 1.75rem;
+  }
+}

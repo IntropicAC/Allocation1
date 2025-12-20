@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DndProvider } from 'react-dnd';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -18,6 +18,17 @@ import LandingPage from './LandingPage';
 import AboutPage from './AboutPage';
 import ContactPage from './ContactPage';
 import LogoutButton from '../components/LogoutButton';
+import LoginButton from '../components/LoginButton';
+import VerifyEmailNotice from '../components/VerifyEmailNotice';
+
+// Import GDPR compliance components
+import PrivacyPolicy from './PrivacyPolicy';
+import TermsOfService from './TermsOfService';
+import CookiePolicy from './CookiePolicy';
+import AccountSettings from './AccountSettings';
+import CookieBanner from '../components/CookieBanner';
+import ConsentTracker from '../components/ConsentTracker';
+import Footer from '../components/Footer';
 
 function MainPage(props) {
   // Destructure props passed from App.js
@@ -37,14 +48,44 @@ function MainPage(props) {
     setIsAllocationReady,
     resetHistory,
     startNewAllocation,
-    allocationId
+    allocationId,
+    observationColorPreferences,
+    setObservationColorPreferences
   } = props;
 
   // Auth0 hook
-  const { isAuthenticated, isLoading, user } = useAuth0();
+  const { isAuthenticated, isLoading, user, getIdTokenClaims } = useAuth0();
+
+  // State to track email verification
+  const [emailVerified, setEmailVerified] = useState(null);
+
+  // Check email verification status from ID token claims
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      if (isAuthenticated && user) {
+        try {
+          // Get ID token claims which contain email_verified
+          const claims = await getIdTokenClaims();
+          const isVerified = claims?.email_verified ?? false;
+
+          console.log('Auth0 User Object:', user);
+          console.log('ID Token Claims:', claims);
+          console.log('Email Verified:', isVerified);
+
+          setEmailVerified(isVerified);
+        } catch (error) {
+          console.error('Error getting ID token claims:', error);
+          // Fallback to user object
+          setEmailVerified(user.email_verified ?? false);
+        }
+      }
+    };
+
+    checkEmailVerification();
+  }, [isAuthenticated, user, getIdTokenClaims]);
 
   // Navigation state - determines which page to show
-  const [activePage, setActivePage] = useState('landing'); // 'landing', 'about', 'contact', 'app'
+  const [activePage, setActivePage] = useState('landing'); // 'landing', 'about', 'contact', 'app', 'privacy-policy', 'terms-of-service', 'cookie-policy', 'account-settings'
   
   // App workflow state
   const [currentPage, setCurrentPage] = useState("welcome");
@@ -77,20 +118,97 @@ const setTableRef = (ref) => {
 
   checkCachedData();
 }, [observations, staff]);
-  // Allocation settings
+
+  // Allocation settings - with localStorage persistence
   const [isTransposed, setIsTransposed] = useState(false);
   const [timeRange, setTimeRange] = useState('day');
-  const [colorCodingEnabled, setColorCodingEnabled] = useState(false);
-  const [dragDropEnabled, setDragDropEnabled] = useState(false);
-  const [cellColors, setCellColors] = useState({});
-  const [textColors, setTextColors] = useState({});
-  const [cellDecorations, setCellDecorations] = useState({});
+  const [colorCodingEnabled, setColorCodingEnabled] = useState(() => {
+    try {
+      const saved = localStorage.getItem('colorCodingEnabled');
+      return saved !== null ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+  const [dragDropEnabled, setDragDropEnabled] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dragDropEnabled');
+      return saved !== null ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+  // Derive cellColors from staff array
+  const cellColors = useMemo(() => {
+    const colors = {};
+    staff.forEach(member => {
+      if (member.cellFormatting) {
+        Object.entries(member.cellFormatting).forEach(([hour, format]) => {
+          if (format.bgColor) {
+            colors[`${member.name}-${hour}`] = format.bgColor;
+          }
+        });
+      }
+    });
+    return colors;
+  }, [staff]);
+
+  // Derive textColors from staff array
+  const textColors = useMemo(() => {
+    const colors = {};
+    staff.forEach(member => {
+      if (member.cellFormatting) {
+        Object.entries(member.cellFormatting).forEach(([hour, format]) => {
+          if (format.textColor) {
+            colors[`${member.name}-${hour}`] = format.textColor;
+          }
+        });
+      }
+    });
+    return colors;
+  }, [staff]);
+
+  // Derive cellDecorations from staff array
+  const cellDecorations = useMemo(() => {
+    const decorations = {};
+    staff.forEach(member => {
+      if (member.cellFormatting) {
+        Object.entries(member.cellFormatting).forEach(([hour, format]) => {
+          if (format.bold || format.underline) {
+            decorations[`${member.name}-${hour}`] = {
+              bold: format.bold || false,
+              underline: format.underline || false
+            };
+          }
+        });
+      }
+    });
+    return decorations;
+  }, [staff]);
   const [hasUnfinishedForm, setHasUnfinishedForm] = useState(false);
-  
+
   // Tutorial state
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [activeTutorialPages, setActiveTutorialPages] = useState(null);
   const [activeTutorialKey, setActiveTutorialKey] = useState(null);
+
+  // Save color coding setting to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('colorCodingEnabled', JSON.stringify(colorCodingEnabled));
+    } catch (error) {
+      console.error('Error saving colorCodingEnabled:', error);
+    }
+  }, [colorCodingEnabled]);
+
+  // Save drag-drop setting to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('dragDropEnabled', JSON.stringify(dragDropEnabled));
+    } catch (error) {
+      console.error('Error saving dragDropEnabled:', error);
+    }
+  }, [dragDropEnabled]);
 
   // Navigation handlers
   const handleNavigation = (page) => {
@@ -204,6 +322,14 @@ const setTableRef = (ref) => {
         return <AboutPage />;
       case 'contact':
         return <ContactPage />;
+      case 'privacy-policy':
+        return <PrivacyPolicy />;
+      case 'terms-of-service':
+        return <TermsOfService />;
+      case 'cookie-policy':
+        return <CookiePolicy />;
+      case 'account-settings':
+        return <AccountSettings />;
       default:
         return null;
     }
@@ -294,7 +420,7 @@ const setTableRef = (ref) => {
               canRedo={canRedo}
               currentIndex={currentIndex}
               historyLength={historyLength}
-              isTransposed={isTransposed}          
+              isTransposed={isTransposed}
               setIsTransposed={setIsTransposed}
               timeRange={timeRange}
               setTimeRange={setTimeRange}
@@ -303,11 +429,10 @@ const setTableRef = (ref) => {
               dragDropEnabled={dragDropEnabled}
               setDragDropEnabled={setDragDropEnabled}
               cellColors={cellColors}
-              setCellColors={setCellColors}
               textColors={textColors}
-              setTextColors={setTextColors}
               cellDecorations={cellDecorations}
-              setCellDecorations={setCellDecorations}
+              observationColorPreferences={observationColorPreferences}
+              setObservationColorPreferences={setObservationColorPreferences}
             />
           </DndProvider>
           <NavigationButtons
@@ -382,11 +507,27 @@ const setTableRef = (ref) => {
             </button>
           </li>
           {isAuthenticated && (
-            <li className={styles.navItem} style={{ marginLeft: 'auto' }}>
-              <span style={{ marginRight: '16px', color: '#666' }}>{user?.email}</span>
-              <LogoutButton className={styles.navButton}>
-                Log Out
-              </LogoutButton>
+            <li className={styles.navItem}>
+              <button
+                className={`${styles.navButton} ${activePage === 'account-settings' ? styles.activeNav : ''}`}
+                type="button"
+                onClick={() => handleNavigation('account-settings')}
+              >
+                Account
+              </button>
+            </li>
+          )}
+          {(isAuthenticated || !isLoading) && (
+            <li className={styles.navItem} style={{ marginLeft: 'auto', marginRight: 0 }}>
+              {isAuthenticated ? (
+                <LogoutButton className={`${styles.navButton} ${styles.logoutButton}`}>
+                  Log Out
+                </LogoutButton>
+              ) : (
+                <LoginButton className={`${styles.navButton} ${styles.logoutButton}`}>
+                  Log In
+                </LoginButton>
+              )}
             </li>
           )}
         </ul>
@@ -403,31 +544,28 @@ const setTableRef = (ref) => {
       {activePage === 'app' && (
         <main id="content-area" className={styles.mainContent}>
           <div className={styles.contentWrapper}>
-            {isLoading ? (
+            {isLoading || (isAuthenticated && emailVerified === null) ? (
               <div style={{ textAlign: 'center', padding: '48px' }}>
                 <p>Loading...</p>
               </div>
             ) : !isAuthenticated ? (
-              <div style={{ textAlign: 'center', padding: '48px' }}>
-                <h2>Authentication Required</h2>
-                <p style={{ marginTop: '16px', marginBottom: '24px' }}>
-                  Please log in to access the allocation tool.
-                </p>
-                <button
-                  onClick={() => handleNavigation('landing')}
-                  style={{
-                    padding: '12px 24px',
-                    background: '#0066cc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '16px'
-                  }}
-                >
-                  Go to Login
-                </button>
+              <div className={styles.authRequired}>
+                <div className={styles.authCard}>
+                  <div className={styles.authIcon}>
+                    <i className="fas fa-lock"></i>
+                  </div>
+                  <h2 className={styles.authTitle}>Authentication Required</h2>
+                  <p className={styles.authText}>
+                    Please log in to access the allocation tool.
+                  </p>
+                  <LoginButton className={styles.authButton}>
+                    <i className="fas fa-sign-in-alt"></i>
+                    Go to Login
+                  </LoginButton>
+                </div>
               </div>
+            ) : isAuthenticated && emailVerified === false ? (
+              <VerifyEmailNotice />
             ) : (
               renderAppPage()
             )}
@@ -435,11 +573,12 @@ const setTableRef = (ref) => {
         </main>
       )}
 
-      <footer className={styles.footer}>
-        <p className={styles.footerText}>&copy; Alex 2025</p>
-      </footer>
+      {/* Replace old footer with new GDPR-compliant footer */}
+      <Footer onNavigate={handleNavigation} />
 
-      
+      {/* GDPR Compliance Components */}
+      <CookieBanner />
+      <ConsentTracker />
     </div>
   );
 }

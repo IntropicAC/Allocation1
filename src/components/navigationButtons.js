@@ -101,6 +101,17 @@ function NavigationButtons({
 }, [staff]);
 
 const [isLoadingSolver, setIsLoadingSolver] = useState(false);
+  const [solverAbortController, setSolverAbortController] = useState(null);
+
+  const handleCancelSolver = () => {
+    if (solverAbortController) {
+      console.log('🛑 User cancelled solver');
+      solverAbortController.abort();
+      setSolverAbortController(null);
+      setIsLoadingSolver(false);
+    }
+  };
+
   function calculateAvailabilityForEachObservation(observations, staff, hour) {
     let availabilityCounts = {};
 
@@ -426,13 +437,9 @@ function analyzeHourCapacity(staff, observations, hour, obsRequirements, current
       // Track other reasons for unavailability
       if (member.break === hour) {
         unavailableReasons.onBreak.push(member.name);
-      } else if ((member.security && [8, 12, 17, 19].includes(hour)) ||
-                 (member.nurse && [8, 9, 19].includes(hour))) {
-        unavailableReasons.restrictedRole.push({
-          name: member.name,
-          role: member.security ? 'Security' : 'Nurse'
-        });
       }
+      // No role-based hour restrictions - removed nurse hour check
+      // Nurses can work any hour, constraint is handled by "not all nurses same hour" validation
     }
   });
   
@@ -494,9 +501,9 @@ function isStaffAvailableAtHour(member, hour, currentObservationNames) {
   // Check role restrictions
   // Note: This is simplified - you may want to add the maxObs check
   // from calculateEffectiveMaxObservations
-  if (member.security && [8, 12, 17, 19].includes(hour)) return false;
-  if (member.nurse && [8, 9, 19].includes(hour)) return false;
-  
+  // No role-based hour restrictions - all staff can work any hour
+  // The only constraint is that not all nurses can be assigned the same hour (handled in validation)
+
   return true;
 }
 
@@ -1161,14 +1168,13 @@ if (varietyBonus > 0) {
     hour,
     maxObs,
     observation,
-    maxObservations,
     logs,
     majorityObsPrevHour,
     observations
   ) {
     // First, filter out staff members who do not meet the assignment conditions
     let eligibleStaff = staff.filter((staffMember) =>
-      checkAssignmentConditions(staffMember, hour, observation, maxObservations)
+      checkAssignmentConditions(staffMember, hour, observation, staff)
     );
 
     // Then, calculate scores for the eligible staff and sort them
@@ -1198,7 +1204,7 @@ if (varietyBonus > 0) {
     return staffWithScores;
   }
 
-  function checkAssignmentConditions(staffMember, hour, observation, maxObs, staff = null) {
+  function checkAssignmentConditions(staffMember, hour, observation, staff = null) {
   // Primary check: staff member must be free (showing "-") for this hour
   let isAvailable = staffMember.observations[hour] === "-";
   
@@ -1267,16 +1273,14 @@ if (varietyBonus > 0) {
   }
   
   let isOnBreak = staffMember.break === hour;
-  let isSecurityHour = staffMember.security === true && (hour === 8 || hour === 12 || hour === 17 || hour === 19) && maxObs <= 9;
-  let isNurse = staffMember.nurse === true && (hour === 8 || hour === 9 || hour === 19) && maxObs <= 9;
+  // No role-based hour restrictions - all staff can work any hour
+  // The only constraint is that not all nurses can be assigned the same hour (wouldLeaveNoNurseFree)
 
   return (
     !hadObservationLastHour &&  // Didn't have same observation last hour
     !isOnBreak &&              // Not on break
-    !isSecurityHour &&         // Not security restricted hour
     !maxObsSecurity &&         // Hasn't exceeded security observation limit
     !NurseMax &&               // Hasn't exceeded nurse observation limit
-    !isNurse &&                // Not nurse restricted hour
     !wouldLeaveNoNurseFree     // Would not leave all nurses busy
   );
 }
@@ -1296,7 +1300,6 @@ if (varietyBonus > 0) {
     staffWithScores,
     hour,
     observation,
-    maxObservations,
     firstObservationEachHour,
     logs,
     unassignedCountRef
@@ -1313,7 +1316,7 @@ if (varietyBonus > 0) {
           staffMember,
           hour,
           observation,
-          maxObservations
+          staff
         )
       ) {
         continue; // Skip to the next staff member if conditions are not met
@@ -1722,7 +1725,6 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
           hour,
           maxObs,
           observation,
-          maxObs,
           logs,
           majorityObsPrevHour,
           observations
@@ -1732,7 +1734,6 @@ function applyDeletedObsOnce(staff, observations, startHour = 7) {
           staffWithScores,
           hour,
           observation,
-          maxObs,
           firstObservationEachHour,
           logs,
           unassignedCountRef
@@ -1801,6 +1802,9 @@ const handleAllocate = async () => {
   console.log('🚀🚀🚀 ═══════════════════════════════════════');
   console.log('Time:', new Date().toLocaleTimeString());
 
+  // Create AbortController for cancellation
+  const abortController = new AbortController();
+  setSolverAbortController(abortController);
   setIsLoadingSolver(true);
   
   // ═══════════════════════════════════════
@@ -2023,16 +2027,25 @@ const handleAllocate = async () => {
     console.log('\n📤 ═══════════════════════════════════════');
     console.log('📤 STARTING ASYNC SOLVE JOB');
     console.log('📤 ═══════════════════════════════════════');
-    
-    const endpoint = '/api/solve';
+
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+    const endpoint = `${backendUrl}/solve`;
     console.log(`🎯 Endpoint: ${endpoint}`);
     console.log(`📦 Request size: ${(JSON.stringify(requestData).length / 1024).toFixed(2)} KB`);
-    
+
     const startTime = Date.now();
+
+    // Prepare headers with API key if available
+    const headers = { 'Content-Type': 'application/json' };
+    if (process.env.REACT_APP_RAILWAY_API_KEY) {
+      headers['X-API-Key'] = process.env.REACT_APP_RAILWAY_API_KEY;
+    }
+
     const startResponse = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestData)
+      headers: headers,
+      body: JSON.stringify(requestData),
+      signal: abortController.signal
     });
     
     if (!startResponse.ok) {
@@ -2065,7 +2078,7 @@ const handleAllocate = async () => {
       
       try {
         const pollUrl = `${endpoint}/${jobId}`;
-        const statusResponse = await fetch(pollUrl);
+        const statusResponse = await fetch(pollUrl, { signal: abortController.signal });
         
         const responseText = await statusResponse.text();
         let statusData;
@@ -2187,11 +2200,19 @@ const handleAllocate = async () => {
     console.error('Error type:', error.constructor.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    
-    alert(`Error: ${error.message}\n\nCheck console for details.`);
+
+    // Handle abort (user cancellation) differently
+    if (error.name === 'AbortError') {
+      console.log('🛑 Solver cancelled by user');
+      // Don't show an error alert for user cancellation
+    } else {
+      alert(`Error: ${error.message}\n\nCheck console for details.`);
+    }
+  } finally {
+    // Always clean up
+    setSolverAbortController(null);
+    setIsLoadingSolver(false);
   }
-  
-  setIsLoadingSolver(false);
   console.log('\n🏁 HANDLE ALLOCATE COMPLETE');
   console.log('🏁 Time:', new Date().toLocaleTimeString());
   console.log('🏁🏁🏁 ═══════════════════════════════════════\n\n');
@@ -2362,13 +2383,20 @@ const handleNext = () => {
               Optimizing Schedule...
             </div>
             <div className={styles.loadingSubtext}>
-              {selectedStartHour ? 
-                `Using advanced solver (${selectedStartHour}:00 - 19:00)` : 
+              {selectedStartHour ?
+                `Using advanced solver (${selectedStartHour}:00 - 19:00)` :
                 'Using advanced solver'}
             </div>
             <div className={styles.progressBar}>
               <div className={styles.progressBarFill}></div>
             </div>
+            <button
+              onClick={handleCancelSolver}
+              className={styles.cancelButton}
+              title="Cancel solver"
+            >
+              ✕ Cancel
+            </button>
           </div>
         </div>
       )}

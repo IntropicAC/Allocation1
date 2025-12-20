@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm start)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill /F /PID 23484)",
+      "Bash(curl:*)",
+      "Bash(dir:*)",
+      "Bash(find:*)",
+      "Bash(for url in \"https://pythonsolver-production.up.railway.app\" \"https://web-production.up.railway.app\" \"https://pythonsolver.up.railway.app\")",
+      "Bash(do echo \"Testing $url\")",
+      "Bash(done)",
+      "Bash(npm view:*)",
+      "Bash(npm audit:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git restore:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git reset:*)",
+      "Bash(cat:*)",
+      "Bash(git fsck:*)",
+      "Bash(for commit in 4f90d2b 7b827e2 05e48db 3b7579b 4c99f7a 7f8de0f d69e901)",
+      "Bash(do echo \"=== Checking $commit ===\")",
+      "Bash(git checkout:*)",
+      "Bash(for commit in 7b827e2 4c99f7a 7f8de0f)",
+      "Bash(do echo \"=== $commit ===\")",
+      "Bash(del /Q BACKEND_SETUP.md EASY_SOLVER_SETUP.md FIND_RAILWAY_URL.md GDPR_SETUP_GUIDE.md LOCALHOST_RAILWAY_SETUP.md QUICK_BACKEND_START.md QUICK_START.md RAILWAY_URL_FIX.md REACT_UPDATE_GUIDE.md SECURITY_FIX.md SECURITY_FIXES_APPLIED.md SETUP_COMPLETE.md SOLVER_CONSECUTIVE_HOURS_BUG.md SOLVER_LOCALHOST_SETUP.md)",
+      "Bash(rm:*)",
+      "Bash(timeout /t 15 /nobreak)",
+      "Bash(del NUL)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

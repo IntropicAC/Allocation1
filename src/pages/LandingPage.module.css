@@ -5,7 +5,7 @@
 
 /* Hero Section */
 .hero {
-  padding: 8rem 4rem;
+  padding: 8rem 0rem;
   min-height: 40rem;
   display: flex;
   align-items: center;
@@ -52,7 +52,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 8rem;
-  max-width: 120rem;
+  max-width: 170rem;
   margin: 0 auto;
 }
 
@@ -148,8 +148,8 @@
   background-color: #333333;
   color: white;
   border: none;
-  padding: 1.8rem 3.5rem;
-  font-size: 1.9rem;
+  padding: 2.3rem 3.5rem;
+  font-size: 2.2rem;
   font-weight: 600;
   border-radius: 0.8rem;
   cursor: pointer;
@@ -158,6 +158,15 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.ctaButtonLoggedIn {
+  padding: 2.3rem 3.5rem;
+}
+
+.ctaButtonLoggedOut {
+  padding: 1.5rem 3.5rem;
+  font-size: 2rem;
 }
 
 .ctaButton:hover {
@@ -188,8 +197,8 @@
   background-color: transparent;
   color: #333333;
   border: 2px solid #333333;
-  padding: 1.8rem 3.5rem;
-  font-size: 1.9rem;
+  padding: 2.3rem 3.5rem;
+  font-size: 2.2rem;
   font-weight: 600;
   border-radius: 0.8rem;
   cursor: pointer;

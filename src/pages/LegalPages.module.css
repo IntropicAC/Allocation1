@@ -1,0 +1,267 @@
+.legalPage {
+  min-height: 100vh;
+  background: #B0E0E6;
+  padding: 40px 20px;
+  overflow-y: auto;
+}
+
+.legalContent {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  padding: 60px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.legalContent h1 {
+  font-size: 2.5rem;
+  color: #2d3748;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.lastUpdated {
+  color: #718096;
+  font-size: 0.95rem;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.legalContent section {
+  margin-bottom: 40px;
+}
+
+.legalContent h2 {
+  font-size: 1.5rem;
+  color: #4a90e2;
+  margin-bottom: 20px;
+  margin-top: 40px;
+  font-weight: 600;
+}
+
+.legalContent h3 {
+  font-size: 1.15rem;
+  color: #4a5568;
+  margin-bottom: 15px;
+  margin-top: 25px;
+  font-weight: 600;
+}
+
+.legalContent h4 {
+  font-size: 1.1rem;
+  color: #2d3748;
+  margin-bottom: 12px;
+  margin-top: 20px;
+  font-weight: 600;
+}
+
+.legalContent p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #4a5568;
+  margin-bottom: 16px;
+}
+
+.legalContent ul {
+  margin-left: 30px;
+  margin-bottom: 20px;
+  list-style-type: disc;
+}
+
+.legalContent ol {
+  margin-left: 30px;
+  margin-bottom: 20px;
+}
+
+.legalContent li {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #4a5568;
+  margin-bottom: 10px;
+}
+
+.legalContent a {
+  color: #4a90e2;
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.legalContent a:hover {
+  border-bottom-color: #4a90e2;
+}
+
+.highlight {
+  background: #edf2f7;
+  border-left: 4px solid #4a90e2;
+  padding: 20px;
+  margin: 25px 0;
+  border-radius: 8px;
+}
+
+.highlight p {
+  margin-bottom: 10px;
+}
+
+.highlight p:last-child {
+  margin-bottom: 0;
+}
+
+.highlight strong {
+  color: #4a90e2;
+}
+
+.rightsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.right {
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+.right:hover {
+  border-color: #4a90e2;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.1);
+  transform: translateY(-2px);
+}
+
+.right h3 {
+  font-size: 1.05rem;
+  color: #4a90e2;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.right p {
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
+.cookieTable {
+  margin: 30px 0;
+}
+
+.cookieDescription {
+  background: #f7fafc;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  font-style: italic;
+}
+
+.cookieItem {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.cookieItem h4 {
+  margin-top: 0;
+  color: #4a90e2;
+}
+
+.cookieItem table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.cookieItem table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.95rem;
+  vertical-align: top;
+}
+
+.cookieItem table tr:last-child td {
+  border-bottom: none;
+}
+
+.cookieItem table td:first-child {
+  width: 140px;
+  color: #2d3748;
+}
+
+.cookieItem table td:last-child {
+  color: #4a5568;
+}
+
+.browserLinks {
+  background: #f7fafc;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.browserLinks ul {
+  margin-left: 20px;
+  margin-top: 15px;
+  margin-bottom: 0;
+}
+
+.browserLinks li {
+  margin-bottom: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .legalContent {
+    padding: 40px 30px;
+  }
+
+  .legalContent h1 {
+    font-size: 2rem;
+  }
+
+  .legalContent h2 {
+    font-size: 1.5rem;
+  }
+
+  .legalContent h3 {
+    font-size: 1.2rem;
+  }
+
+  .rightsList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .legalPage {
+    padding: 20px 15px;
+  }
+
+  .legalContent {
+    padding: 30px 20px;
+  }
+
+  .legalContent h1 {
+    font-size: 1.75rem;
+  }
+
+  .legalContent h2 {
+    font-size: 1.35rem;
+  }
+
+  .legalContent p,
+  .legalContent li {
+    font-size: 1rem;
+  }
+
+  .cookieItem table td:first-child {
+    width: 100px;
+    font-size: 0.9rem;
+  }
+}

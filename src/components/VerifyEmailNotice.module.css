@@ -1,0 +1,115 @@
+.verifyContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 24px;
+}
+
+.verifyCard {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 48px 40px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.verifyIcon {
+  font-size: 64px;
+  color: #f59e0b;
+  margin-bottom: 24px;
+}
+
+.verifyTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+}
+
+.verifyText {
+  font-size: 16px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+
+.verifyText strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.verifyActions {
+  margin-top: 32px;
+  margin-bottom: 24px;
+}
+
+.resendButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.resendButton:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.resendButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.successMessage,
+.errorMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.successMessage {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.errorMessage {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.verifyHint {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.hintText {
+  font-size: 14px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.hintText i {
+  font-size: 16px;
+}
