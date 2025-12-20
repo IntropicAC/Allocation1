@@ -1,0 +1,128 @@
+/* Account Button Container */
+.accountButtonContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.accountButton {
+  background-color: transparent;
+  color: #333333;
+  border: 2px solid #333333;
+  padding: 0.8rem 1.6rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  white-space: nowrap;
+}
+
+.accountButton:hover {
+  background-color: #333333;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 0.8rem);
+  right: 0;
+  min-width: 26rem;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.8rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dropdown Header */
+.dropdownHeader {
+  padding: 1.2rem 1.6rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.userEmail {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #666;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* Dropdown Items */
+.dropdownItem {
+  width: 100%;
+  padding: 1.2rem 1.6rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #333333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dropdownItem:hover {
+  background: #f8f9fa;
+  color: #000;
+}
+
+.dropdownIcon {
+  font-size: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+}
+
+/* Divider */
+.dropdownDivider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 0.4rem 0;
+}
+
+/* Danger Item (Delete Account) */
+.dangerItem {
+  color: #dc3545;
+}
+
+.dangerItem:hover {
+  background: #fff5f5;
+  color: #c82333;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dropdown {
+    min-width: 22rem;
+  }
+
+  .accountButton {
+    font-size: 1.3rem;
+    padding: 0.7rem 1.4rem;
+  }
+}
