@@ -25,40 +25,40 @@ export default async function handler(req, res) {
 
     // Validate input
     if (!staff || !observations) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Missing staff or observations data' 
+      return res.status(400).json({
+        success: false,
+        error: 'Missing staff or observations data'
       });
     }
 
     // ✨ Log the startHour for debugging
-    console.log(`Solving for ${staff.length} staff, ${observations.length} observations, startHour: ${startHour || 8}`);
+    console.log(`Starting async solve for ${staff.length} staff, ${observations.length} observations, startHour: ${startHour || 8}`);
 
-    // Call Railway API with secure API key
+    // Call Railway API async endpoint with secure API key
     const response = await fetch('https://pythonsolver-production.up.railway.app/solve', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': process.env.RAILWAY_API_KEY  // Secure!
       },
-      body: JSON.stringify({ 
-        staff, 
+      body: JSON.stringify({
+        staff,
         observations,
         startHour: startHour || 8  // ✨ Pass startHour with default fallback
       })
     });
 
     const data = await response.json();
-    
-    console.log(`Solve complete: ${data.success}`);
-    
-    // Return the result
-    return res.status(response.ok ? 200 : 500).json(data);
+
+    console.log(`Job started: ${data.job_id || 'unknown'}`);
+
+    // Return the job_id for async polling (202 Accepted)
+    return res.status(response.ok ? 202 : response.status).json(data);
 
   } catch (error) {
     console.error('API Error:', error);
-    return res.status(500).json({ 
-      success: false, 
+    return res.status(500).json({
+      success: false,
       error: 'Internal server error: ' + error.message
     });
   }
