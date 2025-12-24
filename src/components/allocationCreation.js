@@ -396,27 +396,47 @@ const handleCellClick = (e) => {
   // Mark that we're actively typing
   isTypingRef.current = true;
 
-  // Remove zero-width space from DOM immediately on first keystroke
-  if (e.target.textContent && e.target.textContent.includes('\u200B')) {
-    const sel = window.getSelection();
-    let cursorOffset = 0;
-    if (sel.rangeCount > 0) {
-      const range = sel.getRangeAt(0);
-      cursorOffset = range.startOffset;
+  // Get the stripped text (without zero-width space)
+  const strippedText = stripZeroWidthSpace(e.target.textContent || '');
+
+  // Only remove zero-width space from DOM when user types actual text (not when deleting)
+  if (e.nativeEvent && e.nativeEvent.inputType === 'insertText') {
+    if (e.target.textContent && e.target.textContent.includes('\u200B')) {
+      const sel = window.getSelection();
+      let cursorOffset = 0;
+      if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        cursorOffset = range.startOffset;
+      }
+
+      // Remove zero-width space from the DOM
+      e.target.textContent = strippedText;
+
+      // Restore cursor position
+      if (e.target.firstChild) {
+        const range = document.createRange();
+        const newSel = window.getSelection();
+        const position = Math.min(cursorOffset, e.target.firstChild.length);
+        range.setStart(e.target.firstChild, position);
+        range.collapse(true);
+        newSel.removeAllRanges();
+        newSel.addRange(range);
+      }
     }
+  } else {
+    // If user deleted everything, restore zero-width space for cursor positioning
+    if (strippedText === '' && !e.target.textContent.includes('\u200B')) {
+      e.target.textContent = '\u200B';
 
-    // Remove zero-width space from the DOM
-    e.target.textContent = stripZeroWidthSpace(e.target.textContent);
-
-    // Restore cursor position
-    if (e.target.firstChild) {
+      // Place cursor at the end
       const range = document.createRange();
-      const newSel = window.getSelection();
-      const position = Math.min(cursorOffset, e.target.firstChild.length);
-      range.setStart(e.target.firstChild, position);
-      range.collapse(true);
-      newSel.removeAllRanges();
-      newSel.addRange(range);
+      const sel = window.getSelection();
+      if (e.target.firstChild) {
+        range.setStart(e.target.firstChild, e.target.firstChild.length);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
     }
   }
 
@@ -424,7 +444,7 @@ const handleCellClick = (e) => {
   normalizeCellDOM(e.target);
 
   // Strip zero-width space before processing
-  const text = stripZeroWidthSpace(e.target.textContent || '').slice(0, 16);
+  const text = strippedText.slice(0, 16);
   setLocalEditValue(text);
   setEditValue(text);
 
