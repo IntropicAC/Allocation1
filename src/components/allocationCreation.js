@@ -362,9 +362,14 @@ const handleCellClick = (e) => {
   // Fix cursor positioning for empty cells
   setTimeout(() => {
     if (cellRef.current) {
+      // If cell is empty, add a zero-width space for cursor positioning
+      if (!cellRef.current.textContent || cellRef.current.textContent === '') {
+        cellRef.current.textContent = '\u200B';
+      }
+
       cellRef.current.focus();
 
-      // Place cursor at the end if there's content
+      // Place cursor at the end
       const range = document.createRange();
       const sel = window.getSelection();
 
@@ -373,12 +378,6 @@ const handleCellClick = (e) => {
         const position = textNode.length;
         range.setStart(textNode, position);
         range.setEnd(textNode, position);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      } else {
-        // Empty cell - just set cursor inside
-        range.selectNodeContents(cellRef.current);
-        range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
       }
@@ -397,6 +396,30 @@ const handleCellClick = (e) => {
   // Mark that we're actively typing
   isTypingRef.current = true;
 
+  // Remove zero-width space from DOM immediately on first keystroke
+  if (e.target.textContent && e.target.textContent.includes('\u200B')) {
+    const sel = window.getSelection();
+    let cursorOffset = 0;
+    if (sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      cursorOffset = range.startOffset;
+    }
+
+    // Remove zero-width space from the DOM
+    e.target.textContent = stripZeroWidthSpace(e.target.textContent);
+
+    // Restore cursor position
+    if (e.target.firstChild) {
+      const range = document.createRange();
+      const newSel = window.getSelection();
+      const position = Math.min(cursorOffset, e.target.firstChild.length);
+      range.setStart(e.target.firstChild, position);
+      range.collapse(true);
+      newSel.removeAllRanges();
+      newSel.addRange(range);
+    }
+  }
+
   // Normalize DOM to prevent divs/brs from being created
   normalizeCellDOM(e.target);
 
@@ -408,11 +431,11 @@ const handleCellClick = (e) => {
   // Update the staff state immediately on every keystroke (prevents crashes)
   const normalizedText = text === '' ? '-' : text;
   const originalValue = staffMember.observations[hour] || '-';
-  
+
   if (originalValue !== normalizedText) {
     updateObservation(staffMember.name, hour, normalizedText);
   }
-  
+
   // Clear typing flag after a short delay
   setTimeout(() => {
     isTypingRef.current = false;
