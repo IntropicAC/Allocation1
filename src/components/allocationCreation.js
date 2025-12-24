@@ -362,22 +362,23 @@ const handleCellClick = (e) => {
   // Fix cursor positioning for empty cells
   setTimeout(() => {
     if (cellRef.current) {
-      // If cell is empty, add a zero-width space as actual content
-      if (!cellRef.current.textContent || cellRef.current.textContent === '') {
-        cellRef.current.textContent = '\u200B';
-      }
-      
       cellRef.current.focus();
-      
-      // Place cursor at the end
+
+      // Place cursor at the end if there's content
       const range = document.createRange();
       const sel = window.getSelection();
-      
+
       if (cellRef.current.firstChild) {
         const textNode = cellRef.current.firstChild;
         const position = textNode.length;
         range.setStart(textNode, position);
         range.setEnd(textNode, position);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        // Empty cell - just set cursor inside
+        range.selectNodeContents(cellRef.current);
+        range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
       }
