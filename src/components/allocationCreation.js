@@ -15,6 +15,41 @@ function stripZeroWidthSpace(text) {
   return text.replace(/\u200B/g, '');
 }
 
+function normalizeCellDOM(element) {
+  if (!element) return;
+
+  // Get all the text content
+  const text = element.textContent || '';
+
+  // Check if the DOM has been corrupted with divs/brs
+  // (more than just a text node)
+  const hasWrapperElements = element.querySelector('div, br');
+
+  if (hasWrapperElements) {
+    // Store cursor position
+    const sel = window.getSelection();
+    let cursorOffset = 0;
+    if (sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      cursorOffset = range.startOffset;
+    }
+
+    // Replace entire content with just plain text
+    element.textContent = text;
+
+    // Restore cursor position
+    if (element.firstChild) {
+      const range = document.createRange();
+      const newSel = window.getSelection();
+      const position = Math.min(cursorOffset, element.firstChild.length);
+      range.setStart(element.firstChild, position);
+      range.collapse(true);
+      newSel.removeAllRanges();
+      newSel.addRange(range);
+    }
+  }
+}
+
 function getObservationKey(observationName) {
   if (!observationName || typeof observationName !== 'string') return '';
 
@@ -360,12 +395,15 @@ const handleCellClick = (e) => {
   const handleInput = (e) => {
   // Mark that we're actively typing
   isTypingRef.current = true;
-  
+
+  // Normalize DOM to prevent divs/brs from being created
+  normalizeCellDOM(e.target);
+
   // Strip zero-width space before processing
   const text = stripZeroWidthSpace(e.target.textContent || '').slice(0, 16);
   setLocalEditValue(text);
   setEditValue(text);
-  
+
   // Update the staff state immediately on every keystroke (prevents crashes)
   const normalizedText = text === '' ? '-' : text;
   const originalValue = staffMember.observations[hour] || '-';
