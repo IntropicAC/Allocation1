@@ -219,7 +219,7 @@ table td:not(.hourCell):hover {
 
 .allocationTable td[contenteditable="true"]:empty:before {
   content: '\200b';
-  display: inline-block;
+  display: inline;
 }
 
 .AmPmToggle {
