@@ -690,6 +690,7 @@ const DragDropHeaderCell = ({
   const [localEditValue, setLocalEditValue] = useState('');
   const headerRef = useRef(null);
   const combinedRef = useRef(null);
+  const isTypingRef = useRef(false);
 
   const capitalizedStaffName = capitalizeFirstLetter(staffMember.name);
 const getRoleTag = () => {
@@ -746,8 +747,16 @@ const displayText = `${capitalizedStaffName}${roleTag} - ${totalObservations}`;
 };
 
   const handleInput = (e) => {
+  // Mark that we're actively typing
+  isTypingRef.current = true;
+
   const text = (e.target.textContent || '').slice(0, 25); // Increased limit for name + tag
   setLocalEditValue(text);
+
+  // Clear typing flag after a short delay
+  setTimeout(() => {
+    isTypingRef.current = false;
+  }, 50);
 };
 
   const handleKeyDown = (e) => {
@@ -873,26 +882,55 @@ const displayText = `${capitalizedStaffName}${roleTag} - ${totalObservations}`;
   // Set initial content and cursor position when entering edit mode
   useEffect(() => {
     if (isEditing && headerRef.current) {
-      // Set the initial text content
-      headerRef.current.textContent = localEditValue;
-      
-      // Focus and place cursor at end
-      headerRef.current.focus();
-      const range = document.createRange();
-      const sel = window.getSelection();
-      
-      if (headerRef.current.childNodes.length > 0) {
-        const textNode = headerRef.current.firstChild;
-        const position = textNode ? textNode.length : 0;
-        range.setStart(textNode || headerRef.current, position);
-        range.setEnd(textNode || headerRef.current, position);
-      } else {
-        range.selectNodeContents(headerRef.current);
-        range.collapse(false);
+      // SKIP if actively typing to prevent cursor jumping
+      if (isTypingRef.current) {
+        return;
       }
-      
-      sel.removeAllRanges();
-      sel.addRange(range);
+
+      // Store current cursor position BEFORE updating content
+      const sel = window.getSelection();
+      let cursorPosition = 0;
+      let isInitialEdit = false;
+
+      // Check if we have a valid selection within our cell
+      if (sel.rangeCount > 0 && headerRef.current.contains(sel.focusNode)) {
+        const range = sel.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(headerRef.current);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        cursorPosition = preCaretRange.toString().length;
+      } else {
+        // No valid selection in our cell yet = this is the initial edit
+        isInitialEdit = true;
+      }
+
+      // Only update textContent if it's actually different
+      const currentText = headerRef.current.textContent || '';
+      if (currentText !== localEditValue) {
+        // Set the text content
+        headerRef.current.textContent = localEditValue;
+
+        // Restore cursor position after content change
+        headerRef.current.focus();
+        const range = document.createRange();
+        const newSel = window.getSelection();
+
+        if (headerRef.current.childNodes.length > 0) {
+          const textNode = headerRef.current.firstChild;
+          // If initial edit, place at end; otherwise preserve existing position
+          const position = isInitialEdit
+            ? (textNode ? textNode.length : 0)
+            : Math.min(cursorPosition, textNode ? textNode.length : 0);
+          range.setStart(textNode || headerRef.current, position);
+          range.setEnd(textNode || headerRef.current, position);
+        } else {
+          range.selectNodeContents(headerRef.current);
+          range.collapse(false);
+        }
+
+        newSel.removeAllRanges();
+        newSel.addRange(range);
+      }
     }
   }, [isEditing, localEditValue]);
 
